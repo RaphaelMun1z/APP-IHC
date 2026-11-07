@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar | IPB · APP 1</title><link rel="stylesheet" href="./css/output.css">
+  <script src="./js/app-data.js" defer></script><script src="./js/app-shell.js" defer></script><script src="./js/app-pages.js" defer></script>
+</head>
+<body class="bg-neutral-secondary-soft font-sans text-body" data-page="login">
+  <main class="app-login">
+    <section class="app-login-brand" aria-label="IPB · APP 1">
+      <div class="flex items-center gap-5"><img src="./assets/ipb_logo.png" alt="IPB" class="h-14 w-auto"><span class="border-l border-gray-600 pl-5 text-sm font-medium text-gray-300">APP 1<br>Acompanhamento pedagógico</span></div>
+      <div class="login-intro space-y-6"><span class="text-xs font-medium uppercase tracking-widest text-gray-400">Mais perto de cada aluno</span><h2 class="max-w-lg text-4xl font-semibold leading-tight tracking-tight">Ensinar, acompanhar<br>e desenvolver.</h2><p class="max-w-md text-base leading-relaxed text-gray-300">Turmas, aulas, frequência e avaliação em um só lugar. Mais espaço para o que acontece em sala.</p><div class="mt-8 flex flex-wrap gap-3 text-xs text-gray-300"><span class="rounded-full border border-gray-600 px-3 py-2">Professor</span><span class="rounded-full border border-gray-600 px-3 py-2">Coordenação pedagógica</span></div></div>
+      <p class="login-intro text-xs text-gray-400">IPB · Gestão e acompanhamento escolar</p>
+    </section>
+    <section class="app-login-form" aria-labelledby="login-title">
+      <div class="mx-auto w-full max-w-md space-y-6">
+        <header><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-body-subtle">Bem-vindo ao APP 1</p><h1 id="login-title" class="text-2xl font-semibold tracking-tight text-heading">Acesse sua conta</h1><p class="mt-2 app-help">Escolha seu perfil para continuar.</p></header>
+        <form id="login-form" class="app-card app-card-body space-y-5">
+          <fieldset><legend class="mb-2 text-sm font-medium text-heading">Perfil de acesso</legend><div class="grid grid-cols-2 gap-3"><label class="app-choice"><input type="radio" name="perfil" value="professor" checked class="mt-0.5 accent-gray-900"><span>Professor</span></label><label class="app-choice"><input type="radio" name="perfil" value="coordenacao" class="mt-0.5 accent-gray-900"><span>Coordenação</span></label></div></fieldset>
+          <div class="app-field"><label for="usuario">Usuário</label><input id="usuario" name="usuario" class="app-input" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="Seu usuário"></div>
+          <div class="app-field"><label for="senha">Senha</label><div class="relative"><input id="senha" name="senha" class="app-input pr-20" type="password" autocomplete="current-password" required placeholder="Sua senha"><button id="mostrar-senha" type="button" class="absolute inset-y-0 right-0 cursor-pointer px-3 text-xs font-medium" aria-controls="senha" aria-pressed="false">Mostrar</button></div></div>
+          <p id="login-error" hidden role="alert"></p>
+          <button type="submit" class="app-btn app-btn-primary w-full">Entrar <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="rounded-base border border-default bg-neutral-primary px-4 py-4 text-sm"><p class="font-semibold text-heading">Acesso demonstrativo</p><p class="mt-1 app-help">Use <strong id="demo-username">professor</strong> e a senha <strong>ipb123</strong>. Dados fictícios, salvos apenas neste navegador.</p><button type="button" id="preencher-demo" class="mt-3 cursor-pointer text-sm font-semibold text-heading underline underline-offset-4">Preencher credenciais de demonstração</button></div>
+      </div>
+    </section>
+  </main>
+  <noscript>Ative o JavaScript para acessar o aplicativo.</noscript>
+  <script src="./node_modules/flowbite/dist/flowbite.min.js"></script>
+</body>
+</html>

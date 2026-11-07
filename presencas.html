@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./css/output.css" />
+		<title>Registro de presença e faltas | IPB</title>
+		<script src="./js/app-data.js" defer></script>
+		<script src="./js/app-shell.js" defer></script>
+		<script src="./js/presencas.js" defer></script>
+		<script src="./js/table-header.js" defer></script>
+	</head>
+	<body class="min-h-screen bg-neutral-secondary-soft font-sans text-body">
+		<nav aria-label="Navegação principal"></nav>
+
+		<main class="mx-auto max-w-screen-2xl space-y-6 px-4 pb-8 pt-24 sm:px-6 lg:px-8">
+			<header>
+				<h1 id="presencas-titulo" class="text-2xl font-semibold tracking-tight text-heading">Registro de presença e faltas</h1>
+			</header>
+
+			<section aria-label="Filtros da chamada" class="flex flex-wrap items-end justify-between gap-4 rounded-base border border-default bg-neutral-primary-soft px-4 py-4">
+				<div class="w-full space-y-3">
+					<div>
+						<p class="mb-2 text-sm font-medium text-heading">Turma, ano e mês</p>
+						<div class="attendance-search-row">
+						<div class="attendance-filters relative flex w-full sm:w-auto">
+							<button id="turma-chamada-button" type="button" data-dropdown-toggle="turma-chamada-dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Selecionar turma" class="inline-flex shrink-0 items-center gap-2 rounded-s-base border border-default-medium bg-neutral-secondary-medium px-4 py-2.5 text-sm font-medium leading-5 text-body hover:bg-neutral-tertiary-medium hover:text-fg-brand focus:outline-none focus:ring-4 focus:ring-neutral-tertiary">
+								<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+								<span id="turma-chamada-label">Selecione turma</span>
+								<svg class="ms-1 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+							</button>
+							<div id="turma-chamada-dropdown" class="absolute start-0 top-full z-50 hidden w-56 rounded-base border border-default-medium bg-neutral-primary-medium">
+								<ul class="p-2 text-sm font-medium text-body" aria-labelledby="turma-chamada-button">
+									<li><button type="button" data-turma-choice="6a" class="inline-flex w-full items-center gap-2 rounded-base p-2 text-left hover:bg-neutral-tertiary-medium hover:text-heading"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>6º ano A</button></li>
+									<li><button type="button" data-turma-choice="6b" class="inline-flex w-full items-center gap-2 rounded-base p-2 text-left hover:bg-neutral-tertiary-medium hover:text-heading"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>6º ano B</button></li>
+									<li><button type="button" data-turma-choice="7a" class="inline-flex w-full items-center gap-2 rounded-base p-2 text-left hover:bg-neutral-tertiary-medium hover:text-heading"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>7º ano A</button></li>
+									<li><button type="button" data-turma-choice="7b" class="inline-flex w-full items-center gap-2 rounded-base p-2 text-left hover:bg-neutral-tertiary-medium hover:text-heading"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>7º ano B</button></li>
+								</ul>
+							</div>
+							<label for="ano-chamada" class="sr-only">Ano</label>
+							<select id="ano-chamada" disabled class="block w-36 shrink-0 border border-s-0 border-default-medium bg-neutral-secondary-medium px-3 py-2.5 text-sm text-heading focus:border-brand focus:ring-4 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50">
+								<option value="" selected>Selecione</option>
+							</select>
+							<label for="mes-chamada" class="sr-only">Mês</label>
+							<select id="mes-chamada" disabled class="block w-48 shrink-0 rounded-e-base border border-s-0 border-default-medium bg-neutral-secondary-medium px-3 py-2.5 text-sm capitalize text-heading focus:border-brand focus:ring-4 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50">
+								<option value="" selected>Selecione</option>
+							</select>
+						</div>
+						<button id="buscar-chamada" type="button" disabled class="inline-flex cursor-pointer items-center gap-2 rounded-base bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40">
+							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+							<span>Buscar</span>
+						</button>
+					</div>
+				</div>
+				</div>
+			</section>
+
+			<section id="secao-tabela-presencas" hidden aria-labelledby="presencas-titulo" class="rounded-base border border-default bg-neutral-primary-soft">
+				<div class="flex flex-wrap items-center justify-between gap-4 border-b border-brand-medium bg-brand-softer px-4 py-3">
+					<div>
+						<h2 id="contexto-mes" class="mt-1 text-2xl font-bold tracking-tight text-fg-brand"></h2>
+						<p id="contexto-turma" class="mt-1 text-sm font-medium text-body-subtle"></p>
+					</div>
+					<nav class="flex flex-wrap items-center gap-2" aria-label="Paginação semanal da chamada">
+						<button id="semana-anterior" type="button" aria-label="Semana anterior" class="inline-flex h-9 w-9 items-center justify-center rounded-base border border-brand-medium bg-neutral-primary-soft text-fg-brand hover:bg-neutral-tertiary focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40">
+							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+						</button>
+						<p id="intervalo-semana" class="min-w-36 text-center text-sm font-semibold text-fg-brand" aria-live="polite"></p>
+						<button id="semana-proxima" type="button" aria-label="Próxima semana" class="inline-flex h-9 w-9 items-center justify-center rounded-base border border-brand-medium bg-neutral-primary-soft text-fg-brand hover:bg-neutral-tertiary focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40">
+							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+						</button>
+						<button id="semana-atual" type="button" class="rounded-base border border-brand-medium bg-neutral-primary-soft px-3 py-2 text-sm font-medium text-fg-brand hover:bg-neutral-tertiary focus-visible:outline-2 focus-visible:outline-brand">Esta semana</button>
+					</nav>
+				</div>
+				<div id="tabela-presencas" class="overflow-x-auto rounded-b-base">
+					<table class="evaluation-table attendance-table w-max table-fixed border-separate border-spacing-0 text-left text-sm text-body">
+						<caption class="sr-only">Registro mensal de presença dos alunos da turma. Cada coluna representa um dia do mês.</caption>
+						<thead><tr id="cabecalho-presencas">
+							<th scope="col" class="student-cell px-4 py-4 font-semibold">Aluno</th>
+						</tr></thead>
+						<tbody id="lista-alunos"></tbody>
+					</table>
+				</div>
+				<div class="flex flex-wrap items-center justify-between gap-3 border-t border-default px-4 py-3">
+					<p id="status-salvamento" role="status" aria-live="polite" class="text-sm text-body-subtle"></p>
+					<button id="salvar-chamada" type="button" class="inline-flex cursor-pointer items-center gap-2 rounded-base bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+						<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
+						<span>Salvar chamada</span>
+					</button>
+				</div>
+			</section>
+		</main>
+		<script src="./node_modules/flowbite/dist/flowbite.min.js"></script>
+	</body>
+</html>

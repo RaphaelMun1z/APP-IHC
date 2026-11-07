@@ -1,0 +1,9 @@
+node_modules/
+css/output.css
+.preview/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+npm-debug.log*

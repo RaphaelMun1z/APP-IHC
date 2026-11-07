@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/serve.cjs",
+    "build": "tailwindcss -i ./css/styles.css -o ./css/output.css"
+  },
+  "dependencies": {
+    "flowbite": "^4.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
