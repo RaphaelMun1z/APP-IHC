@@ -45,8 +45,9 @@
       return value && ["professor", "coordenacao"].includes(value.perfil) ? value : null;
     } catch { return null; }
   }
-  function login(username, password, role) {
-    if (!["professor", "coordenacao"].includes(role) || username.trim().toLowerCase() !== role || password !== "ipb123") throw new Error("Usuário ou senha incorretos para o perfil escolhido.");
+  function login(username, password) {
+    const role = username.trim().toLowerCase();
+    if (!["professor", "coordenacao"].includes(role) || password !== "ipb123") throw new Error("Usuário ou senha incorretos.");
     const user = role === "professor" ? { id: "professor-01", nome: "Mariana Oliveira", perfil: role } : { id: "coordenacao-01", nome: "Coordenação pedagógica", perfil: role };
     try { sessionStorage.setItem(keys.session, JSON.stringify(user)); }
     catch { throw new Error("Permita o armazenamento do navegador para acessar a demonstração."); }

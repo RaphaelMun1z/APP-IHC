@@ -2,6 +2,7 @@
 
 @import "tailwindcss";
 @import "flowbite/src/themes/default";
+@import "./navigation.css";
 
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
@@ -88,9 +89,6 @@
 .attendance-search-row { display: flex; align-items: end; gap: .75rem; }
 .attendance-search-row .attendance-filters { min-width: 0; flex: 0 1 auto; }
 .attendance-search-row #buscar-chamada { flex-shrink: 0; min-height: 2.75rem; }
-.app-login { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.app-login-brand { background: #111827; color: white; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(2rem, 7vw, 7rem); }
-.app-login-form { display: grid; align-items: center; padding: 2rem; }
 @media (min-width: 80rem) {
   .app-navbar-inner { grid-template-columns: minmax(100px, 1fr) auto minmax(170px, 1fr); }
   .app-account { grid-column: 3; }
@@ -101,10 +99,6 @@
 @media (max-width: 47.99rem) {
   .app-navbar-inner { padding: 1rem; }
   .app-profile-label { display: none; }
-  .app-login { grid-template-columns: minmax(0, 1fr); }
-  .app-login-brand { padding: 1.5rem; gap: 1.5rem; }
-  .app-login-brand .login-intro { display: none; }
-  .app-login-form { padding: 1.5rem 1rem; }
   #turma-chamada-button { width: 100%; border-radius: .75rem .75rem 0 0; justify-content: space-between; }
   #turma-chamada-button + #turma-chamada-dropdown { max-width: 100%; }
   .attendance-filters { flex-wrap: wrap; }
@@ -199,7 +193,7 @@
 }
 
 @media (max-width: 47.99rem) {
-	body[data-page] > main { padding-top: 6rem; padding-bottom: 2rem; }
+	body[data-page]:not([data-page="login"]) > main { padding-top: 6rem; padding-bottom: 2rem; }
 	.app-navbar-inner { min-height: 4.25rem; padding: .625rem 1rem; }
 	.app-brand { gap: .625rem; }
 	.app-brand img { height: 2.25rem; }

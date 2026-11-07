@@ -31,43 +31,56 @@
 
   function login() {
     const form = $("login-form");
-    const role = () => form.elements.perfil.value;
-    form.elements.perfil.forEach(input => input.addEventListener("change", () => {
-      $("demo-username").textContent = role();
-      if (["professor", "coordenacao"].includes($("usuario").value)) $("usuario").value = role();
-      notice("", false, $("login-error"));
-    }));
-    $("mostrar-senha").addEventListener("click", () => {
-      const show = $("senha").type === "password";
-      $("senha").type = show ? "text" : "password";
-      $("mostrar-senha").textContent = show ? "Ocultar" : "Mostrar";
-      $("mostrar-senha").setAttribute("aria-pressed", String(show));
+    const rememberKey = "ipb-login-username";
+    const remember = $("remember-login");
+    try { $("usuario").value = localStorage.getItem(rememberKey) || ""; } catch { /* Login still works without persistent storage. */ }
+    remember.addEventListener("change", () => {
+      if (!remember.checked) {
+        try { localStorage.removeItem(rememberKey); } catch { /* Storage can be disabled. */ }
+      }
     });
-    $("preencher-demo").addEventListener("click", () => { $("usuario").value = role(); $("senha").value = "ipb123"; form.querySelector('[type="submit"]').focus(); });
+    form.addEventListener("input", () => notice("", false, $("login-error")));
+    $("preencher-demo").addEventListener("click", () => {
+      $("usuario").value = "professor";
+      $("senha").value = "ipb123";
+      notice("", false, $("login-error"));
+      form.querySelector('[type="submit"]').focus();
+    });
+    const help = $("login-help");
+    const helpMessages = {
+      "forgot-password": ["Esqueceu a senha?", "A recuperação de senha ainda não está disponível. Use as credenciais de demonstração do APP 1 para entrar."],
+      "google-login": ["Continuar com Google", "O acesso com Google ainda não está disponível. Entre com seu usuário e senha do APP 1."],
+      "signup-login": ["Criar uma conta", "O cadastro ainda não está disponível. Use sua conta de demonstração do APP 1."]
+    };
+    Object.entries(helpMessages).forEach(([id, [title, description]]) => {
+      $(id).addEventListener("click", () => {
+        $("login-help-title").textContent = title;
+        $("login-help-description").textContent = description;
+        help.showModal();
+      });
+    });
     form.addEventListener("submit", event => {
       event.preventDefault();
-      try { D.login($("usuario").value, $("senha").value, role()); location.href = U.safeReturn(); }
+      try {
+        D.login($("usuario").value, $("senha").value);
+        try {
+          if (remember.checked) localStorage.setItem(rememberKey, $("usuario").value.trim());
+          else localStorage.removeItem(rememberKey);
+        } catch { /* Remembering the username is optional; never store the password. */ }
+        location.href = U.safeReturn();
+      }
       catch (error) { notice(error.message, true, $("login-error")); }
     });
   }
 
   function dashboard() {
-    const coordinator = U.user.perfil === "coordenacao";
-    const modules = [
-      ["turmas.html", "Turmas", "Alunos e horários.", "users"],
-      ["registro-aula.html", "Aulas", "Registre o conteúdo trabalhado.", "book"],
-      ["presencas.html", "Frequência", "Presenças e faltas.", "calendar"],
-      ["index.html", "Avaliação", "Acompanhe o desenvolvimento dos alunos.", "check"],
-      ["historico.html", "Histórico", "Consulte os registros anteriores.", "clock"],
-      ...(coordinator ? [["coordenacao.html", "Coordenação", "Gerencie turmas e professores.", "settings"]] : [])
-    ];
-    main.innerHTML = `<header class="space-y-1"><h1 class="text-xl font-semibold tracking-tight text-heading">Olá, ${coordinator ? "Coordenação" : esc(U.user.nome.split(" ")[0])}.</h1><p class="app-help">Escolha o que deseja acessar.</p></header><nav aria-label="Setores do aplicativo" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">${modules.map(([url, name, description, glyph]) => `<a href="./${url}" class="app-card app-card-body app-quick-link flex items-center gap-3"><span class="app-icon-tile">${icon(glyph)}</span><span class="min-w-0 flex-1"><span class="block font-medium text-heading">${name}</span><span class="mt-1 block text-sm text-body-subtle">${description}</span></span><span class="text-body-subtle">${icon("arrow")}</span></a>`).join("")}</nav>`;
+    main.innerHTML = `<h1 class="sr-only">Navegação do APP 1</h1><nav class="app-home-grid" aria-label="Setores do aplicativo">${U.navigationColumns(U.navigationGroups, "home")}</nav>`;
   }
 
   function showRoster(id) {
     const t = D.getClass(id);
     if (!t) return;
-    U.showModal(`Alunos · ${t.nome}`, `<p class="mb-4 app-help">${esc(D.course(t.cursoId)?.nome)} · ${D.roster(id).length} alunos matriculados</p>${dataTable(`Alunos da turma ${t.nome}`, [{ name: "Nº", width: "4rem", center: true }, { name: "Aluno", identity: true }, { name: "Situação", width: "10rem", center: true }], D.roster(id).map((a, i) => [String(i + 1).padStart(2, "0"), esc(a.nome), '<span class="app-badge app-badge-success">Matriculado</span>']), { minWidth: "30rem", modal: true })}<div class="mt-5 flex flex-wrap gap-3">${link(recordURL("registro-aula.html", id), "Registrar aula", "book")}${link(recordURL("presencas.html", id), "Frequ\u00eancia", "calendar", true)}${link(recordURL("index.html", id), "Avaliar alunos", "check")}</div>`);
+    U.showModal(`Alunos · ${t.nome}`, `<p class="mb-4 app-help">${esc(D.course(t.cursoId)?.nome)} · ${D.roster(id).length} alunos matriculados</p>${dataTable(`Alunos da turma ${t.nome}`, [{ name: "Nº", width: "4rem", center: true }, { name: "Aluno", identity: true }, { name: "Situação", width: "10rem", center: true }], D.roster(id).map((a, i) => [String(i + 1).padStart(2, "0"), esc(a.nome), '<span class="app-badge app-badge-success">Matriculado</span>']), { minWidth: "30rem", modal: true })}<div class="mt-5 flex flex-wrap gap-3">${link(recordURL("registro-aula.html", id), "Registrar aula", "book")}${link(recordURL("presencas.html", id), "Frequ\u00eancia", "calendar", true)}${link(recordURL("avaliacao.html", id), "Avaliar alunos", "check")}</div>`);
   }
 
   function classesPage() {
@@ -154,7 +167,7 @@
       const studentIds = new Set([...turma.alunoIds, ...Object.keys(record.registro)]);
       body += dataTable(`Frequência de ${turma.nome} em ${D.formatDate(record.data)}`, [{ name: "Aluno", identity: true }, { name: "Frequência", width: "10rem", center: true }], D.students.filter(a => studentIds.has(a.id)).map(a => [esc(a.nome), `<span class="app-badge ${record.registro[a.id] === "presente" ? "app-badge-success" : record.registro[a.id] === "falta" ? "app-badge-danger" : ""}">${({ presente: "Presente", falta: "Falta" })[record.registro[a.id]] || "Sem registro"}</span>`]), { minWidth: "24rem", modal: true }) + (turma.ativa ? `<div class="mt-5">${link(recordURL("presencas.html", turma.id, record.data), "Abrir frequência", "calendar", true)}</div>` : "");
     } else {
-      body += `<p class="mb-4 text-sm">${esc(record.resumo)}</p>${dataTable(`Avaliação de ${turma.nome} em ${D.formatDate(record.data)}`, [{ name: "Aluno", width: "14rem", identity: true }, { name: "Critério" }, { name: "Resultado", width: "9rem", center: true }], record.registro.alunos.flatMap(a => D.criteria.filter(c => a.avaliacoes[c.id]).map(c => [esc(a.nome), esc(c.nome), `<span class="app-badge ${a.avaliacoes[c.id] === "ok" ? "app-badge-success" : "app-badge-danger"}">${a.avaliacoes[c.id] === "ok" ? "OK" : "Não OK"}</span>`])), { minWidth: "42rem", modal: true, emptyLabel: "Nenhum critério marcado nesta avaliação." })}<p class="mt-3 app-help">Critérios não listados permanecem sem status.</p>${turma.ativa ? `<div class="mt-5">${link(recordURL("index.html", turma.id, record.data), "Abrir avaliação", "check", true)}</div>` : ""}`;
+      body += `<p class="mb-4 text-sm">${esc(record.resumo)}</p>${dataTable(`Avaliação de ${turma.nome} em ${D.formatDate(record.data)}`, [{ name: "Aluno", width: "14rem", identity: true }, { name: "Critério" }, { name: "Resultado", width: "9rem", center: true }], record.registro.alunos.flatMap(a => D.criteria.filter(c => a.avaliacoes[c.id]).map(c => [esc(a.nome), esc(c.nome), `<span class="app-badge ${a.avaliacoes[c.id] === "ok" ? "app-badge-success" : "app-badge-danger"}">${a.avaliacoes[c.id] === "ok" ? "OK" : "Não OK"}</span>`])), { minWidth: "42rem", modal: true, emptyLabel: "Nenhum critério marcado nesta avaliação." })}<p class="mt-3 app-help">Critérios não listados permanecem sem status.</p>${turma.ativa ? `<div class="mt-5">${link(recordURL("avaliacao.html", turma.id, record.data), "Abrir avaliação", "check", true)}</div>` : ""}`;
     }
     U.showModal(record.titulo, body);
   }

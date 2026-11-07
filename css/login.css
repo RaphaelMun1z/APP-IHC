@@ -1,0 +1,104 @@
+/* O layout preenche a tela; os controles mantêm dimensões legíveis. */
+body[data-page="login"] {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #171717;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-login {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fff;
+}
+
+.app-login-story {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3rem;
+  padding: clamp(1.5rem, 3vw, 3rem);
+  overflow: hidden;
+  color: #fff;
+  background: #4e4035;
+}
+.app-login-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+.app-login-story::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(rgb(0 0 0 / 24%), transparent 30%, transparent 55%, rgb(0 0 0 / 55%)); pointer-events: none; }
+.app-login-wordmark { display: flex; align-items: center; gap: 1rem; }
+.app-login-logo { display: block; width: auto; height: 3.5rem; object-fit: contain; }
+.app-login-wordmark > span { border-left: 1px solid rgb(255 255 255 / 40%); padding-left: 1rem; font-size: 1rem; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.app-login-intro { max-width: 20rem; }
+.app-login-intro p { margin: 0; font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 600; line-height: 1.3; letter-spacing: -.025em; text-wrap: balance; }
+.app-login-intro > span { display: block; margin-top: .75rem; color: rgb(255 255 255 / 85%); font-size: .875rem; line-height: 1.5; }
+
+.app-login-form { display: grid; place-items: center; min-width: 0; padding: 2.5rem clamp(1.5rem, 4vw, 4rem); }
+.app-login-content { width: 100%; max-width: 24rem; }
+.app-login-heading { text-align: center; margin-bottom: 2rem; }
+.app-login-heading h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.25; letter-spacing: -.035em; text-wrap: balance; }
+.app-login-heading p { margin: .5rem 0 0; color: #717477; font-size: .875rem; line-height: 1.5; }
+
+.app-login-field { position: relative; height: 3.5rem; border: 1px solid #e1e1e6; border-radius: .5rem; background: #fff; }
+.app-login-field + .app-login-field { margin-top: 1rem; }
+.app-login-field label { position: absolute; top: .375rem; left: .875rem; z-index: 1; color: #717477; font-size: .75rem; line-height: 1rem; cursor: text; }
+.app-login-field input { width: 100%; height: 100%; min-width: 0; border: 0; border-radius: inherit; padding: 1.375rem .875rem .375rem; background: transparent; color: #171717; font: inherit; font-size: 1rem; line-height: 1.5rem; outline: none; }
+.app-login-field input::placeholder { color: #96969e; opacity: 1; }
+.app-login-field:focus-within { border-color: #7953ff; box-shadow: 0 0 0 3px #e2d9ff !important; }
+.app-login-link { padding: 0; border: 0; background: none; color: #6240e8; cursor: pointer; font-weight: 600; }
+.app-login-link:hover { color: #4d27cf; text-decoration: underline; text-underline-offset: 3px; }
+.app-login-forgot { display: block; min-height: 2.75rem; margin-top: .25rem; font-size: .8125rem; line-height: 1.5; }
+
+.app-login-remember { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; color: #717477; font-size: .875rem; line-height: 1.5; cursor: pointer; }
+.app-login-remember input { position: absolute; right: 0; width: 2.75rem; height: 2.75rem; margin: 0; opacity: 0; cursor: pointer; }
+.app-login-switch { width: 2.75rem; height: 1.5rem; flex-shrink: 0; border: 1px solid #b7b7be; border-radius: 999px; background: #d5d5da; transition: background-color 150ms; pointer-events: none; }
+.app-login-switch::after { content: ""; display: block; width: calc(1.5rem - 2px); height: calc(1.5rem - 2px); border-radius: 50%; background: #fff; transition: transform 150ms; }
+.app-login-remember input:checked + .app-login-switch { border-color: #6440e8; background: #7852ff; }
+.app-login-remember input:checked + .app-login-switch::after { transform: translateX(1.25rem); }
+.app-login-remember input:focus-visible + .app-login-switch { outline: 2px solid #7852ff; outline-offset: 3px; }
+
+.app-login-submit, .app-login-google { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; min-height: 3rem; padding: .75rem 1rem; border: 0; border-radius: 999px; font: inherit; font-size: .875rem; font-weight: 600; line-height: 1.5; cursor: pointer; transition: background-color 150ms; }
+.app-login-submit { margin-top: 1rem; border: 1px solid #6943e9; background: #7652ff; color: #fff; }
+.app-login-submit:hover { background: #6641ee; }
+.app-login-divider { display: flex; align-items: center; gap: 1rem; margin: 1.25rem .75rem; color: #808487; font-size: .6875rem; line-height: 1.5rem; }
+.app-login-divider::before, .app-login-divider::after { content: ""; height: 1px; flex: 1; background: #efeff1; }
+.app-login-google { padding-inline: 2.75rem; background: #f5f6f7; color: #171717; }
+.app-login-google:hover { background: #edeef1; }
+.app-login-google svg { position: absolute; left: 1rem; width: 1.25rem; height: 1.25rem; }
+.app-login-signup { margin: 1rem 0 0; color: #717477; text-align: center; font-size: .8125rem; line-height: 1.5; }
+.app-login-signup button { min-height: 2.75rem; }
+.app-login-dev { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; min-height: 2.75rem; margin-top: .75rem; padding: .5rem .75rem; border: 1px dashed #d5d5da; border-radius: .5rem; background: transparent; color: #717477; font: inherit; font-size: .75rem; line-height: 1.5; cursor: pointer; }
+.app-login-dev:hover { border-color: #a9a9b3; background: #f5f6f7; color: #171717; }
+.app-login-dev-badge { flex-shrink: 0; padding: .125rem .375rem; border-radius: .25rem; background: #edeef1; color: #61616b; font-size: .625rem; font-weight: 600; letter-spacing: .04em; }
+.app-login :where(button, a):focus-visible { outline: 2px solid #7852ff; outline-offset: 4px; }
+.app-login #login-error { margin-top: 1rem; padding: .75rem; font-size: .875rem; }
+
+.app-login-dialog { width: min(25rem, calc(100vw - 3rem)); margin: auto; border: 1px solid #e7e7e9; border-radius: 1rem; padding: 1.5rem; color: #171717; background: #fff; }
+.app-login-dialog::backdrop { background: rgb(20 17 30 / 40%); }
+.app-login-dialog h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.app-login-dialog p { margin-top: 1rem; color: #717477; font-size: .875rem; line-height: 1.6; }
+.app-login-dialog .app-login-submit { margin-top: 1.5rem; }
+.app-login-dialog button:focus-visible { outline: 2px solid #7852ff; outline-offset: 3px; }
+
+@media (max-width: 47.99rem) {
+  .app-login { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .app-login-story { min-height: 10rem; min-height: clamp(10rem, 22svh, 13rem); padding: 1.5rem; }
+  .app-login-photo { object-position: center 30%; }
+  .app-login-story::after { background: rgb(0 0 0 / 30%); }
+  .app-login-logo { height: 3rem; }
+  .app-login-intro { display: none; }
+  .app-login-form { padding: 2rem 1.5rem; }
+  .app-login-heading { margin-bottom: 1.5rem; }
+  .app-login-heading h1 { font-size: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-login *, .app-login *::after { transition: none; }
+}
