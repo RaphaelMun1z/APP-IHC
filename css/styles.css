@@ -60,6 +60,10 @@
 .app-quick-link { transition: border-color .15s, background-color .15s; }
 .app-quick-link:hover { border-color: #64748b; background: #f8fafc; }
 .app-list-row + .app-list-row { border-top: 1px solid var(--color-default); }
+.app-class-search { display: flex; align-items: center; gap: .5rem; width: min(100%, 32rem); min-height: 3.125rem; padding: .35rem; border: 1px solid var(--color-default); border-radius: 999px; background: var(--color-neutral-secondary-soft); }
+.app-class-search-input { flex: 1; min-width: 0; height: 2.5rem; padding: 0 1rem; border: 0; outline: 0; background: transparent; color: var(--color-heading); font: inherit; font-size: .875rem; }
+.app-class-search-input::placeholder { color: var(--color-body-subtle); }
+.app-class-search-input:focus-visible { outline: 0; }
 .app-modal-table { overflow-x: auto; border: 1px solid var(--color-default); border-radius: .75rem; }
 .app-table :is(th, td) { padding: .75rem 1rem; height: 3.5rem; vertical-align: middle; border-bottom: 1px solid var(--color-default); border-inline-end: 1px solid var(--color-default); overflow-wrap: anywhere; }
 .app-table thead th { height: 4rem; background: var(--color-neutral-secondary-soft); color: var(--color-heading); font-weight: 600; }

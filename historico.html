@@ -1,9 +1,55 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Histórico | IPB · APP 1</title><link rel="stylesheet" href="./css/output.css"><script src="./js/app-data.js" defer></script><script src="./js/app-shell.js" defer></script><script src="./js/app-pages.js" defer></script><script src="./js/app-tables.js" defer></script></head>
-<body class="min-h-screen bg-neutral-secondary-soft font-sans text-body" data-page="historico">
-  <nav aria-label="Navegação principal"></nav>
-  <main id="page-content" class="mx-auto max-w-screen-2xl space-y-6 px-4 pb-8 pt-28 sm:px-6 lg:px-8"></main>
-  <noscript>Ative o JavaScript para consultar os registros.</noscript>
-  <script src="./node_modules/flowbite/dist/flowbite.min.js"></script>
-</body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico | IPB · APP 1</title>
+  <link rel="stylesheet" href="./css/output.css">
+  <link rel="stylesheet" href="./css/pages/turmas.css">
+  <link rel="stylesheet" href="./css/pages/historico.css">
+</head>
+<body class="font-sans" data-page="historico">
+  <aside class="turmas-topbar" aria-label="Navegação principal">
+    <a class="turmas-brand" href="./inicio.html"><img src="./assets/ipb_logo.png" alt=""><span>APP 1</span></a>
+    <nav class="turmas-nav">
+      <a data-short="IN" href="./inicio.html">Início</a><a data-short="TU" href="./turmas.html">Turmas</a><a data-short="AU" href="./registro-aula.html">Registro de aula</a>
+      <a data-short="FR" href="./presencas.html">Frequência</a><a data-short="AV" href="./avaliacao.html">Avaliação</a><a data-short="HI" href="./historico.html" aria-current="page">Histórico</a><a data-short="CO" href="./coordenacao.html">Coordenação</a>
+    </nav>
+    <span class="turmas-avatar" aria-label="Perfil demonstrativo">MO</span>
+  </aside>
+
+  <main class="historico-page">
+    <header class="historico-heading">
+      <div><h1>Histórico</h1></div>
+    </header>
+    <section class="historico-panel" aria-label="Histórico demonstrativo">
+      <div class="historico-filters">
+        <label>Tipo de registro<select><option>Todos os registros</option><option>Aula</option><option>Frequência</option><option>Avaliação</option></select></label>
+        <label>Turma<select><option>Todas as turmas</option><option>6º ano A</option><option>6º ano B</option><option>7º ano A</option><option>7º ano B</option></select></label>
+        <label>Data inicial<input type="date" value="2026-11-01"></label>
+        <label>Data final<input type="date" value="2026-11-30"></label>
+        <button type="button">Buscar</button>
+      </div>
+      <hr class="page-results-divider">
+      <div class="historico-summary"><strong>8 registros</strong><span>Ordenados do mais recente para o mais antigo</span></div>
+      <div class="historico-table-scroll" role="region" aria-label="Registros históricos" tabindex="0">
+        <table class="historico-table">
+          <caption class="sr-only">Registros pedagógicos demonstrativos por turma e data</caption>
+          <thead><tr><th scope="col">Data</th><th scope="col">Tipo</th><th scope="col">Turma</th><th scope="col">Resumo</th><th scope="col"><span class="sr-only">Ação</span></th></tr></thead>
+          <tbody>
+            <tr><td>11/11/2026</td><td><span class="history-badge evaluation">Avaliação</span></td><td>6º ano A</td><td>Observação individual · 4 alunos</td><td><a href="./avaliacao.html" aria-label="Abrir avaliação de 11/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>11/11/2026</td><td><span class="history-badge attendance">Frequência</span></td><td>6º ano A</td><td>4 presentes · 0 faltas</td><td><a href="./presencas.html" aria-label="Abrir frequência de 11/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>09/11/2026</td><td><span class="history-badge lesson">Aula</span></td><td>6º ano A</td><td>Quem sou eu · Minhas habilidades</td><td><a href="./registro-aula.html" aria-label="Abrir aula de 09/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>09/11/2026</td><td><span class="history-badge attendance">Frequência</span></td><td>7º ano B</td><td>3 presentes · 1 falta</td><td><a href="./presencas.html" aria-label="Abrir frequência de 09/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>06/11/2026</td><td><span class="history-badge evaluation">Avaliação</span></td><td>7º ano A</td><td>Observação individual · 4 alunos</td><td><a href="./avaliacao.html" aria-label="Abrir avaliação de 06/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>05/11/2026</td><td><span class="history-badge lesson">Aula</span></td><td>6º ano B</td><td>Respeito às diferenças · Escuta e diálogo</td><td><a href="./registro-aula.html" aria-label="Abrir aula de 05/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>04/11/2026</td><td><span class="history-badge attendance">Frequência</span></td><td>6º ano A</td><td>3 presentes · 1 falta</td><td><a href="./presencas.html" aria-label="Abrir frequência de 04/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+            <tr><td>02/11/2026</td><td><span class="history-badge lesson">Aula</span></td><td>7º ano B</td><td>Meu lugar no mundo · Cuidado com o outro</td><td><a href="./registro-aula.html" aria-label="Abrir aula de 02/11/2026">Abrir <span aria-hidden="true">↗</span></a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <footer class="historico-footer"><span>Mostrando 8 de 8 registros</span><nav aria-label="Paginação"><button type="button" disabled>Anterior</button><span aria-current="page">1</span><button type="button" disabled>Próxima</button></nav></footer>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,9 +1,35 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Início | IPB · APP 1</title><link rel="stylesheet" href="./css/output.css"><script src="./js/app-data.js" defer></script><script src="./js/app-shell.js" defer></script><script src="./js/app-pages.js" defer></script><script src="./js/app-tables.js" defer></script></head>
-<body class="min-h-screen bg-neutral-secondary-soft font-sans text-body" data-page="inicio">
-  <nav aria-label="Navegação principal"></nav>
-  <main id="page-content" class="app-home"></main>
-  <noscript>Ative o JavaScript para visualizar a página inicial.</noscript>
-  <script src="./node_modules/flowbite/dist/flowbite.min.js"></script>
-</body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Início | IPB · APP 1</title>
+  <link rel="stylesheet" href="./css/output.css">
+  <link rel="stylesheet" href="./css/pages/turmas.css">
+  <link rel="stylesheet" href="./css/pages/inicio.css">
+</head>
+<body class="font-sans" data-page="inicio">
+  <aside class="turmas-topbar" aria-label="Navegação principal">
+    <a class="turmas-brand" href="./inicio.html"><img src="./assets/ipb_logo.png" alt=""><span>APP 1</span></a>
+    <nav class="turmas-nav">
+      <a data-short="IN" href="./inicio.html" aria-current="page">Início</a><a data-short="TU" href="./turmas.html">Turmas</a><a data-short="AU" href="./registro-aula.html">Registro de aula</a>
+      <a data-short="FR" href="./presencas.html">Frequência</a><a data-short="AV" href="./avaliacao.html">Avaliação</a><a data-short="HI" href="./historico.html">Histórico</a><a data-short="CO" href="./coordenacao.html">Coordenação</a>
+    </nav>
+    <span class="turmas-avatar" aria-label="Perfil demonstrativo">MO</span>
+  </aside>
+
+  <main class="inicio-page">
+    <header class="inicio-heading"><h1>Início</h1></header>
+    <section class="inicio-panel" aria-label="Visão geral demonstrativa">
+      <div class="inicio-quick-links">
+        <a href="./turmas.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">groups</span><span><strong>Minhas turmas</strong><small>Alunos, cursos e horários</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+        <a href="./registro-aula.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">menu_book</span><span><strong>Registrar aula</strong><small>Conteúdos e lições da turma</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+        <a href="./presencas.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">event_available</span><span><strong>Frequência</strong><small>Presenças e faltas dos alunos</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+        <a href="./avaliacao.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">fact_check</span><span><strong>Avaliação</strong><small>Desenvolvimento de cada aluno</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+        <a href="./historico.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">history</span><span><strong>Histórico</strong><small>Registros anteriores</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+        <a href="./coordenacao.html"><span class="quick-icon material-symbols-outlined" aria-hidden="true">settings</span><span><strong>Coordenação</strong><small>Gestão de turmas e professores</small></span><span class="quick-arrow" aria-hidden="true">›</span></a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

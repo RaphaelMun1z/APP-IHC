@@ -1,7 +1,8 @@
 /* Cabeçalho e navegação inicial compartilham os mesmos acessos. */
 :root { --app-header-height: 4.875rem; }
 .app-topbar, .app-home { --nav-accent: #4338a0; --nav-muted: #565578; --nav-hover: #eef4ff; --nav-icon: #e9efff; }
-.app-topbar { position: fixed; inset: 0 0 auto; z-index: 40; width: 100%; border-bottom: 1px solid #e8e8ed; background: #fff; }
+.app-topbar { position: fixed; inset: 0 0 auto; z-index: 40; width: 100%; background: #fff; }
+.app-topbar::after { position: absolute; right: 0; bottom: 0; left: 0; width: min(92%, 96rem); height: 1px; margin-inline: auto; background: rgb(67 56 160 / 10%); content: ""; }
 .app-topbar-inner { display: flex; align-items: center; gap: 2rem; min-height: var(--app-header-height); max-width: 100rem; margin-inline: auto; padding: .75rem 2rem; }
 .app-topbar-brand { display: flex; flex-shrink: 0; align-items: center; gap: .75rem; color: #171720; font-size: 1.125rem; font-weight: 600; white-space: nowrap; }
 .app-topbar-brand img { display: block; width: auto; height: 2.5rem; filter: brightness(0); }

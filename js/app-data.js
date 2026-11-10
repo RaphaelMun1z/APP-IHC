@@ -143,6 +143,17 @@
     write(keys.classes, [...items.filter(t => t.id !== saved.id), saved]);
     return saved;
   }
+  function deleteClass(id) {
+    if (session()?.perfil !== "coordenacao") throw new Error("Acesso exclusivo da coordenacao.");
+    if (!allClasses().some(t => t.id === id)) throw new Error("Turma nao encontrada.");
+    write(keys.classes, allClasses().filter(t => t.id !== id));
+    write(keys.lessons, read(keys.lessons, demoLessons).filter(item => item.turmaId !== id));
+    for (const key of [keys.attendance, keys.observations]) {
+      const records = read(key, {});
+      delete records[id];
+      write(key, records);
+    }
+  }
   function history() {
     const result = lessons().map(a => ({ id: a.id, tipo: "aula", turmaId: a.turmaId, data: a.data, titulo: "Registro de aula", resumo: a.licoes.join(" · "), registro: a }));
     for (const [turmaId, dates] of Object.entries(attendance())) for (const [data, values] of Object.entries(dates)) {
@@ -156,5 +167,5 @@
     }
     return result.sort((a, b) => b.data.localeCompare(a.data) || a.titulo.localeCompare(b.titulo));
   }
-  window.AppData = Object.freeze({ keys, students, criteria, teachers, courses, today, formatDate, schedule, course, moduleFor, session, login, logout: () => sessionStorage.removeItem(keys.session), classes, getClass, roster, lessons, saveLesson, attendance, observations, saveObservation, saveClass, history, hasStorageError: () => storageError });
+  window.AppData = Object.freeze({ keys, students, criteria, teachers, courses, today, formatDate, schedule, course, moduleFor, session, login, logout: () => sessionStorage.removeItem(keys.session), classes, getClass, roster, lessons, saveLesson, attendance, observations, saveObservation, saveClass, deleteClass, history, hasStorageError: () => storageError });
 })();
