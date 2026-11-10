@@ -112,7 +112,7 @@
   const headerGroups = navigationGroups.slice(0, 2);
   nav.className = "app-topbar";
   nav.innerHTML = `<div class="app-topbar-inner">
-    <a href="./inicio.html" class="app-topbar-brand" aria-label="IPB · APP 1 — Início"><img src="./assets/ipb_logo.png" alt="IPB"><span>APP 1</span></a>
+    <a href="./inicio.html" class="app-topbar-brand" aria-label="Início"><img src="./assets/ipb_logo.png" alt="IPB"></a>
     <div id="app-header-links" class="app-topbar-links">
       <a href="./inicio.html" class="app-topbar-link"${file === "inicio.html" ? ' aria-current="page"' : ""}>Início</a>
       ${headerGroups.map(group => `<button type="button" class="app-topbar-link" data-nav-toggle="${group.id}" aria-expanded="false" aria-controls="app-nav-${group.id}"${group.items.some(item => item.href === file) ? ' data-current="true"' : ""}>${esc(group.title)}${icon("down")}</button>`).join("")}

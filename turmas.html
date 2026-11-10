@@ -10,7 +10,7 @@
 	<body class="font-sans" data-page="turmas">
 	<aside class="turmas-topbar" aria-label="Navegação principal">
 			<a class="turmas-brand" href="./inicio.html"
-				><img src="./assets/ipb_logo.png" alt="" /><span>APP 1</span></a
+				><img src="./assets/ipb_logo.png" alt="" /></a
 			>
 		<nav class="turmas-nav">
 			<a data-short="IN" href="./inicio.html">Início</a>
@@ -18,8 +18,8 @@
 			<a data-short="AU" href="./registro-aula.html">Registro de aula</a>
 			<a data-short="FR" href="./presencas.html">Frequência</a>
 			<a data-short="AV" href="./avaliacao.html">Avaliação</a>
-			<a data-short="HI" href="./historico.html">Histórico</a>
-			<a data-short="CO" href="./coordenacao.html">Coordenação</a>
+			
+			
 			</nav>
 			<span class="turmas-avatar" aria-label="Perfil demonstrativo"
 				>MO</span
@@ -45,9 +45,9 @@
 			<hr class="page-results-divider" />
 
 			<ul class="turmas-list" aria-label="Registros de turmas">
+				<li class="turmas-bulk-actions"><label class="turmas-select-all" for="select-all-turmas"><input id="select-all-turmas" class="turma-checkbox" type="checkbox" /><span>Selecionar todas as turmas</span></label><button id="delete-selected" class="turmas-bulk-delete" type="button" aria-label="Apagar selecionados" title="Apagar selecionados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0-1 14H6L5 6m4 0V4h6v2m-5 4v6m4-6v6" /></svg></button></li>
 				<li class="turma-row">
-					<span class="turma-dot" aria-hidden="true"></span
-					><span class="turma-name">6º ano A</span>
+					<input class="turma-checkbox" type="checkbox" aria-label="Selecionar turma" /><span class="turma-name">6º ano A</span>
 					<div class="turma-actions">
 						<a
 							class="turma-action"
@@ -84,8 +84,7 @@
 					</div>
 				</li>
 				<li class="turma-row">
-					<span class="turma-dot" aria-hidden="true"></span
-					><span class="turma-name">6º ano B</span>
+					<input class="turma-checkbox" type="checkbox" aria-label="Selecionar turma" /><span class="turma-name">6º ano B</span>
 					<div class="turma-actions">
 						<a
 							class="turma-action"
@@ -122,8 +121,7 @@
 					</div>
 				</li>
 				<li class="turma-row">
-					<span class="turma-dot" aria-hidden="true"></span
-					><span class="turma-name">7º ano A</span>
+					<input class="turma-checkbox" type="checkbox" aria-label="Selecionar turma" /><span class="turma-name">7º ano A</span>
 					<div class="turma-actions">
 						<a
 							class="turma-action"
@@ -160,8 +158,7 @@
 					</div>
 				</li>
 				<li class="turma-row">
-					<span class="turma-dot" aria-hidden="true"></span
-					><span class="turma-name">7º ano B</span>
+					<input class="turma-checkbox" type="checkbox" aria-label="Selecionar turma" /><span class="turma-name">7º ano B</span>
 					<div class="turma-actions">
 						<a
 							class="turma-action"
@@ -199,5 +196,6 @@
 				</li>
 			</ul>
 		</main>
+			<script src="./js/turmas.js" defer></script>
 	</body>
 </html>
