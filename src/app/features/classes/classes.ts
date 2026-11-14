@@ -1,15 +1,17 @@
+import { Action } from '../../shared/ui/action';
+import { FilterPanel } from '../../shared/ui/filter-panel';
+import { ListHeader } from '../../shared/ui/list-header';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ClassesStore } from './classes.store';
 import { Feedback } from '../../shared/ui/feedback';
-import { Modal } from '../../shared/ui/modal';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
 
 @Component({
   selector: 'app-classes',
-  imports: [FormsModule, RouterLink, Feedback, Modal],
+  imports: [Action, FilterPanel, ListHeader, FormsModule, RouterLink, Feedback],
   templateUrl: './classes.html',
   styleUrl: './classes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,7 +19,24 @@ import { errorMessage, toggleValue } from '../../shared/utils/errors';
 export class Classes {
   readonly store = inject(ClassesStore);
   readonly auth = inject(AuthService);
-  readonly query = signal('');
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  readonly query = signal(this.route.snapshot.queryParamMap.get('busca') ?? '');
+  readonly chips = computed(() =>
+    this.query().trim() ? [{ key: 'query', label: 'Busca', value: this.query().trim() }] : [],
+  );
+  readonly currentUrl = computed(
+    () => '/turmas' + (this.query() ? '?busca=' + encodeURIComponent(this.query()) : ''),
+  );
+  setQuery(value: string): void {
+    this.query.set(value);
+    this.selected.set([]);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { busca: value || null },
+      replaceUrl: true,
+    });
+  }
   readonly filtered = computed(() =>
     this.store
       .active()
@@ -33,10 +52,12 @@ export class Classes {
       this.filtered().length > 0 &&
       this.filtered().every((group) => this.selected().includes(group.id)),
   );
-  readonly message = signal('');
+  readonly message = signal(
+    this.route.snapshot.queryParamMap.has('indisponivel')
+      ? 'Turma não encontrada ou sem permissão de acesso.'
+      : '',
+  );
   readonly isError = signal(false);
-  readonly rosterId = signal('');
-  readonly rosterClass = computed(() => this.store.get(this.rosterId()));
   toggle(id: string): void {
     this.selected.update((values) => toggleValue(values, id));
   }

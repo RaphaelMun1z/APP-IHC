@@ -7,7 +7,9 @@
 >
   <header>
     <h2 [id]="titleId">{{ title() }}</h2>
-    <button type="button" aria-label="Fechar janela" (click)="dialog.close()">×</button>
+    <button type="button" aria-label="Fechar janela" title="Fechar janela" (click)="dialog.close()">
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+    </button>
   </header>
   <div class="body"><ng-content /></div>
 </dialog>

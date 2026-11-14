@@ -16,7 +16,7 @@ legend {
   gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
-  border-radius: 0.625rem;
+  border-radius: var(--radius-control);
   font-size: 0.875rem;
 }
 input[type='checkbox'] {

@@ -4,6 +4,7 @@ import type {
   Lesson,
   SchoolClass,
   Session,
+  Student,
 } from '../models/domain';
 import { isDate } from '../../shared/utils/dates';
 
@@ -19,6 +20,21 @@ export function isSession(value: unknown): value is Session {
     typeof value['id'] === 'string' &&
     typeof value['nome'] === 'string' &&
     (value['perfil'] === 'professor' || value['perfil'] === 'coordenacao')
+  );
+}
+export function isStudents(value: unknown): value is Student[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (student) =>
+        record(student) &&
+        typeof student['id'] === 'string' &&
+        !!student['id'].trim() &&
+        typeof student['nome'] === 'string' &&
+        !!student['nome'].trim() &&
+        student['nome'].length <= 100,
+    ) &&
+    new Set(value.map((student) => student.id)).size === value.length
   );
 }
 export function isClass(value: unknown): value is SchoolClass {

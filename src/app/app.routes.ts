@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import type { Routes } from '@angular/router';
 import { authGuard, coordinatorGuard, loginEntryGuard } from './core/auth/auth.guards';
+import { classAccessGuard } from './core/navigation/class-access.guard';
 import { unsavedChangesGuard } from './core/navigation/unsaved-changes';
 
 const pages = [
@@ -46,6 +47,59 @@ export const routes: Routes = [
         path: 'turmas',
         title: 'Minhas turmas | IPB · APP 1',
         loadComponent: () => import('./features/classes/classes').then((module) => module.Classes),
+      },
+      {
+        path: 'turmas/:turma',
+        canActivate: [classAccessGuard],
+        loadComponent: () => import('./features/classes/class-shell').then((m) => m.ClassShell),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'visao-geral' },
+          ...['visao-geral', 'alunos', 'aulas'].map((section) => ({
+            path: section,
+            data: { section },
+            loadComponent: () =>
+              import('./features/classes/class-details').then((m) => m.ClassDetails),
+          })),
+          {
+            path: 'aulas/nova',
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/lessons/lesson-editor').then((m) => m.LessonEditor),
+          },
+          {
+            path: 'aulas/:id/editar',
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/lessons/lesson-editor').then((m) => m.LessonEditor),
+          },
+          {
+            path: 'registros/:id',
+            loadComponent: () => import('./features/history/record-page').then((m) => m.RecordPage),
+          },
+          {
+            path: 'frequencia',
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/attendance/attendance').then((m) => m.Attendance),
+          },
+          {
+            path: 'avaliacoes',
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/assessments/assessments').then((m) => m.Assessments),
+          },
+          {
+            path: 'gerenciar',
+            canActivate: [coordinatorGuard],
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/coordination/class-editor').then((m) => m.ClassEditor),
+          },
+        ],
+      },
+      {
+        path: 'historico/:id',
+        loadComponent: () => import('./features/history/record-page').then((m) => m.RecordPage),
       },
       {
         path: 'registro-aula',

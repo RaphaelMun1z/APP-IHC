@@ -1,7 +1,26 @@
-<main class="historico-page">
-  <header class="historico-heading"><h1>Histórico</h1></header>
-  <section class="historico-panel" aria-label="Histórico de registros pedagógicos">
-    <form class="historico-filters" [formGroup]="form" (ngSubmit)="search()">
+<main class="app-page historico-page">
+  <app-filter-panel
+    (applyFilters)="search()"
+    [chips]="chips()"
+    [activeCount]="chips().length"
+    [searchable]="true"
+    (removeFilter)="removeFilter($event)"
+    (clearFilters)="clear()"
+    ><form filter-search class="filter-search-form" (ngSubmit)="search()">
+      <label class="sr-only" for="history-search">Conteúdo ou observação</label
+      ><input
+        id="history-search"
+        name="conteudo"
+        type="search"
+        placeholder="Buscar nas lições e observações"
+        [ngModel]="form.controls.conteudo.value"
+        (ngModelChange)="form.controls.conteudo.setValue($event)"
+      /><button type="submit" title="Buscar" aria-label="Buscar">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+      </button>
+    </form>
+
+    <form class="filter-bar historico-filters" [formGroup]="form" (ngSubmit)="search()">
       <label
         >Tipo de registro<select formControlName="tipo">
           <option value="">Todos os registros</option>
@@ -18,28 +37,31 @@
           }
         </select></label
       >
+      @if (auth.isCoordinator()) {
+        <label
+          >Professor<select
+            formControlName="professorId"
+            title="Autor em aulas e avaliações; professor responsável atual em frequência"
+          >
+            <option value="">Todos os professores</option>
+            @for (teacher of classes.teachers; track teacher.id) {
+              <option [value]="teacher.id">{{ teacher.nome }}</option>
+            }
+          </select></label
+        >
+      }
       <label>Data inicial<input type="date" formControlName="inicio" /></label
-      ><label>Data final<input type="date" formControlName="fim" /></label
-      ><button type="submit">Buscar</button>
-      <label
-        >Conteúdo ou observação<input
-          type="search"
-          formControlName="conteudo"
-          placeholder="Buscar nas lições e observações" /></label
-      ><button type="button" (click)="clear()">Limpar filtros</button>
+      ><label>Data final<input type="date" formControlName="fim" /></label>
     </form>
-    <hr class="page-results-divider" />
+  </app-filter-panel>
+  <section
+    class="surface data-panel historico-panel"
+    aria-label="Histórico de registros pedagógicos"
+  >
+    <app-list-header title="Registros pedagógicos" [count]="filtered().length" />
     <app-feedback [message]="message()" [error]="true" />
-    <div class="historico-summary">
-      <strong role="status">{{ filtered().length }} registros</strong
-      ><span>Ordenados do mais recente para o mais antigo</span>
-    </div>
-    <div
-      class="historico-table-scroll"
-      role="region"
-      aria-label="Registros históricos"
-      tabindex="0"
-    >
+
+    <app-data-table class="historico-table-scroll" label="Registros históricos">
       <table class="historico-table">
         <caption class="sr-only">
           Registros pedagógicos por turma e data
@@ -50,7 +72,7 @@
             <th scope="col">Tipo</th>
             <th scope="col">Turma</th>
             <th scope="col">Resumo</th>
-            <th scope="col"><span class="sr-only">Ação</span></th>
+            <th scope="col" class="actions-cell">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -74,15 +96,29 @@
               </td>
               <td>{{ classes.get(item.turmaId)?.nome }}</td>
               <td>{{ item.resumo }}</td>
-              <td>
-                <button
-                  type="button"
-                  class="record-open"
-                  [attr.aria-label]="'Abrir ' + item.titulo + ' de ' + formatDate(item.data)"
-                  (click)="selected.set(item)"
-                >
-                  Abrir <span aria-hidden="true">↗</span>
-                </button>
+              <td class="actions-cell">
+                <div class="row-actions">
+                  <a
+                    appAction="open_in_new"
+                    class="icon-button record-open"
+                    title="Abrir registro"
+                    [attr.aria-label]="'Abrir ' + item.titulo + ' de ' + formatDate(item.data)"
+                    [routerLink]="['/historico', item.id]"
+                    [queryParams]="{ retorno: currentUrl() }"
+                  >
+                  </a>
+
+                  @if (classes.get(item.turmaId)?.ativa) {
+                    <a
+                      appAction="edit"
+                      class="icon-button"
+                      title="Editar registro"
+                      [attr.aria-label]="'Editar ' + item.titulo + ' de ' + formatDate(item.data)"
+                      [routerLink]="editLink(item)"
+                      [queryParams]="{ data: item.data, retorno: currentUrl() }"
+                    ></a>
+                  }
+                </div>
               </td>
             </tr>
           } @empty {
@@ -95,23 +131,13 @@
           }
         </tbody>
       </table>
-    </div>
-    <footer class="historico-footer">
-      <span>Mostrando {{ visible().length }} de {{ filtered().length }} registros</span>
-      <nav aria-label="Paginação">
-        <button type="button" [disabled]="page() === 1" (click)="previous()">Anterior</button
-        ><span aria-current="page">{{ page() }} / {{ pageCount() }}</span
-        ><button type="button" [disabled]="page() >= pageCount()" (click)="next()">Próxima</button>
-      </nav>
-    </footer>
+    </app-data-table>
+    <app-pagination
+      [total]="filtered().length"
+      [page]="page()"
+      [size]="pageSize()"
+      (pageChange)="changePage($event)"
+      (sizeChange)="changeSize($event)"
+    />
   </section>
 </main>
-<app-modal
-  [title]="selected()?.titulo ?? ''"
-  [open]="selected() !== null"
-  (closed)="selected.set(null)"
->
-  @if (selected(); as item) {
-    <app-record-details [record]="item" />
-  }
-</app-modal>

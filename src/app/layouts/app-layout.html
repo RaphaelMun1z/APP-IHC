@@ -1,17 +1,18 @@
+<a class="skip-link" href="#page-content">Pular para o conteúdo</a>
 <aside class="turmas-topbar" aria-label="Navegação principal">
   <a class="turmas-brand" routerLink="/inicio" aria-label="Início"
     ><img src="assets/ipb_logo.png" alt="IPB"
   /></a>
-  <nav class="turmas-nav">
+  <nav class="turmas-nav" aria-label="Menu principal">
     @for (item of navigation; track item.path) {
       <a
         [routerLink]="item.path"
         routerLinkActive="active"
         ariaCurrentWhenActive="page"
         [attr.aria-label]="item.title"
-        [attr.data-short]="item.short"
-        (click)="accountOpen.set(false)"
-        >{{ item.title }}</a
+        [attr.title]="item.title"
+        ><span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span
+        ><span class="nav-label">{{ item.title }}</span></a
       >
     }
     @if (auth.isCoordinator()) {
@@ -19,56 +20,58 @@
         routerLink="/coordenacao"
         routerLinkActive="active"
         ariaCurrentWhenActive="page"
-        data-short="CO"
-        >Coordenação</a
+        aria-label="Coordenação"
+        title="Coordenação"
+        ><span class="material-symbols-outlined" aria-hidden="true">settings</span
+        ><span class="nav-label">Coordenação</span></a
       >
     }
   </nav>
-  <button
-    type="button"
-    class="turmas-avatar"
-    [attr.aria-label]="'Opções de ' + auth.user()?.nome"
-    [attr.aria-expanded]="accountOpen()"
-    aria-controls="account-menu"
-    (click)="accountOpen.set(!accountOpen())"
-  >
-    {{ auth.isCoordinator() ? 'CP' : 'MO' }}
-  </button>
-</aside>
-@if (accountOpen()) {
-  <div id="account-menu" class="account-menu">
-    <p>
-      <strong>{{ auth.user()?.nome }}</strong><br />{{
-        auth.isCoordinator() ? 'Coordenação' : 'Professor'
-      }}
-      · Demonstração
-    </p>
+  <section class="sidebar-account" aria-label="Conta do usuário">
     <button
-      class="app-button"
+      class="account-profile"
       type="button"
-      (click)="profileOpen.set(true); accountOpen.set(false)"
+      (click)="profileOpen.set(true)"
+      aria-label="Meu perfil"
+      aria-describedby="sidebar-user-name sidebar-user-role"
+      [attr.title]="auth.user()?.nome"
     >
-      Meu perfil
+      <span class="turmas-avatar" aria-hidden="true">{{ auth.isCoordinator() ? 'CP' : 'MO' }}</span>
+      <span class="account-info"
+        ><strong id="sidebar-user-name">{{ auth.user()?.nome }}</strong
+        ><small id="sidebar-user-role">{{
+          auth.isCoordinator() ? 'Coordenação' : 'Professor'
+        }}</small></span
+      >
     </button>
-    <button class="app-button" type="button" (click)="logout()">Sair da conta</button>
-    <app-feedback [message]="message()" [error]="true" />
-  </div>
-}
-@if (storageMessages().length) {
+    <button
+      class="logout-button"
+      type="button"
+      (click)="logout()"
+      aria-label="Sair do sistema"
+      title="Sair do sistema"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">logout</span
+      ><span class="nav-label">Sair do sistema</span>
+    </button>
+  </section>
+</aside>
+<div id="page-content" tabindex="-1">
+  <app-page-header />
+  <div class="page-view"><router-outlet /></div>
+</div>
+@if (storageMessages().length || message()) {
   <div class="storage-errors">
     @for (message of storageMessages(); track message) {
       <app-feedback [message]="message" [error]="true" />
     }
+    <app-feedback [message]="message()" [error]="true" />
   </div>
-}
-<router-outlet />
-@if (message()) {
-  <div class="storage-errors"><app-feedback [message]="message()" [error]="true" /></div>
 }
 <app-modal title="Meu perfil" [open]="profileOpen()" (closed)="profileOpen.set(false)">
   <h3>{{ auth.user()?.nome }}</h3>
   <p>Perfil: {{ auth.isCoordinator() ? 'Coordenação pedagógica' : 'Professor' }}</p>
-  <p>Conta demonstrativa. Os registros ficam neste navegador e não são enviados a um servidor.</p>
+  <p>Conta demonstrativa. Os registros ficam neste navegador.</p>
   <a class="app-button primary" routerLink="/turmas" (click)="profileOpen.set(false)"
     >Ver minhas turmas</a
   >

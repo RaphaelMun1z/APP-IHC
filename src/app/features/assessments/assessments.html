@@ -1,45 +1,42 @@
-<main class="avaliacao-page" [appUnsavedChanges]="dirty()">
-  <header class="avaliacao-heading">
-    <h1>Avaliação observacional</h1>
-    <button type="button" class="avaliacao-save-top" [disabled]="!group()?.ativa" (click)="save()">
-      Salvar avaliação
-    </button>
-  </header>
-  <section class="avaliacao-panel" aria-label="Avaliação dos alunos">
-    <div class="avaliacao-toolbar">
-      <div class="avaliacao-filters" [formGroup]="form">
-        <label
-          >Turma<select formControlName="turmaId" (change)="load()">
-            @for (group of classes.accessible(); track group.id) {
-              <option [value]="group.id">
-                {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
-              </option>
-            }
-          </select></label
-        ><label
-          >Data da avaliação<input
-            type="date"
-            formControlName="data"
-            [max]="today"
-            (change)="load()"
-        /></label>
-      </div>
-      <p>{{ rows().length }} alunos · Avaliação em {{ formatDate(applied().data) }}</p>
+<main class="app-page avaliacao-page" [appUnsavedChanges]="dirty()">
+  <app-filter-panel
+    (applyFilters)="load()"
+    [chips]="chips()"
+    [activeCount]="chips().length"
+    [context]="formatDate(applied().data)"
+    (removeFilter)="removeFilter($event)"
+    (clearFilters)="resetFilters()"
+  >
+    <div class="filter-bar avaliacao-filters" [formGroup]="form">
+      <label
+        >Turma<select formControlName="turmaId" (change)="load()">
+          @for (group of classes.accessible(); track group.id) {
+            <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
+              {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+            </option>
+          }
+        </select></label
+      >
+      <label
+        >Data da avaliação<input type="date" formControlName="data" [max]="today" (change)="load()"
+      /></label>
     </div>
-    <hr class="page-results-divider" />
+  </app-filter-panel>
+  <section class="surface data-panel avaliacao-panel" aria-label="Avaliação dos alunos">
+    <app-list-header
+      title="Avaliação dos alunos"
+      [count]="rows().length"
+      singular="aluno"
+      plural="alunos"
+    />
     <app-feedback [message]="message()" [error]="isError()" />
     <div class="avaliacao-legend">
-      <strong>Legenda</strong><span><i class="evaluation-dot ok">✓</i>Atendeu ao critério</span
+      <span><i class="evaluation-dot ok">✓</i>Atendeu ao critério</span
       ><span><i class="evaluation-dot no">×</i>Precisa desenvolver</span
       ><span><i class="evaluation-dot pending">—</i>Sem avaliação</span>
     </div>
     @if (group()) {
-      <div
-        class="avaliacao-table-scroll"
-        role="region"
-        aria-label="Tabela de avaliação dos alunos"
-        tabindex="0"
-      >
+      <app-data-table class="avaliacao-table-scroll" label="Tabela de avaliação dos alunos">
         <table class="avaliacao-table">
           <caption class="sr-only">
             Avaliação em dez critérios. Ative cada marcação para alternar entre atendeu, precisa
@@ -54,9 +51,13 @@
             </tr>
           </thead>
           <tbody>
-            @for (student of rows(); track student.id) {
+            @for (student of visibleRows(); track student.id) {
               <tr>
-                <th scope="row" class="student-cell">{{ student.nome }}</th>
+                <th scope="row" class="student-cell">
+                  <span class="person-name"
+                    ><app-person-avatar [name]="student.nome" />{{ student.nome }}</span
+                  >
+                </th>
                 @for (criterion of store.criteria; track criterion.id) {
                   <td>
                     <button
@@ -93,17 +94,19 @@
             }
           </tbody>
         </table>
-      </div>
+      </app-data-table>
+      <app-pagination
+        [total]="rows().length"
+        [page]="paging.current()"
+        [size]="paging.size()"
+        (pageChange)="paging.page.set($event)"
+        (sizeChange)="paging.resize($event)"
+      />
       <footer class="avaliacao-footer">
-        <p>
-          {{
-            group()?.ativa
-              ? 'Ative uma marcação para alternar o resultado do critério.'
-              : 'Turma arquivada · Disponível somente para consulta.'
-          }}
-        </p>
         @if (group()?.ativa) {
-          <button type="button" (click)="save()">Salvar avaliação</button>
+          <button appAction="save" type="button" [disabled]="!dirty()" (click)="save()">
+            Salvar avaliação
+          </button>
         }
       </footer>
     } @else {

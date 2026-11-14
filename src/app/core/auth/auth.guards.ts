@@ -26,7 +26,12 @@ export function safeReturn(raw: string | null, coordinator: boolean): string {
   const target = raw.replace(/^\.\//, '').replace(/^\//, '');
   const [path] = target.split('?');
   const normalized = path.replace(/\.html$/, '');
+  const contextual = new RegExp(
+    `^turmas/[^/]+(?:/(?:visao-geral|alunos|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar${coordinator ? '|gerenciar' : ''}))?$`,
+  ).test(normalized);
   if (
+    !contextual &&
+    !/^historico\/[^/]+$/.test(normalized) &&
     ![
       'inicio',
       'turmas',

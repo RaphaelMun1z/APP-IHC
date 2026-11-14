@@ -1,3 +1,6 @@
+import { Action } from '../../shared/ui/action';
+import { contextParam, returnTo } from '../../core/navigation/context';
+import { AuthService } from '../../core/auth/auth.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,7 +17,7 @@ import { localDate } from '../../shared/utils/dates';
 
 @Component({
   selector: 'app-lesson-editor',
-  imports: [ReactiveFormsModule, RouterLink, Feedback, UnsavedChangesDirective],
+  imports: [Action, ReactiveFormsModule, RouterLink, Feedback, UnsavedChangesDirective],
   templateUrl: './lesson-editor.html',
   styleUrl: './lesson-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,15 +27,26 @@ export class LessonEditor implements UnsavedChanges {
   private readonly lessons = inject(LessonsStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly initialId = this.route.snapshot.queryParamMap.get('id');
+  private readonly initialId = contextParam(this.route.snapshot, 'id');
   private readonly existing = this.lessons.records().find((lesson) => lesson.id === this.initialId);
+  readonly fixedClass = this.route.snapshot.pathFromRoot.some((node) => node.paramMap.has('turma'));
+  readonly contextClass = contextParam(this.route.snapshot, 'turma');
+  readonly back = returnTo(
+    this.route.snapshot,
+    this.contextClass ? `/turmas/${this.contextClass}/aulas` : '/historico',
+    inject(AuthService).isCoordinator(),
+  );
   readonly recordId = signal(this.existing?.id);
   readonly unavailable =
-    !!this.initialId && (!this.existing || !this.classes.get(this.existing.turmaId)?.ativa);
+    (!!this.initialId &&
+      (!this.existing ||
+        !this.classes.get(this.existing.turmaId)?.ativa ||
+        (!!this.contextClass && this.contextClass !== this.existing.turmaId))) ||
+    (!!this.contextClass && !this.classes.get(this.contextClass)?.ativa);
   readonly form = inject(FormBuilder).nonNullable.group({
     turmaId: [
       this.existing?.turmaId ??
-        this.route.snapshot.queryParamMap.get('turma') ??
+        contextParam(this.route.snapshot, 'turma') ??
         this.classes.active()[0]?.id ??
         '',
       Validators.required,
@@ -120,14 +134,13 @@ export class LessonEditor implements UnsavedChanges {
       this.isError.set(false);
       this.saved.set(true);
       this.message.set('Aula salva. O registro já está disponível no histórico.');
-      void this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { id: saved.id },
-        replaceUrl: true,
+      void this.router.navigate(['/turmas', saved.turmaId, 'registros', saved.id], {
+        queryParams: { retorno: this.back },
       });
     } catch (error: unknown) {
       this.isError.set(true);
       this.message.set(errorMessage(error));
     }
   }
+  readonly backLink = inject(Router).parseUrl(this.back);
 }

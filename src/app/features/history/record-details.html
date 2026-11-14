@@ -27,13 +27,23 @@
       <p class="notes">{{ item.registro.notas }}</p>
     }
     @if (classes.get(item.turmaId)?.ativa) {
-      <a class="app-button primary" routerLink="/registro-aula" [queryParams]="{ id: item.id }"
+      <a
+        appAction="edit"
+        class="app-button primary"
+        [routerLink]="['/turmas', item.turmaId, 'aulas', item.id, 'editar']"
+        [queryParams]="{ retorno: returnUrl() }"
         >Editar registro</a
       >
     }
   }
   @case ('frequencia') {
-    <div class="details-table" role="region" aria-label="Detalhes da frequência" tabindex="0">
+    <app-list-header
+      title="Frequência registrada"
+      [count]="attendanceRows().length"
+      singular="aluno"
+      plural="alunos"
+    />
+    <app-data-table class="details-table" label="Detalhes da frequência">
       <table>
         <caption class="sr-only">
           Frequência em
@@ -48,12 +58,16 @@
           </tr>
         </thead>
         <tbody>
-          @for (student of students; track student.id) {
+          @for (student of visibleAttendance(); track student.id) {
             @if (
               classes.get(item.turmaId)?.alunoIds?.includes(student.id) || item.registro[student.id]
             ) {
               <tr>
-                <th scope="row">{{ student.nome }}</th>
+                <th scope="row">
+                  <span class="person-name"
+                    ><app-person-avatar [name]="student.nome" />{{ student.nome }}</span
+                  >
+                </th>
                 <td>
                   {{
                     item.registro[student.id] === 'presente'
@@ -68,13 +82,21 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-data-table>
+    <app-pagination
+      [total]="attendanceRows().length"
+      [page]="paging.current()"
+      [size]="paging.size()"
+      (pageChange)="paging.page.set($event)"
+      (sizeChange)="paging.resize($event)"
+    />
     @if (classes.get(item.turmaId)?.ativa) {
       <div class="app-actions">
         <a
+          appAction="edit"
           class="app-button primary"
-          routerLink="/presencas"
-          [queryParams]="{ turma: item.turmaId, data: item.data }"
+          [routerLink]="['/turmas', item.turmaId, 'frequencia']"
+          [queryParams]="{ data: item.data, retorno: returnUrl() }"
           >Abrir frequência</a
         >
       </div>
@@ -82,7 +104,8 @@
   }
   @case ('avaliacao') {
     <p>{{ item.resumo }}</p>
-    <div class="details-table" role="region" aria-label="Detalhes da avaliação" tabindex="0">
+    <app-list-header title="Critérios avaliados" [count]="assessmentRows().length" />
+    <app-data-table class="details-table" label="Detalhes da avaliação">
       <table>
         <caption class="sr-only">
           Critérios avaliados em
@@ -98,26 +121,38 @@
           </tr>
         </thead>
         <tbody>
-          @for (student of item.registro.alunos; track student.id) {
-            @for (criterion of criteria; track criterion.id) {
-              @if (student.avaliacoes[criterion.id]) {
-                <tr>
-                  <th scope="row">{{ student.nome }}</th>
-                  <td>{{ criterion.nome }}</td>
-                  <td>{{ student.avaliacoes[criterion.id] === 'ok' ? 'OK' : 'Não OK' }}</td>
-                </tr>
-              }
-            }
+          @for (row of visibleAssessments(); track row.student.id + row.criterion.id) {
+            <tr>
+              <th scope="row">
+                <span class="person-name"
+                  ><app-person-avatar [name]="row.student.nome" />{{ row.student.nome }}</span
+                >
+              </th>
+              <td>{{ row.criterion.nome }}</td>
+              <td>
+                <app-badge [tone]="row.mark === 'ok' ? 'success' : 'warning'">{{
+                  row.mark === 'ok' ? 'OK' : 'Não OK'
+                }}</app-badge>
+              </td>
+            </tr>
           }
         </tbody>
       </table>
-    </div>
+    </app-data-table>
+    <app-pagination
+      [total]="assessmentRows().length"
+      [page]="paging.current()"
+      [size]="paging.size()"
+      (pageChange)="paging.page.set($event)"
+      (sizeChange)="paging.resize($event)"
+    />
     <p>Critérios não listados permanecem sem status.</p>
     @if (classes.get(item.turmaId)?.ativa) {
       <a
+        appAction="edit"
         class="app-button primary"
-        routerLink="/avaliacao"
-        [queryParams]="{ turma: item.turmaId, data: item.data }"
+        [routerLink]="['/turmas', item.turmaId, 'avaliacoes']"
+        [queryParams]="{ data: item.data, retorno: returnUrl() }"
         >Abrir avaliação</a
       >
     }

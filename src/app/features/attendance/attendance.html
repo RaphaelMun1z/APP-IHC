@@ -1,42 +1,45 @@
-<main class="presencas-page" [appUnsavedChanges]="dirty()">
-  <header class="presencas-heading"><h1>Registro de presença e faltas</h1></header>
-  <section class="presencas-panel" aria-label="Frequência dos alunos">
-    <div class="presencas-toolbar">
-      <form class="presencas-filters" [formGroup]="form" (ngSubmit)="search()">
-        <label
-          >Turma<select formControlName="turmaId">
-            @for (group of classes.accessible(); track group.id) {
-              <option [value]="group.id">
-                {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
-              </option>
-            }
-          </select></label
-        >
-        <label
-          >Ano<select formControlName="year">
-            @for (year of years(); track year) {
-              <option [ngValue]="year">{{ year }}</option>
-            }
-          </select></label
-        >
-        <label
-          >Mês<select formControlName="month">
-            @for (month of months; track month.value) {
-              <option [ngValue]="month.value">{{ month.label }}</option>
-            }
-          </select></label
-        >
-        <button type="submit" class="presencas-search-button">
-          <span aria-hidden="true">⌕</span>Buscar
-        </button>
-      </form>
-      <div class="presencas-context">
-        <strong>{{ monthLabel() }}</strong><span
-          >{{ group()?.nome }} · {{ roster().length }} alunos</span
-        >
-      </div>
-    </div>
-    <hr class="page-results-divider" />
+<main class="app-page presencas-page" [appUnsavedChanges]="dirty()">
+  <app-filter-panel
+    (applyFilters)="search()"
+    [chips]="chips()"
+    [activeCount]="chips().length"
+    [context]="monthLabel()"
+    (removeFilter)="removeFilter($event)"
+    (clearFilters)="resetFilters()"
+  >
+    <form class="filter-bar presencas-filters" [formGroup]="form" (ngSubmit)="search()">
+      <label
+        >Turma<select formControlName="turmaId">
+          @for (group of classes.accessible(); track group.id) {
+            <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
+              {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+            </option>
+          }
+        </select></label
+      >
+      <label
+        >Ano<select formControlName="year">
+          @for (year of years(); track year) {
+            <option [ngValue]="year">{{ year }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Mês<select formControlName="month">
+          @for (month of months; track month.value) {
+            <option [ngValue]="month.value">{{ month.label }}</option>
+          }
+        </select></label
+      >
+    </form>
+  </app-filter-panel>
+  <section class="surface data-panel presencas-panel" aria-label="Frequência dos alunos">
+    <app-list-header
+      title="Frequência dos alunos"
+      [count]="roster().length"
+      singular="aluno"
+      plural="alunos"
+    />
     <app-feedback [message]="message()" [error]="isError()" />
     <div class="presencas-legend" aria-label="Legenda">
       <span><i class="status-dot is-present"></i>Presente</span
@@ -44,12 +47,7 @@
       ><span><i class="status-dot is-empty"></i>Sem registro</span>
     </div>
     @if (group()) {
-      <div
-        class="presencas-table-scroll"
-        role="region"
-        aria-label="Tabela de frequência mensal"
-        tabindex="0"
-      >
+      <app-data-table class="presencas-table-scroll" label="Tabela de frequência mensal">
         <table class="presencas-table">
           <caption class="sr-only">
             Frequência de
@@ -73,9 +71,13 @@
             </tr>
           </thead>
           <tbody>
-            @for (student of roster(); track student.id) {
+            @for (student of visibleRows(); track student.id) {
               <tr>
-                <th scope="row" class="student-column">{{ student.nome }}</th>
+                <th scope="row" class="student-column">
+                  <span class="person-name"
+                    ><app-person-avatar [name]="student.nome" />{{ student.nome }}</span
+                  >
+                </th>
                 @for (column of columns(); track column.date) {
                   <td>
                     <button
@@ -112,17 +114,19 @@
             }
           </tbody>
         </table>
-      </div>
+      </app-data-table>
+      <app-pagination
+        [total]="roster().length"
+        [page]="paging.current()"
+        [size]="paging.size()"
+        (pageChange)="paging.page.set($event)"
+        (sizeChange)="paging.resize($event)"
+      />
       <footer class="presencas-footer">
-        <p>
-          {{
-            group()?.ativa
-              ? 'Ative uma marcação para alternar entre presente, falta e sem registro.'
-              : 'Turma arquivada · Disponível somente para consulta.'
-          }}
-        </p>
         @if (group()?.ativa) {
-          <button type="button" [disabled]="!dirty()" (click)="save()">Salvar frequência</button>
+          <button appAction="save" type="button" [disabled]="!dirty()" (click)="save()">
+            Salvar frequência
+          </button>
         }
       </footer>
     } @else {

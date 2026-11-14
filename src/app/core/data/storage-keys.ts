@@ -1,4 +1,5 @@
 export const storageKeys = {
+  students: 'ipb-alunos-v1',
   classes: 'ipb-turmas-v1',
   lessons: 'ipb-aulas-v1',
   assessments: 'ipb-avaliacoes-v1',

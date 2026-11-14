@@ -1,36 +1,63 @@
-<main class="management-page">
-  <header class="management-heading">
-    <h1>Coordenação pedagógica</h1>
-    <a class="app-button primary" routerLink="/turma-form">＋ Nova turma</a>
-  </header>
-  <section class="management-panel" aria-label="Gestão de turmas">
-    <div class="filters">
+<main class="app-page management-page">
+  <app-filter-panel
+    (applyFilters)="persist()"
+    [chips]="chips()"
+    [activeCount]="chips().length"
+    [searchable]="true"
+    (removeFilter)="removeFilter($event)"
+    (clearFilters)="clearFilters()"
+    ><label filter-search class="filter-search-label"
+      ><span class="sr-only">Buscar turma</span
+      ><input
+        type="search"
+        placeholder="Buscar turma"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event); paging.page.set(1); persist()"
+    /></label>
+    <div filter-actions class="app-actions">
+      <a
+        appAction="history"
+        class="app-button filter-secondary-action"
+        routerLink="/historico"
+        title="Ver registros"
+        aria-label="Ver registros"
+        ><span>Ver registros</span></a
+      >
+      <a appAction="add" class="app-button primary" routerLink="/turma-form">Nova turma</a>
+    </div>
+    <div class="filter-bar filters">
       <label class="field"
-        >Buscar turma<input
-          type="search"
-          placeholder="Nome da turma"
-          [ngModel]="query()"
-          (ngModelChange)="query.set($event)" /></label
-      ><label class="field"
-        >Professor<select [ngModel]="teacher()" (ngModelChange)="teacher.set($event)">
+        >Professor<select
+          [ngModel]="teacher()"
+          (ngModelChange)="teacher.set($event); paging.page.set(1); persist()"
+        >
           <option value="">Todos os professores</option>
           @for (teacher of classes.teachers; track teacher.id) {
             <option [value]="teacher.id">{{ teacher.nome }}</option>
           }
         </select></label
       ><label class="field"
-        >Situação<select [ngModel]="status()" (ngModelChange)="status.set($event)">
+        >Situação<select
+          [ngModel]="status()"
+          (ngModelChange)="status.set($event); paging.page.set(1); persist()"
+        >
           <option value="ativas">Ativas</option>
           <option value="arquivadas">Arquivadas</option>
           <option value="todas">Todas</option>
         </select></label
       >
     </div>
-    <div class="table-heading">
-      <h2>Turmas cadastradas</h2>
-      <a class="app-button" routerLink="/historico">Ver registros</a>
-    </div>
-    <div class="table-scroll" role="region" aria-label="Turmas cadastradas" tabindex="0">
+  </app-filter-panel>
+  <section class="surface data-panel management-panel" aria-label="Gestão de turmas">
+    <app-list-header
+      title="Turmas cadastradas"
+      [count]="filtered().length"
+      singular="turma"
+      plural="turmas"
+    />
+    <app-feedback [message]="message()" [error]="true" />
+
+    <app-data-table label="Turmas cadastradas">
       <table>
         <caption class="sr-only">
           Turmas, professores, horários e situação
@@ -45,7 +72,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (group of filtered(); track group.id) {
+          @for (group of visible(); track group.id) {
             <tr>
               <th scope="row">
                 <strong>{{ group.nome }}</strong><small>{{
@@ -54,17 +81,58 @@
                 ><small>{{ classes.module(group.cursoId, group.moduloId)?.nome }}</small>
               </th>
               <td>
-                {{ teacherName(group.professorId) }}<small>{{ classes.schedule(group) }}</small>
+                <span class="person-name"
+                  ><app-person-avatar [name]="teacherName(group.professorId)" />{{
+                    teacherName(group.professorId)
+                  }}</span
+                ><small>{{ classes.schedule(group) }}</small>
               </td>
               <td>{{ group.alunoIds.length }}</td>
-              <td>{{ group.ativa ? 'Ativa' : 'Arquivada' }}</td>
               <td>
-                <div class="app-actions">
-                  <a class="app-button" routerLink="/turma-form" [queryParams]="{ turma: group.id }"
-                    >Editar</a
-                  ><a class="app-button" routerLink="/historico" [queryParams]="{ turma: group.id }"
-                    >Registros</a
-                  >
+                <app-badge [tone]="group.ativa ? 'success' : 'neutral'">{{
+                  group.ativa ? 'Ativa' : 'Arquivada'
+                }}</app-badge>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <a
+                    appAction="open_in_new"
+                    class="icon-button"
+                    [routerLink]="['/turmas', group.id]"
+                    [queryParams]="{ retorno: currentUrl() }"
+                    title="Detalhes"
+                    [attr.aria-label]="'Detalhes ' + group.nome"
+                  ></a>
+                  <button
+                    [appAction]="group.ativa ? 'archive' : 'unarchive'"
+                    class="icon-button"
+                    [attr.title]="group.ativa ? 'Arquivar' : 'Reativar'"
+                    [attr.aria-label]="(group.ativa ? 'Arquivar ' : 'Reativar ') + group.nome"
+                    (click)="toggleStatus(group.id)"
+                  ></button>
+                  <a
+                    appAction="edit"
+                    class="icon-button"
+                    [routerLink]="['/turmas', group.id, 'gerenciar']"
+                    [queryParams]="{ retorno: currentUrl() }"
+                    title="Editar"
+                    [attr.aria-label]="'Editar ' + group.nome"
+                  ></a
+                  ><a
+                    appAction="history"
+                    class="icon-button"
+                    routerLink="/historico"
+                    [queryParams]="{ turma: group.id }"
+                    title="Registros"
+                    [attr.aria-label]="'Registros ' + group.nome"
+                  ></a>
+                  <button
+                    appAction="delete"
+                    class="icon-button danger"
+                    title="Excluir turma"
+                    [attr.aria-label]="'Excluir ' + group.nome"
+                    (click)="remove(group.id)"
+                  ></button>
                 </div>
               </td>
             </tr>
@@ -77,7 +145,13 @@
           }
         </tbody>
       </table>
-    </div>
-    <p class="count" role="status">{{ filtered().length }} turmas</p>
+    </app-data-table>
+    <app-pagination
+      [total]="filtered().length"
+      [page]="paging.current()"
+      [size]="paging.size()"
+      (pageChange)="changePage($event)"
+      (sizeChange)="changeSize($event)"
+    />
   </section>
 </main>

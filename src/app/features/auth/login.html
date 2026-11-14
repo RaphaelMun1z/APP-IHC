@@ -5,15 +5,12 @@
       <img src="./assets/ipb_logo.png" alt="IPB" class="app-login-logo" />
       <span>APP 1</span>
     </div>
-    <div class="app-login-intro">
-      <p>Mais perto de cada aluno.</p>
-    </div>
   </section>
   <section class="app-login-form" aria-labelledby="login-title">
     <div class="app-login-content">
       <header class="app-login-heading">
         <h1 id="login-title">Bem-vindo ao APP 1</h1>
-        <p>Acesse sua conta para continuar.</p>
+        <p>Demonstração local. Os registros ficam neste navegador.</p>
       </header>
       <form id="login-form" [formGroup]="form" (ngSubmit)="submit()" (input)="message.set('')">
         <div class="app-login-field">
@@ -85,12 +82,12 @@
             d="M12 5.96c1.47 0 2.79.5 3.82 1.49l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.96 5.49l3.35 2.6C7.18 7.72 9.39 5.96 12 5.96Z"
           />
         </svg>
-        <span>Continuar com Google</span>
+        <span>Google · indisponível nesta demonstração</span>
       </button>
       <p class="app-login-signup">
         Não tem uma conta?
         <button id="signup-login" (click)="showHelp('signup')" type="button" class="app-login-link">
-          Cadastre-se
+          Sobre cadastro · indisponível
         </button>
       </p>
       <button id="preencher-demo" (click)="fillDemo()" type="button" class="app-login-dev">

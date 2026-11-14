@@ -1,4 +1,6 @@
 @use 'tokens';
+@use 'workspace';
+@use 'tables';
 
 *,
 *::before,
@@ -93,6 +95,12 @@ th {
   border: 0;
 }
 .material-symbols-outlined {
+  display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  flex-shrink: 0;
+  overflow: hidden;
+  vertical-align: middle;
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
@@ -144,97 +152,4 @@ th {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-}
-.management-page {
-  width: calc(100% - 16rem);
-  height: 100vh;
-  margin-left: 16rem;
-  padding-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow: hidden;
-}
-.management-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0 2rem;
-}
-.management-heading h1 {
-  font-size: 1.75rem;
-  font-weight: 650;
-  letter-spacing: -0.025em;
-}
-.management-panel {
-  flex: 1;
-  min-height: 0;
-  margin-left: 2rem;
-  padding: 2rem 3rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel) 0 0;
-  background: white;
-  color: var(--color-text);
-  overflow: auto;
-}
-.management-form {
-  display: grid;
-  gap: 1.25rem;
-}
-.field-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-.field {
-  display: grid;
-  gap: 0.5rem;
-  color: #334155;
-  font-size: 0.875rem;
-}
-.field input,
-.field select {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: white;
-  color: var(--color-text);
-}
-@media (max-width: 64rem) {
-  .management-page {
-    width: calc(100% - 14rem);
-    margin-left: 14rem;
-  }
-}
-@media (max-width: 48rem) {
-  .management-page {
-    width: calc(100% - 4rem);
-    margin-left: 4rem;
-    padding-top: 1rem;
-  }
-  .management-heading {
-    padding: 0 1rem;
-    align-items: flex-start;
-  }
-  .management-heading h1 {
-    font-size: 1.5rem;
-  }
-  .management-panel {
-    margin-left: 1rem;
-    padding: 1rem;
-  }
-  .field-grid {
-    grid-template-columns: 1fr;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto;
-    transition: none;
-  }
 }

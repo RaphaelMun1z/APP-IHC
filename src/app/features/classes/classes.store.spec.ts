@@ -74,6 +74,74 @@ describe('Regras pedagógicas e perfis', () => {
     expect(() => classes.save(newClass())).toThrow('exclusivo');
     expect(() => classes.delete(['6a'])).toThrow('exclusivo');
   });
+  it('cadastra um aluno e persiste sua matrícula apenas na turma escolhida', () => {
+    const otherGroup = classes.get('6b');
+    const student = classes.addStudent('6a', '  Beatriz Souza  ');
+    expect(student.nome).toBe('Beatriz Souza');
+    expect(classes.roster('6a')).toContainEqual(student);
+    expect(classes.get('6a')?.alunoIds).toHaveLength(16);
+    expect(classes.get('6b')).toEqual(otherGroup);
+    expect(assessments.roster('6a', localDate()).some((item) => item.id === student.id)).toBe(true);
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(ClassesStore).roster('6a')).toContainEqual(student);
+  });
+  it('valida o nome e o acesso à turma antes de cadastrar um aluno', () => {
+    expect(() => classes.addStudent('6a', '   ')).toThrow('Informe um nome');
+    expect(() => classes.addStudent('6a', 'a'.repeat(101))).toThrow('100');
+    expect(() => classes.addStudent('7a', 'Beatriz Souza')).toThrow('não disponível');
+    expect(classes.students).toHaveLength(15);
+    auth.login('coordenacao', 'ipb123', false);
+    classes.save({ ...classes.require('6a'), ativa: false });
+    expect(() => classes.addStudent('6a', 'Beatriz Souza')).toThrow('arquivada');
+    expect(classes.students).toHaveLength(15);
+  });
+  it('permite editar alunos das próprias turmas e persiste o nome nas listas relacionadas', () => {
+    const id = 'aluno-01';
+    classes.renameStudent('6a', id, '  Ana Clara Santos Silva  ');
+    expect(classes.roster('6a').find((student) => student.id === id)?.nome).toBe(
+      'Ana Clara Santos Silva',
+    );
+    expect(assessments.roster('6a', localDate()).find((student) => student.id === id)?.nome).toBe(
+      'Ana Clara Santos Silva',
+    );
+    TestBed.resetTestingModule();
+    expect(
+      TestBed.inject(ClassesStore)
+        .roster('6a')
+        .find((student) => student.id === id)?.nome,
+    ).toBe('Ana Clara Santos Silva');
+  });
+  it('valida nome, matrícula e acesso ao editar ou excluir alunos', () => {
+    expect(() => classes.renameStudent('6a', 'aluno-01', '   ')).toThrow('Informe um nome');
+    expect(() => classes.renameStudent('6a', 'aluno-01', 'a'.repeat(101))).toThrow('100');
+    expect(() => classes.renameStudent('7a', 'aluno-01', 'Ana')).toThrow('não disponível');
+    expect(() => classes.removeStudent('7a', 'aluno-01')).toThrow('não disponível');
+    expect(() => classes.renameStudent('6a', 'inexistente', 'Ana')).toThrow('não matriculado');
+    expect(() => classes.removeStudent('6a', 'inexistente')).toThrow('não matriculado');
+    classes.removeStudent('6a', 'aluno-01');
+    expect(() => classes.renameStudent('6a', 'aluno-01', 'Ana')).toThrow('não matriculado');
+  });
+  it('exclui apenas a matrícula escolhida e preserva os registros históricos e as outras turmas', () => {
+    const otherGroup = classes.get('6b');
+    const previousAttendance = localStorage.getItem(storageKeys.attendance);
+    const previousAssessments = localStorage.getItem(storageKeys.assessments);
+    classes.removeStudent('6a', 'aluno-01');
+    expect(classes.roster('6a').some((student) => student.id === 'aluno-01')).toBe(false);
+    expect(classes.get('6a')?.alunoIds).toHaveLength(14);
+    expect(classes.get('6b')).toEqual(otherGroup);
+    expect(classes.students.some((student) => student.id === 'aluno-01')).toBe(true);
+    expect(localStorage.getItem(storageKeys.attendance)).toBe(previousAttendance);
+    expect(localStorage.getItem(storageKeys.assessments)).toBe(previousAssessments);
+  });
+  it('preserva o último aluno e bloqueia edição e exclusão em turmas arquivadas', () => {
+    const group = classes.require('6a');
+    for (const id of group.alunoIds.slice(1)) classes.removeStudent('6a', id);
+    expect(() => classes.removeStudent('6a', group.alunoIds[0])).toThrow('pelo menos um aluno');
+    auth.login('coordenacao', 'ipb123', false);
+    classes.save({ ...classes.require('6a'), ativa: false });
+    expect(() => classes.renameStudent('6a', 'aluno-01', 'Ana')).toThrow('arquivada');
+    expect(() => classes.removeStudent('6a', 'aluno-01')).toThrow('arquivada');
+  });
   it('impede aulas duplicadas e permite editar sem duplicar', () => {
     const saved = lessons.save(lesson());
     expect(() => lessons.save(lesson())).toThrow('Já existe uma aula');

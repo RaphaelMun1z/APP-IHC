@@ -22,8 +22,7 @@ li {
   overflow-wrap: anywhere;
 }
 .details-table {
-  max-height: 55vh;
-  overflow: auto;
+  overflow: visible;
 }
 table {
   width: 100%;
@@ -40,6 +39,10 @@ thead {
   position: sticky;
   top: 0;
   background: #f8fafc;
+}
+td,
+th {
+  overflow-wrap: anywhere;
 }
 .app-actions {
   margin-top: 1rem;

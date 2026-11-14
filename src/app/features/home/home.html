@@ -1,6 +1,5 @@
-<main class="inicio-page">
-  <header class="inicio-heading"><h1>Início</h1></header>
-  <section class="inicio-panel" aria-label="Visão geral demonstrativa">
+<main class="app-page inicio-page">
+  <section class="surface content-scroll inicio-panel" aria-label="Visão geral demonstrativa">
     <div class="inicio-quick-links">
       @for (link of links; track link.path) {
         <a [routerLink]="link.path"
@@ -10,14 +9,18 @@
           ><span
             ><strong>{{ link.title }}</strong
             ><small>{{ link.description }}</small></span
-          ><span class="quick-arrow" aria-hidden="true">›</span></a
+          ><span class="quick-arrow material-symbols-outlined" aria-hidden="true"
+            >chevron_right</span
+          ></a
         >
       }
       @if (auth.isCoordinator()) {
         <a routerLink="/coordenacao"
           ><span class="quick-icon material-symbols-outlined" aria-hidden="true">settings</span
           ><span><strong>Coordenação</strong><small>Gestão de turmas e professores</small></span
-          ><span class="quick-arrow" aria-hidden="true">›</span></a
+          ><span class="quick-arrow material-symbols-outlined" aria-hidden="true"
+            >chevron_right</span
+          ></a
         >
       }
     </div>

@@ -1,9 +1,5 @@
-<main class="management-page" [appUnsavedChanges]="hasUnsavedChanges()">
-  <header class="management-heading">
-    <h1>{{ existing ? 'Editar turma' : 'Nova turma' }}</h1>
-    <a class="app-button" routerLink="/coordenacao">Voltar às turmas</a>
-  </header>
-  <section class="management-panel" aria-label="Dados da turma">
+<main class="app-page management-page" [appUnsavedChanges]="hasUnsavedChanges()">
+  <section class="surface content-scroll management-panel" aria-label="Dados da turma">
     @if (unavailable) {
       <p class="app-empty">Turma não encontrada. Confira a lista de turmas e tente novamente.</p>
     } @else {
@@ -60,7 +56,7 @@
           <legend>Alunos da turma</legend>
           <div class="selection-heading">
             <p>Selecione os alunos matriculados.</p>
-            <button type="button" (click)="toggleAll()">
+            <button appAction="checklist" type="button" (click)="toggleAll()">
               {{
                 students().length === classes.students.length
                   ? 'Limpar seleção'
@@ -95,8 +91,8 @@
         }
         <app-feedback [message]="message()" [error]="true" />
         <div class="app-actions end">
-          <a class="app-button" routerLink="/coordenacao">Cancelar</a
-          ><button class="app-button primary" type="submit">Salvar turma</button>
+          <a appAction="close" class="app-button" [routerLink]="backLink">Cancelar</a
+          ><button appAction="save" class="app-button primary" type="submit">Salvar turma</button>
         </div>
       </form>
     }

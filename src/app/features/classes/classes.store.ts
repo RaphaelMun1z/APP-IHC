@@ -8,9 +8,16 @@ import {
   isAttendance,
   isClasses,
   isLessons,
+  isStudents,
   normalizeAttendance,
 } from '../../core/data/validators';
-import type { AssessmentData, AttendanceData, Lesson, SchoolClass } from '../../core/models/domain';
+import type {
+  AssessmentData,
+  AttendanceData,
+  Lesson,
+  SchoolClass,
+  Student,
+} from '../../core/models/domain';
 import { weekdays } from '../../shared/utils/dates';
 
 @Injectable({ providedIn: 'root' })
@@ -28,7 +35,14 @@ export class ClassesStore {
     ),
   );
   readonly active = computed(() => this.accessible().filter((group) => group.ativa));
-  readonly students = students;
+  private readonly studentList = this.storage.collection<readonly Student[]>(
+    storageKeys.students,
+    students,
+    isStudents,
+  );
+  get students(): readonly Student[] {
+    return this.studentList();
+  }
   readonly courses = courses;
   readonly teachers = teachers;
   get(id: string): SchoolClass | undefined {
@@ -42,7 +56,48 @@ export class ClassesStore {
   }
   roster(id: string) {
     const group = this.get(id);
-    return students.filter((student) => group?.alunoIds.includes(student.id));
+    return this.students.filter((student) => group?.alunoIds.includes(student.id));
+  }
+  addStudent(classId: string, name: string): Student {
+    this.require(classId, true);
+    const nome = name.trim();
+    if (!nome || nome.length > 100) throw new Error('Informe um nome com até 100 caracteres.');
+    const student: Student = { id: crypto.randomUUID(), nome };
+    this.storage.writeMany([
+      [storageKeys.students, [...this.students, student]],
+      [
+        storageKeys.classes,
+        this.all().map((item) =>
+          item.id === classId ? { ...item, alunoIds: [...item.alunoIds, student.id] } : item,
+        ),
+      ],
+    ]);
+    return student;
+  }
+  renameStudent(classId: string, studentId: string, name: string): void {
+    const group = this.require(classId, true);
+    if (!group.alunoIds.includes(studentId)) throw new Error('Aluno não matriculado nesta turma.');
+    const student = this.students.find((item) => item.id === studentId);
+    if (!student) throw new Error('Aluno não encontrado.');
+    const nome = name.trim();
+    if (!nome || nome.length > 100) throw new Error('Informe um nome com até 100 caracteres.');
+    this.storage.write(
+      storageKeys.students,
+      this.students.map((item) => (item.id === studentId ? { ...item, nome } : item)),
+    );
+  }
+  removeStudent(classId: string, studentId: string): void {
+    const group = this.require(classId, true);
+    if (!group.alunoIds.includes(studentId)) throw new Error('Aluno não matriculado nesta turma.');
+    if (group.alunoIds.length <= 1) throw new Error('A turma deve ter pelo menos um aluno.');
+    this.storage.write(
+      storageKeys.classes,
+      this.all().map((item) =>
+        item.id === classId
+          ? { ...item, alunoIds: item.alunoIds.filter((id) => id !== studentId) }
+          : item,
+      ),
+    );
   }
   course(id: string) {
     return courses.find((course) => course.id === id);
@@ -72,7 +127,7 @@ export class ClassesStore {
       throw new Error('Escolha os dias e um horário final posterior ao inicial.');
     if (
       !input.alunoIds.length ||
-      input.alunoIds.some((id) => !students.some((student) => student.id === id))
+      input.alunoIds.some((id) => !this.students.some((student) => student.id === id))
     )
       throw new Error('Selecione pelo menos um aluno válido.');
     if (input.id && !this.all().some((group) => group.id === input.id))

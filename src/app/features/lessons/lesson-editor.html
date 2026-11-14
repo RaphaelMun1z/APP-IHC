@@ -1,9 +1,8 @@
-<main class="registro-page" [appUnsavedChanges]="hasUnsavedChanges()">
-  <header class="registro-heading">
-    <h1>{{ recordId() ? 'Editar registro de aula' : 'Registro de aula' }}</h1>
-    <a routerLink="/historico" class="registro-history">Ver histórico</a>
-  </header>
-  <section class="registro-panel" aria-label="Formulário de registro de aula">
+<main class="app-page registro-page" [appUnsavedChanges]="hasUnsavedChanges()">
+  <section
+    class="surface content-scroll registro-panel"
+    aria-label="Formulário de registro de aula"
+  >
     @if (unavailable) {
       <p class="app-empty">
         Registro não encontrado ou turma arquivada. Consulte os registros no histórico.
@@ -28,7 +27,9 @@
                 >Turma<select formControlName="turmaId" (change)="selectClass()">
                   <option value="">Selecione a turma</option>
                   @for (group of classes.active(); track group.id) {
-                    <option [value]="group.id">{{ group.nome }}</option>
+                    <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
+                      {{ group.nome }}
+                    </option>
                   }
                 </select></label
               >
@@ -99,11 +100,22 @@
           </section>
         </div>
         <nav class="registro-step-actions" aria-label="Navegação das etapas">
-          <button type="button" [disabled]="step() === 0" (click)="step.update((step) => step - 1)">
-            Voltar</button
-          ><button type="button" data-step-next [hidden]="step() === 2" (click)="next()">
+          <button
+            appAction="chevron_left"
+            type="button"
+            [disabled]="step() === 0"
+            (click)="step.update((step) => step - 1)"
+          >
+            Etapa anterior</button
+          ><button
+            appAction="chevron_right"
+            type="button"
+            data-step-next
+            [hidden]="step() === 2"
+            (click)="next()"
+          >
             Próxima etapa</button
-          ><button type="submit" data-step-save [hidden]="step() !== 2">
+          ><button appAction="save" type="submit" data-step-save [hidden]="step() !== 2">
             {{ recordId() ? 'Salvar alterações' : 'Salvar registro' }}
           </button>
         </nav>
