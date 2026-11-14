@@ -1,14 +1,48 @@
 {
+  "name": "ipb-app",
+  "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
+  },
   "scripts": {
-    "dev": "node scripts/serve.cjs",
-    "build": "tailwindcss -i ./css/styles.css -o ./css/output.css"
+    "dev": "ng serve --host 127.0.0.1 --port 4173",
+    "start": "npm run dev",
+    "build": "ng build",
+    "preview": "node scripts/preview.cjs",
+    "test": "ng test --watch=false",
+    "test:e2e": "playwright test",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
-    "flowbite": "^4.0.2"
+    "@angular/common": "22.2.6",
+    "@angular/compiler": "22.2.6",
+    "@angular/core": "22.2.6",
+    "@angular/forms": "22.2.6",
+    "@angular/platform-browser": "22.2.6",
+    "@angular/router": "22.2.6",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.3.3",
-    "tailwindcss": "^4.3.3"
+    "@angular/build": "22.2.7",
+    "@angular/cli": "22.2.7",
+    "@angular/compiler-cli": "22.2.6",
+    "@playwright/test": "^1.58.2",
+    "angular-eslint": "^22.6.0",
+    "eslint": "^10.15.0",
+    "@eslint/js": "^10.0.0",
+    "typescript-eslint": "^8.62.0",
+    "prettier": "^3.8.0",
+    "typescript": "~6.0.0",
+    "vitest": "^5.1.0",
+    "jsdom": "^29.0.0"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

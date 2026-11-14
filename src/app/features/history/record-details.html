@@ -1,0 +1,125 @@
+@let item = record();
+<p>{{ classes.get(item.turmaId)?.nome }} · {{ formatDate(item.data) }}</p>
+@switch (item.tipo) {
+  @case ('aula') {
+    <dl>
+      <div>
+        <dt>Curso</dt>
+        <dd>{{ classes.course(item.registro.cursoId)?.nome }}</dd>
+      </div>
+      <div>
+        <dt>Módulo</dt>
+        <dd>{{ classes.module(item.registro.cursoId, item.registro.moduloId)?.nome }}</dd>
+      </div>
+      <div>
+        <dt>Tipo de aula</dt>
+        <dd>{{ types[item.registro.tipo] }}</dd>
+      </div>
+    </dl>
+    <h3>Conteúdos registrados</h3>
+    <ul>
+      @for (lesson of item.registro.licoes; track lesson) {
+        <li>{{ lesson }}</li>
+      }
+    </ul>
+    @if (item.registro.notas) {
+      <h3>Observações</h3>
+      <p class="notes">{{ item.registro.notas }}</p>
+    }
+    @if (classes.get(item.turmaId)?.ativa) {
+      <a class="app-button primary" routerLink="/registro-aula" [queryParams]="{ id: item.id }"
+        >Editar registro</a
+      >
+    }
+  }
+  @case ('frequencia') {
+    <div class="details-table" role="region" aria-label="Detalhes da frequência" tabindex="0">
+      <table>
+        <caption class="sr-only">
+          Frequência em
+          {{
+            formatDate(item.data)
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Aluno</th>
+            <th scope="col">Frequência</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of students; track student.id) {
+            @if (
+              classes.get(item.turmaId)?.alunoIds?.includes(student.id) || item.registro[student.id]
+            ) {
+              <tr>
+                <th scope="row">{{ student.nome }}</th>
+                <td>
+                  {{
+                    item.registro[student.id] === 'presente'
+                      ? 'Presente'
+                      : item.registro[student.id] === 'falta'
+                        ? 'Falta'
+                        : 'Sem registro'
+                  }}
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (classes.get(item.turmaId)?.ativa) {
+      <div class="app-actions">
+        <a
+          class="app-button primary"
+          routerLink="/presencas"
+          [queryParams]="{ turma: item.turmaId, data: item.data }"
+          >Abrir frequência</a
+        >
+      </div>
+    }
+  }
+  @case ('avaliacao') {
+    <p>{{ item.resumo }}</p>
+    <div class="details-table" role="region" aria-label="Detalhes da avaliação" tabindex="0">
+      <table>
+        <caption class="sr-only">
+          Critérios avaliados em
+          {{
+            formatDate(item.data)
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Aluno</th>
+            <th scope="col">Critério</th>
+            <th scope="col">Resultado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of item.registro.alunos; track student.id) {
+            @for (criterion of criteria; track criterion.id) {
+              @if (student.avaliacoes[criterion.id]) {
+                <tr>
+                  <th scope="row">{{ student.nome }}</th>
+                  <td>{{ criterion.nome }}</td>
+                  <td>{{ student.avaliacoes[criterion.id] === 'ok' ? 'OK' : 'Não OK' }}</td>
+                </tr>
+              }
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <p>Critérios não listados permanecem sem status.</p>
+    @if (classes.get(item.turmaId)?.ativa) {
+      <a
+        class="app-button primary"
+        routerLink="/avaliacao"
+        [queryParams]="{ turma: item.turmaId, data: item.data }"
+        >Abrir avaliação</a
+      >
+    }
+  }
+}

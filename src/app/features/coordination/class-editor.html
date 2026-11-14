@@ -1,0 +1,104 @@
+<main class="management-page" [appUnsavedChanges]="hasUnsavedChanges()">
+  <header class="management-heading">
+    <h1>{{ existing ? 'Editar turma' : 'Nova turma' }}</h1>
+    <a class="app-button" routerLink="/coordenacao">Voltar às turmas</a>
+  </header>
+  <section class="management-panel" aria-label="Dados da turma">
+    @if (unavailable) {
+      <p class="app-empty">Turma não encontrada. Confira a lista de turmas e tente novamente.</p>
+    } @else {
+      <form class="management-form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="field-grid">
+          <label class="field"
+            >Nome da turma<input
+              formControlName="nome"
+              maxlength="60"
+              placeholder="Ex.: 8º ano A"
+              required /></label
+          ><label class="field"
+            >Professor responsável<select formControlName="professorId" required>
+              <option value="">Selecione</option>
+              @for (teacher of classes.teachers; track teacher.id) {
+                <option [value]="teacher.id">{{ teacher.nome }}</option>
+              }
+            </select></label
+          ><label class="field"
+            >Curso<select formControlName="cursoId" required (change)="selectCourse()">
+              <option value="">Selecione</option>
+              @for (course of classes.courses; track course.id) {
+                <option [value]="course.id">{{ course.nome }}</option>
+              }
+            </select></label
+          ><label class="field"
+            >Módulo<select formControlName="moduloId" required>
+              <option value="">Selecione</option>
+              @for (module of modules(); track module.id) {
+                <option [value]="module.id">{{ module.nome }}</option>
+              }
+            </select></label
+          >
+        </div>
+        <fieldset>
+          <legend>Dias da semana</legend>
+          <div class="choices">
+            @for (day of weekdays; track day) {
+              <label
+                ><input
+                  type="checkbox"
+                  [checked]="days().includes($index)"
+                  (change)="toggleDay($index)"
+                />{{ day }}</label
+              >
+            }
+          </div>
+        </fieldset>
+        <div class="field-grid">
+          <label class="field">Início<input type="time" formControlName="inicio" required /></label
+          ><label class="field">Término<input type="time" formControlName="fim" required /></label>
+        </div>
+        <fieldset>
+          <legend>Alunos da turma</legend>
+          <div class="selection-heading">
+            <p>Selecione os alunos matriculados.</p>
+            <button type="button" (click)="toggleAll()">
+              {{
+                students().length === classes.students.length
+                  ? 'Limpar seleção'
+                  : 'Selecionar todos'
+              }}
+            </button>
+          </div>
+          <ul class="student-list">
+            @for (student of classes.students; track student.id) {
+              <li>
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="students().includes(student.id)"
+                    (change)="toggleStudent(student.id)"
+                  />{{ student.nome }}</label
+                >
+              </li>
+            }
+          </ul>
+          <p role="status">{{ students().length }} alunos selecionados</p>
+        </fieldset>
+        @if (existing) {
+          <label class="archive-choice"
+            ><input type="checkbox" formControlName="ativa" /><span
+              ><strong>Turma ativa</strong
+              ><small
+                >Desmarque para arquivar. Os registros existentes continuam no histórico.</small
+              ></span
+            ></label
+          >
+        }
+        <app-feedback [message]="message()" [error]="true" />
+        <div class="app-actions end">
+          <a class="app-button" routerLink="/coordenacao">Cancelar</a
+          ><button class="app-button primary" type="submit">Salvar turma</button>
+        </div>
+      </form>
+    }
+  </section>
+</main>

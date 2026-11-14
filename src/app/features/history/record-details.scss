@@ -1,0 +1,46 @@
+p,
+dl,
+ul {
+  margin-bottom: 1rem;
+}
+dl {
+  display: grid;
+  gap: 0.75rem;
+}
+dt {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+dd {
+  font-size: 0.875rem;
+}
+li {
+  padding: 0.5rem 0;
+}
+.notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.details-table {
+  max-height: 55vh;
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+td,
+th {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+thead {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+}
+.app-actions {
+  margin-top: 1rem;
+}

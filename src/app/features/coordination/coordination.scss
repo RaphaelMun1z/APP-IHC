@@ -1,0 +1,54 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.filters .field {
+  flex: 1 1 12rem;
+}
+.table-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  background: #e2e8f0;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+h2 {
+  font-size: 1.125rem;
+}
+.table-scroll {
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-top: 0;
+}
+table {
+  width: 100%;
+  min-width: 65rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+td,
+th {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+thead {
+  background: #f8fafc;
+}
+small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+.count {
+  margin-top: 1rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

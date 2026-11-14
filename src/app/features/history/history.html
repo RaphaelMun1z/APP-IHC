@@ -1,0 +1,117 @@
+<main class="historico-page">
+  <header class="historico-heading"><h1>Histórico</h1></header>
+  <section class="historico-panel" aria-label="Histórico de registros pedagógicos">
+    <form class="historico-filters" [formGroup]="form" (ngSubmit)="search()">
+      <label
+        >Tipo de registro<select formControlName="tipo">
+          <option value="">Todos os registros</option>
+          <option value="aula">Aula</option>
+          <option value="frequencia">Frequência</option>
+          <option value="avaliacao">Avaliação</option>
+        </select></label
+      >
+      <label
+        >Turma<select formControlName="turmaId">
+          <option value="">Todas as turmas</option>
+          @for (group of classes.accessible(); track group.id) {
+            <option [value]="group.id">{{ group.nome }}</option>
+          }
+        </select></label
+      >
+      <label>Data inicial<input type="date" formControlName="inicio" /></label
+      ><label>Data final<input type="date" formControlName="fim" /></label
+      ><button type="submit">Buscar</button>
+      <label
+        >Conteúdo ou observação<input
+          type="search"
+          formControlName="conteudo"
+          placeholder="Buscar nas lições e observações" /></label
+      ><button type="button" (click)="clear()">Limpar filtros</button>
+    </form>
+    <hr class="page-results-divider" />
+    <app-feedback [message]="message()" [error]="true" />
+    <div class="historico-summary">
+      <strong role="status">{{ filtered().length }} registros</strong
+      ><span>Ordenados do mais recente para o mais antigo</span>
+    </div>
+    <div
+      class="historico-table-scroll"
+      role="region"
+      aria-label="Registros históricos"
+      tabindex="0"
+    >
+      <table class="historico-table">
+        <caption class="sr-only">
+          Registros pedagógicos por turma e data
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Data</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Turma</th>
+            <th scope="col">Resumo</th>
+            <th scope="col"><span class="sr-only">Ação</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of visible(); track item.id) {
+            <tr>
+              <td>{{ formatDate(item.data) }}</td>
+              <td>
+                <span
+                  class="history-badge"
+                  [class.lesson]="item.tipo === 'aula'"
+                  [class.attendance]="item.tipo === 'frequencia'"
+                  [class.evaluation]="item.tipo === 'avaliacao'"
+                  >{{
+                    item.tipo === 'aula'
+                      ? 'Aula'
+                      : item.tipo === 'frequencia'
+                        ? 'Frequência'
+                        : 'Avaliação'
+                  }}</span
+                >
+              </td>
+              <td>{{ classes.get(item.turmaId)?.nome }}</td>
+              <td>{{ item.resumo }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="record-open"
+                  [attr.aria-label]="'Abrir ' + item.titulo + ' de ' + formatDate(item.data)"
+                  (click)="selected.set(item)"
+                >
+                  Abrir <span aria-hidden="true">↗</span>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="app-empty">
+                Nenhum registro encontrado. Ajuste os filtros ou registre uma aula, frequência ou
+                avaliação.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <footer class="historico-footer">
+      <span>Mostrando {{ visible().length }} de {{ filtered().length }} registros</span>
+      <nav aria-label="Paginação">
+        <button type="button" [disabled]="page() === 1" (click)="previous()">Anterior</button
+        ><span aria-current="page">{{ page() }} / {{ pageCount() }}</span
+        ><button type="button" [disabled]="page() >= pageCount()" (click)="next()">Próxima</button>
+      </nav>
+    </footer>
+  </section>
+</main>
+<app-modal
+  [title]="selected()?.titulo ?? ''"
+  [open]="selected() !== null"
+  (closed)="selected.set(null)"
+>
+  @if (selected(); as item) {
+    <app-record-details [record]="item" />
+  }
+</app-modal>

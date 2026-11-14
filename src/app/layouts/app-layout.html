@@ -1,0 +1,75 @@
+<aside class="turmas-topbar" aria-label="Navegação principal">
+  <a class="turmas-brand" routerLink="/inicio" aria-label="Início"
+    ><img src="assets/ipb_logo.png" alt="IPB"
+  /></a>
+  <nav class="turmas-nav">
+    @for (item of navigation; track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        [attr.aria-label]="item.title"
+        [attr.data-short]="item.short"
+        (click)="accountOpen.set(false)"
+        >{{ item.title }}</a
+      >
+    }
+    @if (auth.isCoordinator()) {
+      <a
+        routerLink="/coordenacao"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        data-short="CO"
+        >Coordenação</a
+      >
+    }
+  </nav>
+  <button
+    type="button"
+    class="turmas-avatar"
+    [attr.aria-label]="'Opções de ' + auth.user()?.nome"
+    [attr.aria-expanded]="accountOpen()"
+    aria-controls="account-menu"
+    (click)="accountOpen.set(!accountOpen())"
+  >
+    {{ auth.isCoordinator() ? 'CP' : 'MO' }}
+  </button>
+</aside>
+@if (accountOpen()) {
+  <div id="account-menu" class="account-menu">
+    <p>
+      <strong>{{ auth.user()?.nome }}</strong><br />{{
+        auth.isCoordinator() ? 'Coordenação' : 'Professor'
+      }}
+      · Demonstração
+    </p>
+    <button
+      class="app-button"
+      type="button"
+      (click)="profileOpen.set(true); accountOpen.set(false)"
+    >
+      Meu perfil
+    </button>
+    <button class="app-button" type="button" (click)="logout()">Sair da conta</button>
+    <app-feedback [message]="message()" [error]="true" />
+  </div>
+}
+@if (storageMessages().length) {
+  <div class="storage-errors">
+    @for (message of storageMessages(); track message) {
+      <app-feedback [message]="message" [error]="true" />
+    }
+  </div>
+}
+<router-outlet />
+@if (message()) {
+  <div class="storage-errors"><app-feedback [message]="message()" [error]="true" /></div>
+}
+<app-modal title="Meu perfil" [open]="profileOpen()" (closed)="profileOpen.set(false)">
+  <h3>{{ auth.user()?.nome }}</h3>
+  <p>Perfil: {{ auth.isCoordinator() ? 'Coordenação pedagógica' : 'Professor' }}</p>
+  <p>Conta demonstrativa. Os registros ficam neste navegador e não são enviados a um servidor.</p>
+  <a class="app-button primary" routerLink="/turmas" (click)="profileOpen.set(false)"
+    >Ver minhas turmas</a
+  >
+</app-modal>

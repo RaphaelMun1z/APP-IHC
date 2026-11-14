@@ -1,0 +1,130 @@
+<main class="turmas-page">
+  <header class="turmas-heading">
+    <h1>Minhas turmas</h1>
+    @if (auth.isCoordinator()) {
+      <a class="turmas-new" routerLink="/turma-form">＋ <span>Nova turma</span></a>
+    }
+  </header>
+  <div class="turmas-filter-row">
+    <section class="turmas-search" aria-label="Busca de turmas">
+      <span aria-hidden="true">⌕</span
+      ><label class="sr-only" for="busca-turma">Buscar turma pelo nome</label
+      ><input
+        id="busca-turma"
+        type="search"
+        placeholder="Buscar turma pelo nome"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event); selected.set([])"
+      />
+    </section>
+    <p class="turmas-count" role="status">
+      {{ filtered().length }} {{ filtered().length === 1 ? 'turma' : 'turmas' }}
+    </p>
+  </div>
+  <hr class="page-results-divider" />
+  <ul class="turmas-list" aria-label="Registros de turmas">
+    @if (message()) {
+      <li><app-feedback [message]="message()" [error]="isError()" /></li>
+    }
+    @if (auth.isCoordinator() && filtered().length) {
+      <li class="turmas-bulk-actions">
+        <label class="turmas-select-all"
+          ><input
+            class="turma-checkbox"
+            type="checkbox"
+            [checked]="allSelected()"
+            [indeterminate]="selected().length > 0 && !allSelected()"
+            (change)="toggleAll()"
+          /><span>Selecionar todas as turmas</span></label
+        >
+        @if (selected().length) {
+          <button
+            class="turmas-bulk-delete"
+            type="button"
+            [attr.aria-label]="'Apagar ' + selected().length + ' turmas selecionadas'"
+            (click)="remove(selected())"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18m-2 0-1 14H6L5 6m4 0V4h6v2m-5 4v6m4-6v6" />
+            </svg>
+          </button>
+        }
+      </li>
+    }
+    @for (group of filtered(); track group.id) {
+      <li class="turma-row">
+        @if (auth.isCoordinator()) {
+          <input
+            class="turma-checkbox"
+            type="checkbox"
+            [attr.aria-label]="'Selecionar ' + group.nome"
+            [checked]="selected().includes(group.id)"
+            (change)="toggle(group.id)"
+          />
+        }
+        <span class="turma-name">{{ group.nome }}</span>
+        <div class="turma-actions">
+          <button
+            class="turma-action"
+            type="button"
+            [attr.aria-label]="'Abrir ' + group.nome"
+            title="Abrir"
+            (click)="rosterId.set(group.id)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 3h7v7m0-7-9 9M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            </svg>
+          </button>
+          @if (auth.isCoordinator()) {
+            <a
+              class="turma-action"
+              routerLink="/turma-form"
+              [queryParams]="{ turma: group.id }"
+              [attr.aria-label]="'Editar ' + group.nome"
+              title="Editar"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m16 3 5 5-12 12-6 1 1-6ZM14 5l5 5" /></svg
+            ></a>
+            <button
+              class="turma-action turma-delete"
+              type="button"
+              [attr.aria-label]="'Deletar ' + group.nome"
+              title="Deletar"
+              (click)="remove([group.id])"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18m-2 0-1 14H6L5 6m4 0V4h6v2m-5 4v6m4-6v6" />
+              </svg>
+            </button>
+          }
+        </div>
+      </li>
+    } @empty {
+      <li class="app-empty">Nenhuma turma encontrada. Tente buscar por outro nome.</li>
+    }
+  </ul>
+</main>
+<app-modal
+  [title]="'Alunos · ' + (rosterClass()?.nome ?? '')"
+  [open]="!!rosterClass()"
+  (closed)="rosterId.set('')"
+>
+  @if (rosterClass(); as group) {
+    <p>{{ store.course(group.cursoId)?.nome }} · {{ store.schedule(group) }}</p>
+    <p>{{ store.roster(group.id).length }} alunos matriculados</p>
+    <ol class="roster-list">
+      @for (student of store.roster(group.id); track student.id) {
+        <li>{{ $index + 1 }}. {{ student.nome }} <span>Matriculado</span></li>
+      }
+    </ol>
+    <div class="app-actions">
+      <a class="app-button" routerLink="/registro-aula" [queryParams]="{ turma: group.id }"
+        >Registrar aula</a
+      ><a class="app-button primary" routerLink="/presencas" [queryParams]="{ turma: group.id }"
+        >Frequência</a
+      ><a class="app-button" routerLink="/avaliacao" [queryParams]="{ turma: group.id }"
+        >Avaliar alunos</a
+      >
+    </div>
+  }
+</app-modal>

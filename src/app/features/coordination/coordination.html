@@ -1,0 +1,83 @@
+<main class="management-page">
+  <header class="management-heading">
+    <h1>Coordenação pedagógica</h1>
+    <a class="app-button primary" routerLink="/turma-form">＋ Nova turma</a>
+  </header>
+  <section class="management-panel" aria-label="Gestão de turmas">
+    <div class="filters">
+      <label class="field"
+        >Buscar turma<input
+          type="search"
+          placeholder="Nome da turma"
+          [ngModel]="query()"
+          (ngModelChange)="query.set($event)" /></label
+      ><label class="field"
+        >Professor<select [ngModel]="teacher()" (ngModelChange)="teacher.set($event)">
+          <option value="">Todos os professores</option>
+          @for (teacher of classes.teachers; track teacher.id) {
+            <option [value]="teacher.id">{{ teacher.nome }}</option>
+          }
+        </select></label
+      ><label class="field"
+        >Situação<select [ngModel]="status()" (ngModelChange)="status.set($event)">
+          <option value="ativas">Ativas</option>
+          <option value="arquivadas">Arquivadas</option>
+          <option value="todas">Todas</option>
+        </select></label
+      >
+    </div>
+    <div class="table-heading">
+      <h2>Turmas cadastradas</h2>
+      <a class="app-button" routerLink="/historico">Ver registros</a>
+    </div>
+    <div class="table-scroll" role="region" aria-label="Turmas cadastradas" tabindex="0">
+      <table>
+        <caption class="sr-only">
+          Turmas, professores, horários e situação
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Turma / curso</th>
+            <th scope="col">Professor / horário</th>
+            <th scope="col">Alunos</th>
+            <th scope="col">Situação</th>
+            <th scope="col">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of filtered(); track group.id) {
+            <tr>
+              <th scope="row">
+                <strong>{{ group.nome }}</strong><small>{{
+                  classes.course(group.cursoId)?.nome
+                }}</small
+                ><small>{{ classes.module(group.cursoId, group.moduloId)?.nome }}</small>
+              </th>
+              <td>
+                {{ teacherName(group.professorId) }}<small>{{ classes.schedule(group) }}</small>
+              </td>
+              <td>{{ group.alunoIds.length }}</td>
+              <td>{{ group.ativa ? 'Ativa' : 'Arquivada' }}</td>
+              <td>
+                <div class="app-actions">
+                  <a class="app-button" routerLink="/turma-form" [queryParams]="{ turma: group.id }"
+                    >Editar</a
+                  ><a class="app-button" routerLink="/historico" [queryParams]="{ turma: group.id }"
+                    >Registros</a
+                  >
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="app-empty">
+                Nenhuma turma encontrada. Ajuste os filtros ou cadastre uma nova turma.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="count" role="status">{{ filtered().length }} turmas</p>
+  </section>
+</main>

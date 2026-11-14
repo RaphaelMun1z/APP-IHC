@@ -1,0 +1,132 @@
+<main class="presencas-page" [appUnsavedChanges]="dirty()">
+  <header class="presencas-heading"><h1>Registro de presença e faltas</h1></header>
+  <section class="presencas-panel" aria-label="Frequência dos alunos">
+    <div class="presencas-toolbar">
+      <form class="presencas-filters" [formGroup]="form" (ngSubmit)="search()">
+        <label
+          >Turma<select formControlName="turmaId">
+            @for (group of classes.accessible(); track group.id) {
+              <option [value]="group.id">
+                {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+              </option>
+            }
+          </select></label
+        >
+        <label
+          >Ano<select formControlName="year">
+            @for (year of years(); track year) {
+              <option [ngValue]="year">{{ year }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Mês<select formControlName="month">
+            @for (month of months; track month.value) {
+              <option [ngValue]="month.value">{{ month.label }}</option>
+            }
+          </select></label
+        >
+        <button type="submit" class="presencas-search-button">
+          <span aria-hidden="true">⌕</span>Buscar
+        </button>
+      </form>
+      <div class="presencas-context">
+        <strong>{{ monthLabel() }}</strong><span
+          >{{ group()?.nome }} · {{ roster().length }} alunos</span
+        >
+      </div>
+    </div>
+    <hr class="page-results-divider" />
+    <app-feedback [message]="message()" [error]="isError()" />
+    <div class="presencas-legend" aria-label="Legenda">
+      <span><i class="status-dot is-present"></i>Presente</span
+      ><span><i class="status-dot is-absent"></i>Falta</span
+      ><span><i class="status-dot is-empty"></i>Sem registro</span>
+    </div>
+    @if (group()) {
+      <div
+        class="presencas-table-scroll"
+        role="region"
+        aria-label="Tabela de frequência mensal"
+        tabindex="0"
+      >
+        <table class="presencas-table">
+          <caption class="sr-only">
+            Frequência de
+            {{
+              group()?.nome
+            }}
+            em
+            {{
+              monthLabel()
+            }}. Ative cada marcação para alternar entre presente, falta e sem registro.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="student-column">Aluno</th>
+              @for (column of columns(); track column.date) {
+                <th scope="col">
+                  {{ column.day }}<br /><span>{{ column.number }}</span>
+                </th>
+              }
+              <th scope="col" class="summary-column">Presenças</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of roster(); track student.id) {
+              <tr>
+                <th scope="row" class="student-column">{{ student.nome }}</th>
+                @for (column of columns(); track column.date) {
+                  <td>
+                    <button
+                      type="button"
+                      class="attendance-mark"
+                      [class.present]="mark(student.id, column.date) === 'presente'"
+                      [class.absent]="mark(student.id, column.date) === 'falta'"
+                      [disabled]="!column.editable || !group()?.ativa"
+                      [attr.aria-label]="
+                        student.nome +
+                        ', ' +
+                        column.date +
+                        ': ' +
+                        label(mark(student.id, column.date))
+                      "
+                      (click)="cycle(student.id, column.date)"
+                    >
+                      {{
+                        mark(student.id, column.date) === 'presente'
+                          ? 'P'
+                          : mark(student.id, column.date) === 'falta'
+                            ? 'F'
+                            : '—'
+                      }}
+                    </button>
+                  </td>
+                }
+                <td class="summary-column">{{ summary(student.id) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td>Esta turma não tem alunos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="presencas-footer">
+        <p>
+          {{
+            group()?.ativa
+              ? 'Ative uma marcação para alternar entre presente, falta e sem registro.'
+              : 'Turma arquivada · Disponível somente para consulta.'
+          }}
+        </p>
+        @if (group()?.ativa) {
+          <button type="button" [disabled]="!dirty()" (click)="save()">Salvar frequência</button>
+        }
+      </footer>
+    } @else {
+      <p class="app-empty">Nenhuma turma disponível para este perfil.</p>
+    }
+  </section>
+</main>

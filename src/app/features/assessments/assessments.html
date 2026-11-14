@@ -1,0 +1,113 @@
+<main class="avaliacao-page" [appUnsavedChanges]="dirty()">
+  <header class="avaliacao-heading">
+    <h1>Avaliação observacional</h1>
+    <button type="button" class="avaliacao-save-top" [disabled]="!group()?.ativa" (click)="save()">
+      Salvar avaliação
+    </button>
+  </header>
+  <section class="avaliacao-panel" aria-label="Avaliação dos alunos">
+    <div class="avaliacao-toolbar">
+      <div class="avaliacao-filters" [formGroup]="form">
+        <label
+          >Turma<select formControlName="turmaId" (change)="load()">
+            @for (group of classes.accessible(); track group.id) {
+              <option [value]="group.id">
+                {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+              </option>
+            }
+          </select></label
+        ><label
+          >Data da avaliação<input
+            type="date"
+            formControlName="data"
+            [max]="today"
+            (change)="load()"
+        /></label>
+      </div>
+      <p>{{ rows().length }} alunos · Avaliação em {{ formatDate(applied().data) }}</p>
+    </div>
+    <hr class="page-results-divider" />
+    <app-feedback [message]="message()" [error]="isError()" />
+    <div class="avaliacao-legend">
+      <strong>Legenda</strong><span><i class="evaluation-dot ok">✓</i>Atendeu ao critério</span
+      ><span><i class="evaluation-dot no">×</i>Precisa desenvolver</span
+      ><span><i class="evaluation-dot pending">—</i>Sem avaliação</span>
+    </div>
+    @if (group()) {
+      <div
+        class="avaliacao-table-scroll"
+        role="region"
+        aria-label="Tabela de avaliação dos alunos"
+        tabindex="0"
+      >
+        <table class="avaliacao-table">
+          <caption class="sr-only">
+            Avaliação em dez critérios. Ative cada marcação para alternar entre atendeu, precisa
+            desenvolver e sem avaliação.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="student-cell">Aluno</th>
+              @for (criterion of store.criteria; track criterion.id) {
+                <th scope="col">{{ criterion.nome }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of rows(); track student.id) {
+              <tr>
+                <th scope="row" class="student-cell">{{ student.nome }}</th>
+                @for (criterion of store.criteria; track criterion.id) {
+                  <td>
+                    <button
+                      type="button"
+                      class="eval-mark"
+                      [class.ok]="student.avaliacoes[criterion.id] === 'ok'"
+                      [class.no]="student.avaliacoes[criterion.id] === 'nao-ok'"
+                      [class.pending]="!student.avaliacoes[criterion.id]"
+                      [disabled]="!group()?.ativa"
+                      [attr.aria-label]="
+                        student.nome +
+                        ', ' +
+                        criterion.nome +
+                        ': ' +
+                        label(student.avaliacoes[criterion.id])
+                      "
+                      (click)="cycle(student.id, criterion.id)"
+                    >
+                      {{
+                        student.avaliacoes[criterion.id] === 'ok'
+                          ? '✓'
+                          : student.avaliacoes[criterion.id] === 'nao-ok'
+                            ? '×'
+                            : '—'
+                      }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td>Esta turma não tem alunos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="avaliacao-footer">
+        <p>
+          {{
+            group()?.ativa
+              ? 'Ative uma marcação para alternar o resultado do critério.'
+              : 'Turma arquivada · Disponível somente para consulta.'
+          }}
+        </p>
+        @if (group()?.ativa) {
+          <button type="button" (click)="save()">Salvar avaliação</button>
+        }
+      </footer>
+    } @else {
+      <p class="app-empty">Nenhuma turma disponível para este perfil.</p>
+    }
+  </section>
+</main>

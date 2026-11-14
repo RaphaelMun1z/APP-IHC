@@ -1,0 +1,13 @@
+<dialog
+  #dialog
+  [class.compact]="compact()"
+  [attr.aria-labelledby]="titleId"
+  (close)="closed.emit()"
+  (cancel)="closed.emit()"
+>
+  <header>
+    <h2 [id]="titleId">{{ title() }}</h2>
+    <button type="button" aria-label="Fechar janela" (click)="dialog.close()">×</button>
+  </header>
+  <div class="body"><ng-content /></div>
+</dialog>

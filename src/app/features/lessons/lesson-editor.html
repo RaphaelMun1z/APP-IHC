@@ -1,0 +1,123 @@
+<main class="registro-page" [appUnsavedChanges]="hasUnsavedChanges()">
+  <header class="registro-heading">
+    <h1>{{ recordId() ? 'Editar registro de aula' : 'Registro de aula' }}</h1>
+    <a routerLink="/historico" class="registro-history">Ver histórico</a>
+  </header>
+  <section class="registro-panel" aria-label="Formulário de registro de aula">
+    @if (unavailable) {
+      <p class="app-empty">
+        Registro não encontrado ou turma arquivada. Consulte os registros no histórico.
+      </p>
+    } @else if (!classes.active().length) {
+      <p class="app-empty">
+        Nenhuma turma ativa disponível. A coordenação pode cadastrar ou reativar uma turma.
+      </p>
+    } @else {
+      <form class="registro-form" [formGroup]="form" (ngSubmit)="save()">
+        <ol class="registro-progress" aria-label="Etapas do formulário">
+          @for (label of ['1. Informações da aula', '2. Lições', '3. Observações']; track label) {
+            <li [attr.aria-current]="$index === step() ? 'step' : null">{{ label }}</li>
+          }
+        </ol>
+        <app-feedback [message]="message()" [error]="isError()" />
+        <div class="registro-fields">
+          <section class="registro-card" [hidden]="step() !== 0">
+            <h2>Informações da aula</h2>
+            <div class="registro-field-grid">
+              <label class="registro-field"
+                >Turma<select formControlName="turmaId" (change)="selectClass()">
+                  <option value="">Selecione a turma</option>
+                  @for (group of classes.active(); track group.id) {
+                    <option [value]="group.id">{{ group.nome }}</option>
+                  }
+                </select></label
+              >
+              <label class="registro-field"
+                >Data da aula<input type="date" formControlName="data" [max]="today" required
+              /></label>
+              <label class="registro-field"
+                >Curso<select formControlName="cursoId" (change)="selectCourse()">
+                  <option value="">Selecione o curso</option>
+                  @for (course of classes.courses; track course.id) {
+                    <option [value]="course.id">{{ course.nome }}</option>
+                  }
+                </select></label
+              >
+              <label class="registro-field"
+                >Módulo<select formControlName="moduloId" (change)="selectModule()">
+                  <option value="">Selecione o módulo</option>
+                  @for (module of modules(); track module.id) {
+                    <option [value]="module.id">{{ module.nome }}</option>
+                  }
+                </select></label
+              >
+            </div>
+            <fieldset class="registro-types">
+              <legend>Tipo de aula</legend>
+              @for (type of types; track type.value) {
+                <label
+                  ><input type="radio" formControlName="tipo" [value]="type.value" />{{
+                    type.label
+                  }}</label
+                >
+              }
+            </fieldset>
+          </section>
+          <section class="registro-card" [hidden]="step() !== 1">
+            <div class="registro-section-heading">
+              <h2>Lições ministradas</h2>
+              <span>{{ selectedLessons().length }} selecionadas</span>
+            </div>
+            <p>Marque uma ou mais lições trabalhadas nesta aula.</p>
+            <div class="registro-lessons">
+              @for (lesson of availableLessons(); track lesson) {
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="selectedLessons().includes(lesson)"
+                    (change)="toggleLesson(lesson)"
+                  /><span
+                    ><small>Lição {{ $index + 1 }}</small
+                    ><strong>{{ lesson }}</strong></span
+                  ></label
+                >
+              } @empty {
+                <p>Selecione um curso e um módulo para ver as lições.</p>
+              }
+            </div>
+          </section>
+          <section class="registro-card" [hidden]="step() !== 2">
+            <label class="registro-field"
+              >Observações <span class="registro-optional">(opcional)</span
+              ><textarea
+                rows="4"
+                formControlName="notas"
+                maxlength="600"
+                placeholder="Algum contexto importante sobre a aula?"
+              ></textarea>
+            </label>
+          </section>
+        </div>
+        <nav class="registro-step-actions" aria-label="Navegação das etapas">
+          <button type="button" [disabled]="step() === 0" (click)="step.update((step) => step - 1)">
+            Voltar</button
+          ><button type="button" data-step-next [hidden]="step() === 2" (click)="next()">
+            Próxima etapa</button
+          ><button type="submit" data-step-save [hidden]="step() !== 2">
+            {{ recordId() ? 'Salvar alterações' : 'Salvar registro' }}
+          </button>
+        </nav>
+        @if (saved()) {
+          <div class="app-actions">
+            <a
+              class="app-button primary"
+              routerLink="/presencas"
+              [queryParams]="{ turma: form.controls.turmaId.value, data: form.controls.data.value }"
+              >Registrar frequência</a
+            ><a class="app-button" routerLink="/historico">Consultar registros</a>
+          </div>
+        }
+      </form>
+    }
+  </section>
+</main>
