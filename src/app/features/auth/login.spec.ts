@@ -1,3 +1,4 @@
+import { provideMockApi } from '../../core/api/api-test.providers';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -8,13 +9,16 @@ describe('Formulário de login', () => {
     localStorage.clear();
     sessionStorage.clear();
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ imports: [Login], providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      imports: [Login],
+      providers: [provideRouter([]), provideMockApi()],
+    });
   });
   it('mostra erro para credenciais inválidas sem criar uma sessão', async () => {
     const fixture = TestBed.createComponent(Login);
     await fixture.whenStable();
     fixture.componentInstance.form.patchValue({ username: 'professor', password: 'incorreta' });
-    fixture.componentInstance.submit();
+    await fixture.componentInstance.submit();
     await fixture.whenStable();
     const host: unknown = fixture.nativeElement;
     expect(

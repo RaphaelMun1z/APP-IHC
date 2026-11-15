@@ -185,9 +185,9 @@ export class Attendance implements UnsavedChanges {
     const marks = this.columns().map((column) => this.mark(studentId, column.date));
     return String(marks.filter((mark) => mark === 'falta').length);
   }
-  save(): void {
+  async save(): Promise<void> {
     try {
-      this.store.saveMonth(this.applied().turmaId, this.draft());
+      await this.store.saveMonth(this.applied().turmaId, this.draft());
       this.dirty.set(false);
       this.draft.set({});
       this.editingPastDates.set(new Set());

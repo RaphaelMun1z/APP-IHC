@@ -10,7 +10,13 @@
     <div class="app-login-content">
       <header class="app-login-heading">
         <h1 id="login-title">Bem-vindo ao APP 1</h1>
-        <p>Demonstração local. Os registros ficam neste navegador.</p>
+        <p>
+          {{
+            demoAccess
+              ? 'Demonstração local. Os registros ficam neste navegador.'
+              : 'Entre com sua conta.'
+          }}
+        </p>
       </header>
       <form id="login-form" [formGroup]="form" (ngSubmit)="submit()" (input)="message.set('')">
         <div class="app-login-field">
@@ -90,9 +96,11 @@
           Sobre cadastro · indisponível
         </button>
       </p>
-      <button id="preencher-demo" (click)="fillDemo()" type="button" class="app-login-dev">
-        <span class="app-login-dev-badge">DEV</span><span>Preencher credenciais de teste</span>
-      </button>
+      @if (demoAccess) {
+        <button id="preencher-demo" (click)="fillDemo()" type="button" class="app-login-dev">
+          <span class="app-login-dev-badge">DEV</span><span>Preencher credenciais de teste</span>
+        </button>
+      }
     </div>
   </section>
 </main>

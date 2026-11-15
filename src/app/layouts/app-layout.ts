@@ -6,6 +6,10 @@ import { PageHeader } from '../shared/ui/page-header';
 import { Feedback } from '../shared/ui/feedback';
 import { Modal } from '../shared/ui/modal';
 import { errorMessage } from '../shared/utils/errors';
+import { DataState } from '../core/api/data-state';
+import { BootstrapService } from '../core/api/bootstrap.service';
+import { RequestState } from '../core/api/request-state';
+import { API_CONFIG } from '../core/api/api.config';
 
 @Component({
   selector: 'app-layout',
@@ -15,7 +19,19 @@ import { errorMessage } from '../shared/utils/errors';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayout {
+  readonly data = inject(DataState);
+  readonly bootstrap = inject(BootstrapService);
+  readonly requests = inject(RequestState);
+  readonly mockMode = inject(API_CONFIG).mode === 'mock';
   readonly auth = inject(AuthService);
+  readonly initials = computed(() =>
+    (this.auth.user()?.nome ?? '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((name) => name[0])
+      .join(''),
+  );
   private readonly router = inject(Router);
   readonly storage = inject(StorageService);
   readonly profileOpen = signal(false);

@@ -199,6 +199,8 @@ test('listas extensas e detalhes de avaliação usam somente a área interna de 
     localStorage.setItem('ipb-turmas-v1', JSON.stringify([...original, ...groups]));
   });
   await page.goto('/turmas');
+  await page.getByRole('combobox', { name: 'Registros por página' }).selectOption({ label: '50' });
+  await page.getByRole('button', { name: 'Última página' }).click();
   const list = page.locator('.turmas-table-scroll');
   expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
   const last = page.getByRole('link', { name: 'Abrir Turma adicional 59', exact: true });

@@ -1,14 +1,14 @@
-import { inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
-import { StorageService } from './core/data/storage.service';
-import { initializeDemoData } from './core/data/demo-data';
+import { apiInterceptor, mockInterceptor } from './core/api/api.interceptors';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideAppInitializer(() => initializeDemoData(inject(StorageService))),
+    provideHttpClient(withInterceptors([apiInterceptor, mockInterceptor])),
   ],
 };

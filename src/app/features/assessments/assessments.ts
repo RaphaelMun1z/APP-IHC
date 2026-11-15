@@ -175,7 +175,7 @@ export class Assessments implements UnsavedChanges {
         ? 'Precisa desenvolver'
         : 'Sem avaliação';
   }
-  save(): void {
+  async save(): Promise<void> {
     const lesson = this.selectedLesson();
     if (!lesson) {
       this.isError.set(true);
@@ -183,7 +183,7 @@ export class Assessments implements UnsavedChanges {
       return;
     }
     try {
-      this.store.save(lesson.id, this.rows());
+      await this.store.save(lesson.id, this.rows());
       this.dirty.set(false);
       this.isError.set(false);
       this.message.set('Avaliação salva e vinculada à aula.');

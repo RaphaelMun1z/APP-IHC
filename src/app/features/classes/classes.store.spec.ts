@@ -1,3 +1,6 @@
+import { provideMockApi } from '../../core/api/api-test.providers';
+import { BootstrapService } from '../../core/api/bootstrap.service';
+import { firstValueFrom } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AuthService } from '../../core/auth/auth.service';
@@ -12,7 +15,7 @@ import { AssessmentsStore } from '../assessments/assessments.store';
 import { HistoryStore } from '../history/history.store';
 import { localDate } from '../../shared/utils/dates';
 
-describe('Regras pedagógicas e acesso do professor', () => {
+describe('Regras pedagógicas e acesso do professor', async () => {
   let auth: AuthService;
   let classes: ClassesStore;
   let lessons: LessonsStore;
@@ -39,90 +42,97 @@ describe('Regras pedagógicas e acesso do professor', () => {
     ativa: true,
     alunoIds: ['aluno-01'],
   });
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideMockApi()] });
     initializeDemoData(TestBed.inject(StorageService));
     auth = TestBed.inject(AuthService);
     classes = TestBed.inject(ClassesStore);
     lessons = TestBed.inject(LessonsStore);
     attendance = TestBed.inject(AttendanceStore);
     assessments = TestBed.inject(AssessmentsStore);
-    auth.login('professor', 'ipb123', false);
+    await auth.login('professor', 'ipb123', false);
+    await firstValueFrom(TestBed.inject(BootstrapService).load());
   });
-  it('disponibiliza todas as turmas e registros ao único perfil de professor', () => {
+  it('disponibiliza todas as turmas e registros ao único perfil de professor', async () => {
     expect(classes.active()).toHaveLength(4);
     expect(lessons.records()).toHaveLength(4);
     expect(auth.user()?.perfil).toBe('professor');
   });
-  it('aceita somente credenciais do perfil Professor', () => {
-    expect(() => auth.login('coordenacao', 'ipb123', false)).toThrow(
+  it('aceita somente credenciais do perfil Professor', async () => {
+    await expect(auth.login('coordenacao', 'ipb123', false)).rejects.toThrow(
       'Usuário ou senha incorretos.',
     );
     expect(auth.user()?.perfil).toBe('professor');
   });
-  it('mantém senha fora dos armazenamentos e encerra a sessão', () => {
+  it('mantém senha fora dos armazenamentos e encerra a sessão', async () => {
     expect(sessionStorage.getItem(storageKeys.session)).not.toContain('ipb123');
     expect(localStorage.getItem(storageKeys.username)).toBeNull();
-    auth.logout();
+    await auth.logout();
     expect(auth.user()).toBeNull();
     expect(classes.active()).toHaveLength(0);
   });
-  it('permite ao professor salvar registros em qualquer turma', () => {
+  it('permite ao professor salvar registros em qualquer turma', async () => {
     const otherLesson = lessons.records().find((item) => item.turmaId === '7a')!;
-    lessons.save({ ...otherLesson, notas: 'Registro atualizado pelo professor' });
+    await lessons.save({ ...otherLesson, notas: 'Registro atualizado pelo professor' });
     expect(lessons.records().find((item) => item.id === otherLesson.id)?.notas).toBe(
       'Registro atualizado pelo professor',
     );
     const student = classes.roster('7a')[0];
-    attendance.saveMonth('7a', { [localDate()]: { [student.id]: 'presente' } });
+    await attendance.saveMonth('7a', { [localDate()]: { [student.id]: 'presente' } });
     expect(attendance.records()['7a'][localDate()][student.id]).toBe('presente');
-    assessments.save('demo-aula-7a', assessments.roster('demo-aula-7a'));
+    await assessments.save('demo-aula-7a', assessments.roster('demo-aula-7a'));
     expect(assessments.records()['demo-aula-7a']).toBeDefined();
   });
-  it('permite ao professor criar e excluir turmas', () => {
-    const created = classes.save(newClass());
+  it('permite ao professor criar e excluir turmas', async () => {
+    const created = await classes.save(newClass());
     expect(classes.get(created.id)).toEqual(created);
-    classes.delete([created.id]);
+    await classes.delete([created.id]);
     expect(classes.get(created.id)).toBeUndefined();
   });
-  it('fixa turmas na ordem escolhida e remove fixações ao excluir uma turma', () => {
-    classes.togglePinned('7a');
-    classes.togglePinned('6a');
+  it('fixa turmas na ordem escolhida e remove fixações ao excluir uma turma', async () => {
+    await classes.togglePinned('7a');
+    await classes.togglePinned('6a');
     expect(classes.pinned().map((group) => group.id)).toEqual(['7a', '6a']);
     expect(localStorage.getItem(storageKeys.pinnedClasses)).toBe('["7a","6a"]');
 
-    classes.togglePinned('7a');
+    await classes.togglePinned('7a');
     expect(classes.pinned().map((group) => group.id)).toEqual(['6a']);
-    classes.delete(['6a']);
+    await classes.delete(['6a']);
     expect(classes.pinned()).toEqual([]);
     expect(localStorage.getItem(storageKeys.pinnedClasses)).toBe('[]');
   });
-  it('cadastra um aluno e persiste sua matrícula apenas na turma escolhida', () => {
+  it('cadastra um aluno e persiste sua matrícula apenas na turma escolhida', async () => {
+    const classOrder = classes.accessible().map((group) => group.id);
     const otherGroup = classes.get('6b');
-    const student = classes.addStudent('6a', '  Beatriz Souza  ');
+    const student = await classes.addStudent('6a', '  Beatriz Souza  ');
     expect(student.nome).toBe('Beatriz Souza');
     expect(classes.roster('6a')).toContainEqual(student);
     expect(classes.get('6a')?.alunoIds).toHaveLength(16);
     expect(classes.get('6b')).toEqual(otherGroup);
+    expect(classes.accessible().map((group) => group.id)).toEqual(classOrder);
     expect(assessments.roster('demo-aula-6a').some((item) => item.id === student.id)).toBe(true);
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideMockApi()] });
+    await firstValueFrom(TestBed.inject(AuthService).restore());
+    await firstValueFrom(TestBed.inject(BootstrapService).load());
     expect(TestBed.inject(ClassesStore).roster('6a')).toContainEqual(student);
   });
-  it('valida o nome e o estado da turma antes de cadastrar um aluno', () => {
-    expect(() => classes.addStudent('6a', '   ')).toThrow('Informe um nome');
-    expect(() => classes.addStudent('6a', 'a'.repeat(101))).toThrow('100');
-    const student = classes.addStudent('7a', 'Beatriz Souza');
+  it('valida o nome e o estado da turma antes de cadastrar um aluno', async () => {
+    await expect(classes.addStudent('6a', '   ')).rejects.toThrow('Informe um nome');
+    await expect(classes.addStudent('6a', 'a'.repeat(101))).rejects.toThrow('100');
+    const student = await classes.addStudent('7a', 'Beatriz Souza');
     expect(classes.roster('7a')).toContainEqual(student);
     expect(classes.students).toHaveLength(16);
-    classes.save({ ...classes.require('6a'), ativa: false });
-    expect(() => classes.addStudent('6a', 'Beatriz Souza')).toThrow('arquivada');
+    await classes.save({ ...classes.require('6a'), ativa: false });
+    await expect(classes.addStudent('6a', 'Beatriz Souza')).rejects.toThrow('arquivada');
     expect(classes.students).toHaveLength(16);
   });
-  it('permite editar alunos das próprias turmas e persiste o nome nas listas relacionadas', () => {
+  it('permite editar alunos das próprias turmas e persiste o nome nas listas relacionadas', async () => {
     const id = 'aluno-01';
-    classes.renameStudent('6a', id, '  Ana Clara Santos Silva  ');
+    await classes.renameStudent('6a', id, '  Ana Clara Santos Silva  ');
     expect(classes.roster('6a').find((student) => student.id === id)?.nome).toBe(
       'Ana Clara Santos Silva',
     );
@@ -130,30 +140,35 @@ describe('Regras pedagógicas e acesso do professor', () => {
       'Ana Clara Santos Silva',
     );
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideMockApi()] });
+    await firstValueFrom(TestBed.inject(AuthService).restore());
+    await firstValueFrom(TestBed.inject(BootstrapService).load());
     expect(
       TestBed.inject(ClassesStore)
         .roster('6a')
         .find((student) => student.id === id)?.nome,
     ).toBe('Ana Clara Santos Silva');
   });
-  it('valida nome, matrícula e acesso ao editar ou excluir alunos', () => {
-    expect(() => classes.renameStudent('6a', 'aluno-01', '   ')).toThrow('Informe um nome');
-    expect(() => classes.renameStudent('6a', 'aluno-01', 'a'.repeat(101))).toThrow('100');
+  it('valida nome, matrícula e acesso ao editar ou excluir alunos', async () => {
+    await expect(classes.renameStudent('6a', 'aluno-01', '   ')).rejects.toThrow('Informe um nome');
+    await expect(classes.renameStudent('6a', 'aluno-01', 'a'.repeat(101))).rejects.toThrow('100');
     const otherStudentId = classes.roster('7a')[0].id;
-    classes.renameStudent('7a', otherStudentId, 'Ana');
+    await classes.renameStudent('7a', otherStudentId, 'Ana');
     expect(classes.roster('7a').find((student) => student.id === otherStudentId)?.nome).toBe('Ana');
-    classes.removeStudent('7a', otherStudentId);
+    await classes.removeStudent('7a', otherStudentId);
     expect(classes.roster('7a').some((student) => student.id === otherStudentId)).toBe(false);
-    expect(() => classes.renameStudent('6a', 'inexistente', 'Ana')).toThrow('não matriculado');
-    expect(() => classes.removeStudent('6a', 'inexistente')).toThrow('não matriculado');
-    classes.removeStudent('6a', 'aluno-01');
-    expect(() => classes.renameStudent('6a', 'aluno-01', 'Ana')).toThrow('não matriculado');
+    await expect(classes.renameStudent('6a', 'inexistente', 'Ana')).rejects.toThrow(
+      'não matriculado',
+    );
+    await expect(classes.removeStudent('6a', 'inexistente')).rejects.toThrow('não matriculado');
+    await classes.removeStudent('6a', 'aluno-01');
+    await expect(classes.renameStudent('6a', 'aluno-01', 'Ana')).rejects.toThrow('não matriculado');
   });
-  it('exclui apenas a matrícula escolhida e preserva os registros históricos e as outras turmas', () => {
+  it('exclui apenas a matrícula escolhida e preserva os registros históricos e as outras turmas', async () => {
     const otherGroup = classes.get('6b');
     const previousAttendance = localStorage.getItem(storageKeys.attendance);
     const previousAssessments = localStorage.getItem(storageKeys.lessonAssessments);
-    classes.removeStudent('6a', 'aluno-01');
+    await classes.removeStudent('6a', 'aluno-01');
     expect(classes.roster('6a').some((student) => student.id === 'aluno-01')).toBe(false);
     expect(classes.get('6a')?.alunoIds).toHaveLength(14);
     expect(classes.get('6b')).toEqual(otherGroup);
@@ -161,60 +176,64 @@ describe('Regras pedagógicas e acesso do professor', () => {
     expect(localStorage.getItem(storageKeys.attendance)).toBe(previousAttendance);
     expect(localStorage.getItem(storageKeys.lessonAssessments)).toBe(previousAssessments);
   });
-  it('preserva o último aluno e bloqueia edição e exclusão em turmas arquivadas', () => {
+  it('preserva o último aluno e bloqueia edição e exclusão em turmas arquivadas', async () => {
     const group = classes.require('6a');
-    for (const id of group.alunoIds.slice(1)) classes.removeStudent('6a', id);
-    expect(() => classes.removeStudent('6a', group.alunoIds[0])).toThrow('pelo menos um aluno');
-    classes.save({ ...classes.require('6a'), ativa: false });
-    expect(() => classes.renameStudent('6a', 'aluno-01', 'Ana')).toThrow('arquivada');
-    expect(() => classes.removeStudent('6a', 'aluno-01')).toThrow('arquivada');
+    for (const id of group.alunoIds.slice(1)) await classes.removeStudent('6a', id);
+    await expect(classes.removeStudent('6a', group.alunoIds[0])).rejects.toThrow(
+      'pelo menos um aluno',
+    );
+    await classes.save({ ...classes.require('6a'), ativa: false });
+    await expect(classes.renameStudent('6a', 'aluno-01', 'Ana')).rejects.toThrow('arquivada');
+    await expect(classes.removeStudent('6a', 'aluno-01')).rejects.toThrow('arquivada');
   });
-  it('impede aulas duplicadas e permite editar sem duplicar', () => {
-    const saved = lessons.save(lesson());
-    expect(() => lessons.save(lesson())).toThrow('Já existe uma aula');
-    lessons.save({ ...lesson(), id: saved.id, notas: 'Alterado' });
+  it('impede aulas duplicadas e permite editar sem duplicar', async () => {
+    const saved = await lessons.save(lesson());
+    await expect(lessons.save(lesson())).rejects.toThrow('Já existe uma aula');
+    await lessons.save({ ...lesson(), id: saved.id, notas: 'Alterado' });
     expect(lessons.records().filter((item) => item.data === localDate())).toHaveLength(1);
     expect(lessons.records().find((item) => item.id === saved.id)?.notas).toBe('Alterado');
   });
-  it('valida datas, conteúdo e tamanho das observações', () => {
-    expect(() => lessons.save({ ...lesson(), data: '9999-01-01' })).toThrow('data válida');
-    expect(() => lessons.save({ ...lesson(), data: '2026-02-30' })).toThrow('data válida');
-    expect(() => lessons.save({ ...lesson(), licoes: ['inexistente'] })).toThrow('lição');
-    expect(() => lessons.save({ ...lesson(), notas: 'x'.repeat(601) })).toThrow('600');
+  it('valida datas, conteúdo e tamanho das observações', async () => {
+    await expect(lessons.save({ ...lesson(), data: '9999-01-01' })).rejects.toThrow('data válida');
+    await expect(lessons.save({ ...lesson(), data: '2026-02-30' })).rejects.toThrow('data válida');
+    await expect(lessons.save({ ...lesson(), licoes: ['inexistente'] })).rejects.toThrow('lição');
+    await expect(lessons.save({ ...lesson(), notas: 'x'.repeat(601) })).rejects.toThrow('600');
   });
-  it('valida nomes duplicados, horário e matrícula da turma', () => {
-    expect(() => classes.save({ ...newClass(), nome: ' 6º ANO a ' })).toThrow('esse nome');
-    expect(() => classes.save({ ...newClass(), fim: '07:00' })).toThrow('horário final');
-    expect(() => classes.save({ ...newClass(), alunoIds: [] })).toThrow('aluno válido');
-    expect(() => classes.save({ ...newClass(), dias: [7] })).toThrow('dias');
+  it('valida nomes duplicados, horário e matrícula da turma', async () => {
+    await expect(classes.save({ ...newClass(), nome: ' 6º ANO a ' })).rejects.toThrow('esse nome');
+    await expect(classes.save({ ...newClass(), fim: '07:00' })).rejects.toThrow('horário final');
+    await expect(classes.save({ ...newClass(), alunoIds: [] })).rejects.toThrow('aluno válido');
+    await expect(classes.save({ ...newClass(), dias: [7] })).rejects.toThrow('dias');
   });
-  it('arquiva sem perder histórico e bloqueia novas gravações', () => {
+  it('arquiva sem perder histórico e bloqueia novas gravações', async () => {
     const group = classes.require('6a');
-    classes.save({ ...group, ativa: false });
+    await classes.save({ ...group, ativa: false });
     expect(classes.active().some((item) => item.id === '6a')).toBe(false);
     expect(
       TestBed.inject(HistoryStore)
         .records()
         .some((item) => item.turmaId === '6a'),
     ).toBe(true);
-    expect(() => lessons.save(lesson())).toThrow('arquivada');
-    expect(() => attendance.saveMonth('6a', {})).toThrow('arquivada');
-    expect(() => assessments.save('demo-aula-6a', [])).toThrow('arquivada');
+    await expect(lessons.save(lesson())).rejects.toThrow('arquivada');
+    await expect(attendance.saveMonth('6a', {})).rejects.toThrow('arquivada');
+    await expect(assessments.save('demo-aula-6a', [])).rejects.toThrow('arquivada');
   });
-  it('exclui em conjunto turma e registros associados, atualizando stores já abertos', () => {
+  it('exclui em conjunto turma e registros associados, atualizando stores já abertos', async () => {
     const history = TestBed.inject(HistoryStore);
     expect(history.records().filter((item) => item.turmaId === '6a')).toHaveLength(3);
-    classes.delete(['6a']);
+    await classes.delete(['6a']);
     expect(classes.get('6a')).toBeUndefined();
     expect(history.records().some((item) => item.turmaId === '6a')).toBe(false);
     expect(localStorage.getItem(storageKeys.lessons)).not.toContain('demo-aula-6a');
     expect(localStorage.getItem(storageKeys.attendance)).not.toContain('"6a"');
     expect(localStorage.getItem(storageKeys.lessonAssessments)).not.toContain('demo-aula-6a');
   });
-  it('salva frequência e avaliação no histórico sem limitar outros registros', () => {
+  it('salva frequência e avaliação no histórico sem limitar outros registros', async () => {
     const otherAssessment = assessments.records()['demo-aula-7a'];
-    attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' } });
-    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
+    await attendance.saveMonth('6a', {
+      [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' },
+    });
+    await assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     const history = TestBed.inject(HistoryStore);
     expect(
       history
@@ -226,13 +245,15 @@ describe('Regras pedagógicas e acesso do professor', () => {
     ).toBe('1 presentes · 1 faltas');
     expect(assessments.records()['demo-aula-7a']).toEqual(otherAssessment);
   });
-  it('preserva marcas históricas ao remover um aluno da turma', () => {
-    attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' } });
-    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
+  it('preserva marcas históricas ao remover um aluno da turma', async () => {
+    await attendance.saveMonth('6a', {
+      [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' },
+    });
+    await assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     const group = classes.require('6a');
-    classes.save({ ...group, alunoIds: group.alunoIds.filter((id) => id !== 'aluno-02') });
-    attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'falta' } });
-    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
+    await classes.save({ ...group, alunoIds: group.alunoIds.filter((id) => id !== 'aluno-02') });
+    await attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'falta' } });
+    await assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     expect(attendance.records()['6a'][localDate()]['aluno-02']).toBe('falta');
     expect(
       assessments.records()['demo-aula-6a'].alunos.some((student) => student.id === 'aluno-02'),

@@ -23,10 +23,11 @@ export class Login {
     password: ['', Validators.required],
     remember: true,
   });
-  readonly message = signal('');
+  readonly demoAccess = this.auth.demoAccess;
+  readonly message = signal(this.auth.error());
   readonly help = signal<{ title: string; description: string } | null>(null);
   fillDemo(): void {
-    this.form.patchValue({ username: 'professor', password: 'ipb123' });
+    if (this.demoAccess) this.form.patchValue(this.demoAccess);
     this.message.set('');
   }
   rememberChanged(): void {
@@ -52,7 +53,7 @@ export class Login {
     };
     this.help.set(messages[kind]);
   }
-  submit(): void {
+  async submit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.message.set('Informe seu usuário e senha.');
@@ -60,11 +61,9 @@ export class Login {
     }
     try {
       const { username, password, remember } = this.form.getRawValue();
-      this.auth.login(username, password, remember);
+      await this.auth.login(username, password, remember);
       this.form.controls.password.reset();
-      void this.router.navigateByUrl(
-        safeReturn(this.route.snapshot.queryParamMap.get('retorno')),
-      );
+      void this.router.navigateByUrl(safeReturn(this.route.snapshot.queryParamMap.get('retorno')));
     } catch (error: unknown) {
       this.message.set(errorMessage(error));
     }

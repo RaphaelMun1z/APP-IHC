@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import type { HistoryRecord } from './history.store';
 import { ClassesStore } from '../classes/classes.store';
-import { criteria } from '../../core/data/catalog';
+import { AssessmentsStore } from '../assessments/assessments.store';
 import { lessonTypes } from '../../core/models/domain';
 import { formatDate } from '../../shared/utils/dates';
 import { LessonTabs } from '../lessons/lesson-tabs';
@@ -25,7 +25,10 @@ export class RecordDetails {
   readonly record = input.required<HistoryRecord>();
   readonly showLessonTabs = input(true);
   readonly classes = inject(ClassesStore);
-  readonly criteria = criteria;
+  private readonly assessments = inject(AssessmentsStore);
+  get criteria() {
+    return this.assessments.criteria;
+  }
   readonly types = lessonTypes;
   readonly formatDate = formatDate;
 

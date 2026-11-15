@@ -1,34 +1,67 @@
-import { Injectable, signal } from '@angular/core';
-import type { Session } from '../models/domain';
-import { isSession } from '../data/validators';
+﻿import { Injectable, inject } from '@angular/core';
+import { catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { AuthApi } from './auth.api';
+import { SessionState } from './session-state';
+import { DataState } from '../api/data-state';
+import { RequestState } from '../api/request-state';
 import { storageKeys } from '../data/storage-keys';
+import { ApiFailure } from '../api/contracts';
+import { errorMessage } from '../../shared/utils/errors';
+import { API_CONFIG } from '../api/api.config';
+import { demoAccess } from './demo-access';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly current = signal<Session | null>(this.readSession());
-  readonly user = this.current.asReadonly();
-  private readonly sessionError = signal('');
-  readonly error = this.sessionError.asReadonly();
+  readonly demoAccess = inject(API_CONFIG).mode === 'mock' ? demoAccess : null;
+  private readonly api = inject(AuthApi);
+  private readonly state = inject(SessionState);
+  private readonly data = inject(DataState);
+  private readonly requests = inject(RequestState);
+  private restoring?: Observable<boolean>;
+  readonly user = this.state.user.asReadonly();
+  readonly error = this.state.error.asReadonly();
 
-  login(username: string, password: string, remember: boolean): void {
-    const role = username.trim().toLowerCase();
-    // Public demonstration access, retained from the original app; this is not server authentication.
-    if (role !== 'professor' || password !== 'ipb123')
-      throw new Error('Usuário ou senha incorretos.');
-    const user: Session = { id: 'professor-01', nome: 'Mariana Oliveira', perfil: role };
-    try {
-      sessionStorage.setItem(storageKeys.session, JSON.stringify(user));
-    } catch {
-      throw new Error('Permita o armazenamento do navegador para acessar a demonstração.');
-    }
-    this.current.set(user);
-    this.sessionError.set('');
-    try {
-      if (remember) localStorage.setItem(storageKeys.username, username.trim());
-      else localStorage.removeItem(storageKeys.username);
-    } catch {
-      /* Remembering a username is optional; the session was saved successfully. */
-    }
+  restore(): Observable<boolean> {
+    if (this.state.checked()) return of(!!this.user());
+    if (this.restoring) return this.restoring;
+    this.restoring = this.api.session().pipe(
+      tap((user) => {
+        this.state.user.set(user);
+        this.state.checked.set(true);
+        this.state.error.set('');
+      }),
+      map(() => true),
+      catchError((error: unknown) => {
+        if (error instanceof ApiFailure && error.status === 401) return of(false);
+        this.state.error.set(errorMessage(error));
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.restoring = undefined;
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    return this.restoring;
+  }
+
+  async login(username: string, password: string, remember: boolean): Promise<void> {
+    await this.requests.mutate(
+      this.api.login({ username, password }).pipe(
+        tap((user) => {
+          this.data.reset();
+          this.state.user.set(user);
+          this.state.checked.set(true);
+          this.state.error.set('');
+          try {
+            if (remember) localStorage.setItem(storageKeys.username, username.trim());
+            else localStorage.removeItem(storageKeys.username);
+          } catch {
+            /* Optional preference; authentication already succeeded. */
+          }
+        }),
+      ),
+    );
   }
   rememberedUsername(): string {
     try {
@@ -44,23 +77,21 @@ export class AuthService {
       /* Optional preference. */
     }
   }
-  logout(): void {
+  async logout(): Promise<void> {
     try {
-      sessionStorage.removeItem(storageKeys.session);
-    } catch {
-      const message = 'Não foi possível encerrar a sessão. Verifique o armazenamento do navegador.';
-      this.sessionError.set(message);
-      throw new Error(message);
-    }
-    this.current.set(null);
-    this.sessionError.set('');
-  }
-  private readSession(): Session | null {
-    try {
-      const value: unknown = JSON.parse(sessionStorage.getItem(storageKeys.session) ?? 'null');
-      return isSession(value) ? value : null;
-    } catch {
-      return null;
+      await this.requests.mutate(
+        this.api.logout().pipe(
+          tap(() => {
+            this.state.user.set(null);
+            this.state.checked.set(true);
+            this.state.error.set('');
+            this.data.reset();
+          }),
+        ),
+      );
+    } catch (error: unknown) {
+      this.state.error.set(errorMessage(error));
+      throw error;
     }
   }
 }

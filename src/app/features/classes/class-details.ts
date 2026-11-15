@@ -586,7 +586,7 @@ export class ClassDetails {
     this.editingStudent.set(null);
     this.editMessage.set('');
   }
-  saveStudent(): void {
+  async saveStudent(): Promise<void> {
     this.studentName.markAsTouched();
     if (this.studentName.invalid) {
       this.editMessage.set('Informe um nome com até 100 caracteres.');
@@ -596,7 +596,7 @@ export class ClassDetails {
     const student = this.editingStudent();
     if (!group || !student) return;
     try {
-      this.classes.renameStudent(group.id, student.id, this.studentName.value);
+      await this.classes.renameStudent(group.id, student.id, this.studentName.value);
       this.message.set('');
       this.notice.set('Aluno atualizado.');
       this.closeStudentEditor();
@@ -604,7 +604,7 @@ export class ClassDetails {
       this.editMessage.set(errorMessage(error));
     }
   }
-  removeStudent(classId: string, studentId: string): void {
+  async removeStudent(classId: string, studentId: string): Promise<void> {
     const group = this.classes.get(classId);
     const student = this.classes.students.find((item) => item.id === studentId);
     if (
@@ -618,7 +618,7 @@ export class ClassDetails {
     )
       return;
     try {
-      this.classes.removeStudent(classId, studentId);
+      await this.classes.removeStudent(classId, studentId);
       this.message.set('');
       this.notice.set('Matrícula excluída.');
     } catch (error) {
@@ -626,7 +626,7 @@ export class ClassDetails {
       this.message.set(errorMessage(error));
     }
   }
-  toggleStatus(): void {
+  async toggleStatus(): Promise<void> {
     const group = this.group();
     if (
       !group ||
@@ -638,7 +638,7 @@ export class ClassDetails {
     )
       return;
     try {
-      this.classes.save({ ...group, ativa: !group.ativa });
+      await this.classes.save({ ...group, ativa: !group.ativa });
     } catch (error) {
       this.message.set(errorMessage(error));
     }

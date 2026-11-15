@@ -137,7 +137,7 @@ export class LessonEditor implements UnsavedChanges {
     this.step.update((step) => Math.min(2, step + 1));
     this.furthestStep.update((furthest) => Math.max(furthest, this.step()));
   }
-  save(): void {
+  async save(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.isError.set(true);
@@ -145,7 +145,7 @@ export class LessonEditor implements UnsavedChanges {
       return;
     }
     try {
-      const saved = this.lessons.save({ ...this.form.getRawValue(), id: this.recordId() });
+      const saved = await this.lessons.save({ ...this.form.getRawValue(), id: this.recordId() });
       this.recordId.set(saved.id);
       this.form.markAsPristine();
       this.isError.set(false);

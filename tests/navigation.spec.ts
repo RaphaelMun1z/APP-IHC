@@ -164,6 +164,7 @@ test('professor cria turma, gerencia e confirma arquivamento e reativação', as
   await expect(page.getByRole('button', { name: 'Arquivar turma', exact: true })).toBeVisible();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Arquivar turma', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Reativar turma', exact: true })).toBeVisible();
   await page.reload();
   await openFilters(page);
   await expect(page.getByRole('button', { name: 'Reativar turma', exact: true })).toBeVisible();

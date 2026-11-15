@@ -1,0 +1,22 @@
+﻿simulation: ipb-http
+routing: path
+mocks:
+  - name: ipb-contract
+    routeKey: ipb
+    path: .preview/http-mock/config.yaml
+  - name: ipb-unavailable
+    routeKey: unavailable
+    path: .preview/http-mock/config.yaml
+    scenarios:
+      - overrides:
+          conditions:
+            error:
+              status_code: 503
+  - name: ipb-slow
+    routeKey: slow
+    path: .preview/http-mock/config.yaml
+    scenarios:
+      - overrides:
+          conditions:
+            latency:
+              delay_ms: 100

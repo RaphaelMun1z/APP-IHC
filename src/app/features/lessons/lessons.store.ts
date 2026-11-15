@@ -1,63 +1,32 @@
-import { Injectable, computed, inject } from '@angular/core';
-import { StorageService } from '../../core/data/storage.service';
-import { storageKeys } from '../../core/data/storage-keys';
-import { isLessons } from '../../core/data/validators';
-import { AuthService } from '../../core/auth/auth.service';
+﻿import { Injectable, computed, inject } from '@angular/core';
+import { tap } from 'rxjs';
+import { DataState } from '../../core/api/data-state';
+import { RequestState } from '../../core/api/request-state';
 import type { Lesson, LessonInput } from '../../core/models/domain';
-import { lessonTypes } from '../../core/models/domain';
-import { requirePastDate } from '../../shared/utils/dates';
 import { ClassesStore } from '../classes/classes.store';
+import { LessonsApi } from './lessons.api';
 
 @Injectable({ providedIn: 'root' })
 export class LessonsStore {
-  private readonly storage = inject(StorageService);
+  private readonly state = inject(DataState);
   private readonly classes = inject(ClassesStore);
-  private readonly auth = inject(AuthService);
-  private readonly all = this.storage.collection<readonly Lesson[]>(
-    storageKeys.lessons,
-    [],
-    isLessons,
-  );
+  private readonly api = inject(LessonsApi);
+  private readonly requests = inject(RequestState);
   readonly records = computed(() =>
-    this.all().filter((lesson) => this.classes.get(lesson.turmaId)),
+    this.state.lessons().filter((lesson) => this.classes.get(lesson.turmaId)),
   );
-  save(input: LessonInput): Lesson {
-    this.classes.require(input.turmaId, true);
-    const module = this.classes.module(input.cursoId, input.moduloId);
-    if (
-      !module ||
-      !input.licoes.length ||
-      input.licoes.some((lesson) => !module.licoes.includes(lesson))
-    )
-      throw new Error('Selecione o módulo e pelo menos uma lição.');
-    requirePastDate(input.data);
-    if (!Object.hasOwn(lessonTypes, input.tipo)) throw new Error('Selecione o tipo de aula.');
-    if (input.notas.length > 600) throw new Error('As observações devem ter até 600 caracteres.');
-    const previous = input.id ? this.all().find((lesson) => lesson.id === input.id) : undefined;
-    if (input.id && !previous) throw new Error('Registro não encontrado.');
-    if (previous) this.classes.require(previous.turmaId, true);
-    if (
-      this.all().some(
-        (lesson) =>
-          lesson.id !== input.id && lesson.turmaId === input.turmaId && lesson.data === input.data,
-      )
-    )
-      throw new Error(
-        'Já existe uma aula nesta data para a turma. Abra o registro na Auditoria para editá-lo.',
-      );
-    const user = this.auth.user();
-    if (!user) throw new Error('Entre na sua conta para salvar.');
-    const saved: Lesson = {
-      ...input,
-      notas: input.notas.trim(),
-      id: previous?.id ?? crypto.randomUUID(),
-      professorId: previous?.professorId ?? user.id,
-      atualizadoEm: new Date().toISOString(),
-    };
-    this.storage.write(storageKeys.lessons, [
-      ...this.all().filter((lesson) => lesson.id !== saved.id),
-      saved,
-    ]);
-    return saved;
+  save(input: LessonInput): Promise<Lesson> {
+    const { id, turmaId, data, cursoId, moduloId, tipo, licoes, notas } = input;
+    const body = { turmaId, data, cursoId, moduloId, tipo, licoes, notas };
+    return this.requests.mutate(
+      (id ? this.api.update(id, body) : this.api.create(body)).pipe(
+        tap((saved) => {
+          this.state.lessons.update((lessons) => [
+            ...lessons.filter((lesson) => lesson.id !== saved.id),
+            saved,
+          ]);
+        }),
+      ),
+    );
   }
 }

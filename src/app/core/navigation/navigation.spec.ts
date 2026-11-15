@@ -1,3 +1,4 @@
+import { provideMockApi } from '../api/api-test.providers';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -10,11 +11,11 @@ import { safeReturn } from '../auth/auth.guards';
 import { ClassesStore } from '../../features/classes/classes.store';
 
 describe('Navegação contextual e acesso do professor', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     sessionStorage.clear();
     localStorage.clear();
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    TestBed.configureTestingModule({ providers: [provideRouter(routes), provideMockApi()] });
     initializeDemoData(TestBed.inject(StorageService));
   });
   it('preserva URL contextual no retorno de autenticação', async () => {
@@ -24,7 +25,7 @@ describe('Navegação contextual e acesso do professor', () => {
     expect(safeReturn('/turmas/6a/alunos?origem=inicio')).toBe('/turmas/6a/alunos?origem=inicio');
   });
   it('permite ao professor acessar todas as turmas e gerenciar por URL direta', async () => {
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/7a/aulas');
     expect(TestBed.inject(Router).url).toBe('/turmas/7a/aulas');
@@ -33,18 +34,18 @@ describe('Navegação contextual e acesso do professor', () => {
     expect(safeReturn('/turmas/6a/gerenciar')).toBe('/turmas/6a/gerenciar');
   });
   it('professor arquiva turma sem perder a consulta aos registros', async () => {
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/7a/gerenciar');
     expect(TestBed.inject(Router).url).toBe('/turmas/7a/gerenciar');
     const classes = TestBed.inject(ClassesStore);
-    classes.save({ ...classes.require('7a'), ativa: false });
+    await classes.save({ ...classes.require('7a'), ativa: false });
     await harness.navigateByUrl('/turmas/7a/aulas');
     expect(harness.routeNativeElement?.textContent).not.toContain('Registrar aula');
     expect(harness.routeNativeElement?.querySelector('a[title="Abrir registro"]')).not.toBeNull();
   });
   it('confirma descarte antes de trocar abas e mantém o rascunho ao cancelar', async () => {
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/6a/aulas/nova');
     const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('input[type=date]')!;

@@ -7,12 +7,17 @@ import { ClassesStore } from '../../features/classes/classes.store';
 import { AuthService } from '../auth/auth.service';
 import { storageKeys } from './storage-keys';
 import type { AttendanceData } from '../models/domain';
+import { provideMockApi } from '../api/api-test.providers';
+import { BootstrapService } from '../api/bootstrap.service';
+import { firstValueFrom } from 'rxjs';
 
 describe('Persistência local', () => {
   let storage: StorageService;
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideMockApi()] });
     storage = TestBed.inject(StorageService);
   });
   afterEach(() => vi.restoreAllMocks());
@@ -88,10 +93,11 @@ describe('Persistência local', () => {
     expect(storage.errors()['rollback']).toContain('Não foi possível restaurar');
     expect(() => storage.write('three', [])).toThrow('dados locais inválidos');
   });
-  it('exibe o erro e mantém estados derivados puros ao ler uma turma corrompida', () => {
+  it('exibe o erro e mantém estados derivados puros ao ler uma turma corrompida', async () => {
     localStorage.setItem(storageKeys.classes, '{corrompido');
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
-    expect(TestBed.inject(ClassesStore).active()).toHaveLength(2);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await firstValueFrom(TestBed.inject(BootstrapService).load());
+    expect(TestBed.inject(ClassesStore).active()).toHaveLength(4);
     expect(Object.values(storage.errors())[0]).toContain('dados originais foram preservados');
   });
 });

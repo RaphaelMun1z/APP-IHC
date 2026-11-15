@@ -1,3 +1,4 @@
+import { provideMockApi } from '../api/api-test.providers';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -9,13 +10,13 @@ import { StorageService } from '../data/storage.service';
 import { PageNavigation } from './page-navigation';
 
 describe('Hierarquia de páginas', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    TestBed.configureTestingModule({ providers: [provideRouter(routes), provideMockApi()] });
     initializeDemoData(TestBed.inject(StorageService));
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
   });
   it('breadcrumbs seguem a hierarquia, enquanto Voltar preserva a origem', async () => {
     const harness = await RouterTestingHarness.create();

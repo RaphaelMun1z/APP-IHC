@@ -191,7 +191,8 @@ test('falha de gravação mostra erro e preserva os registros anteriores', async
   await openFilters(page);
   const previous = await page.evaluate(() => localStorage.getItem('ipb-aulas-v1'));
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
-  await page.getByLabel('Quem sou eu', { exact: false }).check();
+  await page.getByLabel('Quem sou eu', { exact: false }).press('Space');
+  await expect(page.getByLabel('Quem sou eu', { exact: false })).toBeChecked();
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
   await page.evaluate(() => {
     Storage.prototype.setItem = () => {
@@ -212,6 +213,7 @@ test('dados locais corrompidos são preservados e apresentam erro visível', asy
   await page.evaluate(() => localStorage.setItem('ipb-turmas-v1', '{corrompido'));
   await page.getByRole('button', { name: 'Preencher credenciais de teste' }).click();
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto('/turmas');
   await openFilters(page);
   await expect(page.getByRole('alert')).toContainText('dados originais foram preservados');

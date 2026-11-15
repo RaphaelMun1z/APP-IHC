@@ -25,7 +25,7 @@
       aria-describedby="sidebar-user-name sidebar-user-role"
       [attr.title]="auth.user()?.nome"
     >
-      <span class="turmas-avatar" aria-hidden="true">MO</span>
+      <span class="turmas-avatar" aria-hidden="true">{{ initials() }}</span>
       <span class="account-info"
         ><strong id="sidebar-user-name">{{ auth.user()?.nome }}</strong
         ><small id="sidebar-user-role">Professor</small></span
@@ -45,7 +45,27 @@
 </aside>
 <div id="page-content" tabindex="-1">
   <app-page-header />
-  <div class="page-view"><router-outlet /></div>
+  <div class="page-view">
+    @if (data.ready()) {
+      <router-outlet />
+    } @else {
+      <main class="app-page surface content-scroll">
+        <app-feedback [message]="data.error() || auth.error()" [error]="true" />
+        @if (auth.user()) {
+          <button
+            class="app-button primary"
+            type="button"
+            [disabled]="requests.pending() > 0"
+            (click)="bootstrap.retry()"
+          >
+            Tentar novamente
+          </button>
+        } @else {
+          <a class="app-button primary" routerLink="/login">Entrar novamente</a>
+        }
+      </main>
+    }
+  </div>
 </div>
 @if (storageMessages().length || message()) {
   <div class="storage-errors">
@@ -58,7 +78,9 @@
 <app-modal title="Meu perfil" [open]="profileOpen()" (closed)="profileOpen.set(false)">
   <h3>{{ auth.user()?.nome }}</h3>
   <p>Perfil: Professor</p>
-  <p>Conta demonstrativa. Os registros ficam neste navegador.</p>
+  @if (mockMode) {
+    <p>Conta demonstrativa. Os registros ficam neste navegador.</p>
+  }
   <a class="app-button primary" routerLink="/turmas" (click)="profileOpen.set(false)"
     >Ver minhas turmas</a
   >

@@ -276,6 +276,7 @@ test('turmas fixadas ficam disponíveis na tela inicial e podem ser desafixadas'
 
   await page.goto('/turmas');
   await page.getByRole('button', { name: 'Desafixar 6º ano A' }).click();
+  await expect(page.getByRole('button', { name: 'Fixar 6º ano A', exact: true })).toBeVisible();
   await page.goto('/inicio');
   await expect(page.getByText('Fixe as turmas mais utilizadas')).toBeVisible();
 });

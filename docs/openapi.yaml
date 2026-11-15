@@ -1,0 +1,2467 @@
+openapi: 3.1.0
+info:
+  title: IPB APP 1 — contrato proposto da API
+  version: 1.0.0
+  description:
+    Contratos implementados pelos serviços Angular e pelo interceptor mock. Backend ainda não
+    implementado. Endereçamento REST, cookie de sessão e códigos HTTP são propostas de integração pendentes de
+    validação; regras pedagógicas provêm do frontend atual.
+servers:
+  - url: /api/v1
+    description: Base padrão; substituível por environment.api.baseUrl.
+security:
+  - sessionCookie: []
+tags:
+  - name: Autenticação
+    description: Operações de autenticação.
+  - name: Catálogo
+    description: Operações de catálogo.
+  - name: Alunos
+    description: Operações de alunos.
+  - name: Turmas
+    description: Operações de turmas.
+  - name: Preferências
+    description: Operações de preferências.
+  - name: Aulas
+    description: Operações de aulas.
+  - name: Frequência
+    description: Operações de frequência.
+  - name: Avaliações
+    description: Operações de avaliações.
+paths:
+  /auth/session:
+    post:
+      operationId: login
+      summary: Autenticar e iniciar sessão
+      description:
+        No mock, aceita somente professor/ipb123; trim e lowercase no usuário. Credenciais inválidas
+        retornam 401. Persiste somente o DTO da sessão, nunca senha. Em API real, cookie HttpOnly é proposta
+        pendente de validação.
+      tags:
+        - Autenticação
+      x-authorized-role: public
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              example:
+                id: professor-01
+                nome: Mariana Oliveira
+                perfil: professor
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_CREDENTIALS
+                message: Usuário ou senha incorretos.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: professor
+              password: ipb123
+    get:
+      operationId: getSession
+      summary: Validar/restaurar sessão
+      description: Valida a sessão antes de ativar rotas protegidas. O modo api não confia na sessão local demonstrativa.
+      tags:
+        - Autenticação
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              example:
+                id: professor-01
+                nome: Mariana Oliveira
+                perfil: professor
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+    delete:
+      operationId: logout
+      summary: Encerrar sessão
+      description:
+        Executado somente após confirmação de saída do formulário. Falha preserva a sessão atual (salvo
+        401). Mock usa sessionStorage; falha no acesso é reportada.
+      tags:
+        - Autenticação
+      x-authorized-role: professor
+      responses:
+        '204':
+          description: Sucesso; corpo ausente.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /catalogo:
+    get:
+      operationId: getCatalog
+      summary: Consultar cursos, módulos, professores e critérios
+      description: Catálogo completo, somente leitura. Não há cadastro/edição desses recursos no frontend atual.
+      tags:
+        - Catálogo
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+              example:
+                cursos:
+                  - id: formacao
+                    nome: Formação integral
+                    modulos:
+                      - id: identidade
+                        nome: Módulo 1 · Identidade e valores
+                        licoes:
+                          - Quem sou eu
+                          - Minhas habilidades
+                          - Valores no dia a dia
+                          - Escolhas e consequências
+                professores:
+                  - id: professor-01
+                    nome: Mariana Oliveira
+                criterios:
+                  - id: conhecimento-conteudo
+                    nome: Conhecimento do conteúdo
+                  - id: criatividade
+                    nome: Criatividade
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /alunos:
+    get:
+      operationId: listStudents
+      summary: Consultar alunos para matrículas e histórico
+      description:
+        Retorna todos os alunos, inclusive os que perderam matrícula. Nomes atuais alimentam listas de
+        alunos; avaliações preservam seus nomes históricos.
+      tags:
+        - Alunos
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentList'
+              example:
+                items:
+                  - id: aluno-01
+                    nome: Ana Clara Santos
+                total: 1
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /turmas:
+    get:
+      operationId: listClasses
+      summary: Consultar turmas ativas e arquivadas
+      description:
+        Snapshot completo. O professor atual pode consultar todas as turmas. Busca, filtros, ordenação e
+        paginação da tela são locais.
+      tags:
+        - Turmas
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassList'
+              example:
+                items:
+                  - id: turma-exemplo
+                    nome: 8º ano A
+                    cursoId: formacao
+                    moduloId: identidade
+                    professorId: professor-01
+                    dias:
+                      - 1
+                      - 3
+                    inicio: 08:00
+                    fim: 08:50
+                    ativa: true
+                    alunoIds:
+                      - aluno-01
+                total: 1
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+    post:
+      operationId: createClass
+      summary: Criar turma com matrículas
+      description:
+        Nome após trim obrigatório, até 60 caracteres, único sem distinguir maiúsculas em pt-BR.
+        Curso/módulo e professor devem existir. Pelo menos um dia inteiro de 0 a 6. Início/fim no padrão de
+        dois dígitos HH:mm, fim posterior ao início. Pelo menos um aluno existente. Dias e IDs de alunos são
+        deduplicados. Não há validação de choque de horários, capacidade, faixa etária ou professor
+        proprietário. ativa=false arquiva e preserva histórico. O ID é gerado no servidor.
+      tags:
+        - Turmas
+      x-authorized-role: professor
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolClass'
+              example:
+                id: turma-exemplo
+                nome: 8º ano A
+                cursoId: formacao
+                moduloId: identidade
+                professorId: professor-01
+                dias:
+                  - 1
+                  - 3
+                inicio: 08:00
+                fim: 08:50
+                ativa: true
+                alunoIds:
+                  - aluno-01
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassRequest'
+            example:
+              nome: 8º ano A
+              cursoId: formacao
+              moduloId: identidade
+              professorId: professor-01
+              dias:
+                - 1
+                - 3
+              inicio: 08:00
+              fim: 08:50
+              ativa: true
+              alunoIds:
+                - aluno-01
+    delete:
+      operationId: deleteClasses
+      summary: Excluir turmas e registros associados em lote
+      description:
+        'Lista não vazia; todas as turmas devem existir. Operação atômica: remove turmas, fixações,
+        aulas, frequências e avaliações vinculadas/legadas das turmas. Preserva catálogo global de alunos. O
+        corpo DELETE deve ser suportado pelo backend e proxies.'
+      tags:
+        - Turmas
+      x-authorized-role: professor
+      responses:
+        '204':
+          description: Sucesso; corpo ausente.
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteClassesRequest'
+            example:
+              ids:
+                - turma-exemplo
+  /turmas/{turmaId}:
+    put:
+      operationId: updateClass
+      summary: Substituir dados da turma, arquivar ou reativar
+      description:
+        Nome após trim obrigatório, até 60 caracteres, único sem distinguir maiúsculas em pt-BR.
+        Curso/módulo e professor devem existir. Pelo menos um dia inteiro de 0 a 6. Início/fim no padrão de
+        dois dígitos HH:mm, fim posterior ao início. Pelo menos um aluno existente. Dias e IDs de alunos são
+        deduplicados. Não há validação de choque de horários, capacidade, faixa etária ou professor
+        proprietário. ativa=false arquiva e preserva histórico. Turma deve existir. Permite gestão de turma
+        arquivada. Não remove marcas históricas de matrículas retiradas.
+      tags:
+        - Turmas
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolClass'
+              example:
+                id: turma-exemplo
+                nome: 8º ano A
+                cursoId: formacao
+                moduloId: identidade
+                professorId: professor-01
+                dias:
+                  - 1
+                  - 3
+                inicio: 08:00
+                fim: 08:50
+                ativa: true
+                alunoIds:
+                  - aluno-01
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassRequest'
+            example:
+              nome: 8º ano A
+              cursoId: formacao
+              moduloId: identidade
+              professorId: professor-01
+              dias:
+                - 1
+                - 3
+              inicio: 08:00
+              fim: 08:50
+              ativa: true
+              alunoIds:
+                - aluno-01
+  /turmas/fixadas:
+    get:
+      operationId: getPins
+      summary: Consultar turmas fixadas
+      description:
+        IDs existentes, na ordem de fixação. No mock, preferência compartilhada no navegador como antes.
+        Escopo por usuário no backend depende de validação.
+      tags:
+        - Preferências
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pins'
+              example:
+                turmaIds:
+                  - turma-exemplo
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /turmas/{turmaId}/fixacao:
+    patch:
+      operationId: setPin
+      summary: Fixar ou desafixar turma na tela inicial
+      description:
+        Turma deve existir, mesmo arquivada. Define estado desejado de forma idempotente. Retorna toda a
+        ordem das fixações.
+      tags:
+        - Preferências
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pins'
+              example:
+                turmaIds:
+                  - turma-exemplo
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+            example:
+              fixada: true
+  /turmas/{turmaId}/alunos:
+    post:
+      operationId: enrollStudent
+      summary: Criar aluno e matricular na turma
+      description:
+        Turma ativa e existente. Nome após trim obrigatório com até 100 caracteres. Criação do aluno e
+        matrícula são atômicas. Nomes repetidos são permitidos. Não há outros campos obrigatórios nem
+        reutilização automática de aluno existente neste fluxo.
+      tags:
+        - Alunos
+      x-authorized-role: professor
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+              example:
+                aluno:
+                  id: aluno-01
+                  nome: Ana Clara Santos
+                turma:
+                  id: turma-exemplo
+                  nome: 8º ano A
+                  cursoId: formacao
+                  moduloId: identidade
+                  professorId: professor-01
+                  dias:
+                    - 1
+                    - 3
+                  inicio: 08:00
+                  fim: 08:50
+                  ativa: true
+                  alunoIds:
+                    - aluno-01
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentRequest'
+            example:
+              nome: Ana Clara Santos
+  /turmas/{turmaId}/alunos/{alunoId}:
+    patch:
+      operationId: renameStudent
+      summary: Editar nome do aluno matriculado
+      description:
+        Turma ativa, aluno existente e matriculado nela. Nome após trim de 1 a 100 caracteres. Atualiza o
+        cadastro global e listas das outras turmas. Não reescreve nomes em avaliações históricas já salvas.
+      tags:
+        - Alunos
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+              example:
+                id: aluno-01
+                nome: Ana Clara Santos
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+        - name: alunoId
+          in: path
+          required: true
+          description: ID do aluno matriculado.
+          schema:
+            type: string
+          example: aluno-01
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentRequest'
+            example:
+              nome: Ana Clara Santos
+    delete:
+      operationId: removeEnrollment
+      summary: Excluir somente a matrícula
+      description:
+        Turma ativa e matrícula existente. Não permite remover o último aluno. Preserva cadastro global,
+        matrículas de outras turmas e todas as marcas históricas.
+      tags:
+        - Alunos
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolClass'
+              example:
+                id: turma-exemplo
+                nome: 8º ano A
+                cursoId: formacao
+                moduloId: identidade
+                professorId: professor-01
+                dias:
+                  - 1
+                  - 3
+                inicio: 08:00
+                fim: 08:50
+                ativa: true
+                alunoIds:
+                  - aluno-02
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+        - name: alunoId
+          in: path
+          required: true
+          description: ID do aluno matriculado.
+          schema:
+            type: string
+          example: aluno-01
+  /aulas:
+    get:
+      operationId: listLessons
+      summary: Consultar registros de aulas
+      description:
+        Retorna snapshot de aulas das turmas acessíveis, inclusive arquivadas. turmaId é o único filtro
+        HTTP; demais filtros são aplicados na tela.
+      tags:
+        - Aulas
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonList'
+              example:
+                items:
+                  - id: aula-exemplo
+                    turmaId: turma-exemplo
+                    data: 2026-11-09
+                    cursoId: formacao
+                    moduloId: identidade
+                    tipo: regular
+                    licoes:
+                      - Quem sou eu
+                    notas: Atividade em grupo.
+                    professorId: professor-01
+                    atualizadoEm: 2026-11-09T12:00:00.000Z
+                total: 1
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: query
+          required: false
+          schema:
+            type: string
+          example: turma-exemplo
+          description: Filtra por turma; ID sem registros retorna lista vazia.
+    post:
+      operationId: createLesson
+      summary: Registrar aula
+      description:
+        Turma existente e ativa; na edição, turma anterior também ativa. Data civil válida até hoje.
+        Curso/módulo existente, ao menos uma lição e todas pertencentes ao módulo selecionado. Tipo
+        regular/revisao/PR1/PR2/PR3. notas permite vazio e tem limite de 600 antes de trim. Uma aula por
+        turma/data. Professor original é preservado na edição; atualizadoEm é atualizado. Curso e módulo podem
+        diferir do padrão da turma, conforme seletor existente. O ID e metadados são gerados pelo servidor.
+      tags:
+        - Aulas
+      x-authorized-role: professor
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              example:
+                id: aula-exemplo
+                turmaId: turma-exemplo
+                data: 2026-11-09
+                cursoId: formacao
+                moduloId: identidade
+                tipo: regular
+                licoes:
+                  - Quem sou eu
+                notas: Atividade em grupo.
+                professorId: professor-01
+                atualizadoEm: 2026-11-09T12:00:00.000Z
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonRequest'
+            example:
+              turmaId: turma-exemplo
+              data: 2026-11-09
+              cursoId: formacao
+              moduloId: identidade
+              tipo: regular
+              licoes:
+                - Quem sou eu
+              notas: Atividade em grupo.
+  /aulas/{aulaId}:
+    put:
+      operationId: updateLesson
+      summary: Editar registro de aula
+      description:
+        Turma existente e ativa; na edição, turma anterior também ativa. Data civil válida até hoje.
+        Curso/módulo existente, ao menos uma lição e todas pertencentes ao módulo selecionado. Tipo
+        regular/revisao/PR1/PR2/PR3. notas permite vazio e tem limite de 600 antes de trim. Uma aula por
+        turma/data. Professor original é preservado na edição; atualizadoEm é atualizado. Curso e módulo podem
+        diferir do padrão da turma, conforme seletor existente. Aula deve existir. Avaliação existente
+        permanece vinculada ao ID, mesmo ao editar data/turma.
+      tags:
+        - Aulas
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              example:
+                id: aula-exemplo
+                turmaId: turma-exemplo
+                data: 2026-11-09
+                cursoId: formacao
+                moduloId: identidade
+                tipo: regular
+                licoes:
+                  - Quem sou eu
+                notas: Atividade em grupo.
+                professorId: professor-01
+                atualizadoEm: 2026-11-09T12:00:00.000Z
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: aulaId
+          in: path
+          required: true
+          description: ID da aula.
+          schema:
+            type: string
+          example: aula-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonRequest'
+            example:
+              turmaId: turma-exemplo
+              data: 2026-11-09
+              cursoId: formacao
+              moduloId: identidade
+              tipo: regular
+              licoes:
+                - Quem sou eu
+              notas: Atividade em grupo.
+  /frequencias:
+    get:
+      operationId: listAttendance
+      summary: Consultar chamadas e marcas históricas
+      description:
+        Um item por turma acessível, inclusive com dias={}. Preserva marcas de alunos removidos. Não
+        exige que exista aula para a data da chamada.
+      tags:
+        - Frequência
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceList'
+              example:
+                items:
+                  - turmaId: turma-exemplo
+                    dias:
+                      2026-11-09:
+                        aluno-01: presente
+                total: 1
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /turmas/{turmaId}/frequencias:
+    patch:
+      operationId: saveAttendance
+      summary: Mesclar chamadas alteradas
+      description:
+        Turma existente e ativa. Cada data deve ser válida até hoje. Novas marcas apenas de alunos
+        atualmente matriculados; valores presente/falta/null. Mescla somente datas/alunos enviados; null limpa
+        marca. {} é permitido. Preserva chamadas e alunos omitidos. Edição de chamada passada exige ativação
+        explícita na interface, não um novo campo HTTP. Não valida dias de encontro nem existência de aula.
+      tags:
+        - Frequência
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+              example:
+                turmaId: turma-exemplo
+                dias:
+                  2026-11-09:
+                    aluno-01: presente
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          description: ID da turma.
+          schema:
+            type: string
+          example: turma-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceRequest'
+            example:
+              dias:
+                2026-11-09:
+                  aluno-01: presente
+  /avaliacoes:
+    get:
+      operationId: listAssessments
+      summary: Consultar avaliações por aula e legados sem aula
+      description:
+        Mock migra por turma/data quando há aula correspondente; se falhar, preserva originais e expõe
+        avisoMigracao. Legados sem aula permanecem consultáveis separadamente, sem criar aula fictícia. Não há
+        endpoint de edição direta desses legados.
+      tags:
+        - Avaliações
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessments'
+              example:
+                registros:
+                  - lessonId: aula-exemplo
+                    alunos:
+                      - id: aluno-01
+                        nome: Ana Clara Santos
+                        avaliacoes:
+                          conhecimento-conteudo: ok
+                          criatividade: null
+                    atualizadoEm: 2026-11-09T12:00:00.000Z
+                    professorId: professor-01
+                legadasSemAula: []
+                avisoMigracao: ''
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+  /aulas/{aulaId}/avaliacao:
+    put:
+      operationId: saveAssessment
+      summary: Salvar avaliação observacional da aula
+      description:
+        Aula existente, turma ativa, data até hoje. Deve enviar exatamente todos os alunos atualmente
+        matriculados, sem duplicatas. Chaves de critérios existentes; valores ok/nao-ok/null. Não exige todos
+        os critérios preenchidos. Preserva avaliações de alunos removidos, atualiza professor para usuário
+        atual e timestamp. Remove legado da mesma turma/data ao salvar.
+      tags:
+        - Avaliações
+      x-authorized-role: professor
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+              example:
+                lessonId: aula-exemplo
+                alunos:
+                  - id: aluno-01
+                    nome: Ana Clara Santos
+                    avaliacoes:
+                      conhecimento-conteudo: ok
+                      criatividade: null
+                atualizadoEm: 2026-11-09T12:00:00.000Z
+                professorId: professor-01
+        '400':
+          description: Estrutura JSON inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INVALID_REQUEST
+                message: Formato da requisição inválido.
+        '401':
+          description: Credenciais inválidas ou sessão ausente/expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: UNAUTHENTICATED
+                message: Entre na sua conta para continuar.
+        '403':
+          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: FORBIDDEN
+                message: Você não tem permissão para esta operação.
+        '404':
+          description: Recurso ou matrícula inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Turma não encontrada.
+        '409':
+          description: Conflito de unicidade ou turma arquivada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: CONFLICT
+                message: Já existe uma turma com esse nome.
+        '422':
+          description: Regra de validação do domínio não atendida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: DOMAIN_ERROR
+                message: Informe um nome com até 100 caracteres.
+        '500':
+          description: Erro interno; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+        '503':
+          description: Serviço/armazenamento indisponível; simulável por configuração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: MOCK_FAILURE
+                message: Falha simulada na API.
+      parameters:
+        - name: aulaId
+          in: path
+          required: true
+          description: ID da aula.
+          schema:
+            type: string
+          example: aula-exemplo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+            example:
+              alunos:
+                - id: aluno-01
+                  nome: Ana Clara Santos
+                  avaliacoes:
+                    conhecimento-conteudo: ok
+                    criatividade: null
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: ipb_session
+      description:
+        'Proposta pendente: cookie de sessão HttpOnly, Secure em HTTPS, SameSite conforme origens. O mock
+        usa somente sessionStorage e não emite cookie real.'
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador opaco; não pressupor UUID.
+        nome:
+          type: string
+          description: Nome de exibição.
+      required:
+        - id
+        - nome
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID opaco.
+        nome:
+          type: string
+          description: Nome após trim.
+          minLength: 1
+          maxLength: 100
+      required:
+        - id
+        - nome
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID do usuário.
+        nome:
+          type: string
+          description: Nome do usuário.
+        perfil:
+          type: string
+          const: professor
+      required:
+        - id
+        - nome
+        - perfil
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: 'No mock: professor; trim e comparação sem maiúsculas.'
+        password:
+          type: string
+          description: 'No mock: credencial pública ipb123.'
+      required:
+        - username
+        - password
+    StudentRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          description: Nome após trim deve ter entre 1 e 100 caracteres.
+      required:
+        - nome
+    CourseModule:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID do módulo no curso.
+        nome:
+          type: string
+          description: Nome do módulo.
+        licoes:
+          type: array
+          items:
+            type: string
+            description: Conteúdo selecionável pelo texto.
+      required:
+        - id
+        - nome
+        - licoes
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID do curso.
+        nome:
+          type: string
+          description: Nome do curso.
+        modulos:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseModule'
+      required:
+        - id
+        - nome
+        - modulos
+    Catalog:
+      type: object
+      properties:
+        cursos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+        professores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        criterios:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+      required:
+        - cursos
+        - professores
+        - criterios
+    ClassRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          description: Nome após trim, de 1 a 60 caracteres. Único sem distinguir maiúsculas no locale pt-BR.
+        cursoId:
+          type: string
+          description: Curso existente no catálogo.
+        moduloId:
+          type: string
+          description: Módulo pertencente ao curso.
+        professorId:
+          type: string
+          description: Professor existente no catálogo.
+        dias:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          minItems: 1
+          description: 0 domingo a 6 sábado; duplicatas são removidas.
+        inicio:
+          type: string
+          description: Horário inicial.
+          pattern: ^\d{2}:\d{2}$
+        fim:
+          type: string
+          description: Horário final, posterior ao inicial pela comparação HH:mm.
+          pattern: ^\d{2}:\d{2}$
+        ativa:
+          type: boolean
+          description: Arquivada permite consulta, gestão e exclusão, mas bloqueia gravações pedagógicas e matrículas.
+        alunoIds:
+          type: array
+          items:
+            type: string
+            description: ID de aluno existente.
+          minItems: 1
+          description: Ao menos um aluno. Duplicatas são removidas.
+      required:
+        - nome
+        - cursoId
+        - moduloId
+        - professorId
+        - dias
+        - inicio
+        - fim
+        - ativa
+        - alunoIds
+    SchoolClass:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID gerado pelo servidor; IDs demonstrativos são preservados.
+        nome:
+          type: string
+          description: Nome após trim, de 1 a 60 caracteres. Único sem distinguir maiúsculas no locale pt-BR.
+        cursoId:
+          type: string
+          description: Curso existente no catálogo.
+        moduloId:
+          type: string
+          description: Módulo pertencente ao curso.
+        professorId:
+          type: string
+          description: Professor existente no catálogo.
+        dias:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          minItems: 1
+          description: 0 domingo a 6 sábado; duplicatas são removidas.
+        inicio:
+          type: string
+          description: Horário inicial.
+          pattern: ^\d{2}:\d{2}$
+        fim:
+          type: string
+          description: Horário final, posterior ao inicial pela comparação HH:mm.
+          pattern: ^\d{2}:\d{2}$
+        ativa:
+          type: boolean
+          description: Arquivada permite consulta, gestão e exclusão, mas bloqueia gravações pedagógicas e matrículas.
+        alunoIds:
+          type: array
+          items:
+            type: string
+            description: ID de aluno existente.
+          minItems: 1
+          description: Ao menos um aluno. Duplicatas são removidas.
+      required:
+        - id
+        - nome
+        - cursoId
+        - moduloId
+        - professorId
+        - dias
+        - inicio
+        - fim
+        - ativa
+        - alunoIds
+    ClassList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchoolClass'
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - total
+    StudentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Student'
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - total
+    DeleteClassesRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            description: ID de turma existente.
+          minItems: 1
+      required:
+        - ids
+    Pins:
+      type: object
+      properties:
+        turmaIds:
+          type: array
+          items:
+            type: string
+            description: ID de turma fixada.
+          uniqueItems: true
+          description: Ordem em que foram fixadas.
+      required:
+        - turmaIds
+    PinRequest:
+      type: object
+      properties:
+        fixada:
+          type: boolean
+          description: Estado desejado; operação idempotente.
+      required:
+        - fixada
+    Enrollment:
+      type: object
+      properties:
+        aluno:
+          $ref: '#/components/schemas/Student'
+        turma:
+          $ref: '#/components/schemas/SchoolClass'
+      required:
+        - aluno
+        - turma
+    LessonRequest:
+      type: object
+      properties:
+        turmaId:
+          type: string
+          description: Turma existente e ativa.
+        data:
+          type: string
+          description: Data civil local, sem horário; não pode ser futura em mutações.
+          format: date
+        cursoId:
+          type: string
+          description: Curso do módulo selecionado; não precisa ser o curso padrão da turma.
+        moduloId:
+          type: string
+          description: Módulo válido no curso informado.
+        tipo:
+          type: string
+          enum:
+            - regular
+            - revisao
+            - PR1
+            - PR2
+            - PR3
+        licoes:
+          type: array
+          items:
+            type: string
+            description: Texto de lição do módulo informado.
+          minItems: 1
+        notas:
+          type: string
+          description: Até 600 caracteres antes de trim. Pode ser vazio.
+          maxLength: 600
+      required:
+        - turmaId
+        - data
+        - cursoId
+        - moduloId
+        - tipo
+        - licoes
+        - notas
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID da aula.
+        turmaId:
+          type: string
+          description: Turma existente e ativa.
+        data:
+          type: string
+          description: Data civil local, sem horário; não pode ser futura em mutações.
+          format: date
+        cursoId:
+          type: string
+          description: Curso do módulo selecionado; não precisa ser o curso padrão da turma.
+        moduloId:
+          type: string
+          description: Módulo válido no curso informado.
+        tipo:
+          type: string
+          enum:
+            - regular
+            - revisao
+            - PR1
+            - PR2
+            - PR3
+        licoes:
+          type: array
+          items:
+            type: string
+            description: Texto de lição do módulo informado.
+          minItems: 1
+        notas:
+          type: string
+          description: Até 600 caracteres antes de trim. Pode ser vazio.
+          maxLength: 600
+        atualizadoEm:
+          type: string
+          description: Instante da última gravação; ISO 8601 em novos registros.
+          format: date-time
+        professorId:
+          type: string
+          description: Professor autor da gravação.
+      required:
+        - id
+        - turmaId
+        - data
+        - cursoId
+        - moduloId
+        - tipo
+        - licoes
+        - notas
+        - atualizadoEm
+        - professorId
+    LessonList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - total
+    AttendanceDay:
+      type: object
+      additionalProperties:
+        type:
+          - string
+          - 'null'
+        enum:
+          - presente
+          - falta
+          - null
+      description: Mapa de ID do aluno para presença/falta/null. null limpa a marca.
+    AttendanceDays:
+      type: object
+      propertyNames:
+        format: date
+      additionalProperties:
+        $ref: '#/components/schemas/AttendanceDay'
+    AttendanceRequest:
+      type: object
+      properties:
+        dias:
+          $ref: '#/components/schemas/AttendanceDays'
+      required:
+        - dias
+    Attendance:
+      type: object
+      properties:
+        turmaId:
+          type: string
+          description: ID da turma.
+        dias:
+          $ref: '#/components/schemas/AttendanceDays'
+      required:
+        - turmaId
+        - dias
+    AttendanceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attendance'
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - total
+    StudentAssessment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID do aluno.
+        nome:
+          type: string
+          description: Nome preservado no registro.
+        avaliacoes:
+          type: object
+          additionalProperties:
+            type:
+              - string
+              - 'null'
+            enum:
+              - ok
+              - nao-ok
+              - null
+          description: Chaves de critérios existentes. É permitido omitir critérios; não são exigidos todos.
+      required:
+        - id
+        - nome
+        - avaliacoes
+    AssessmentRequest:
+      type: object
+      properties:
+        alunos:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentAssessment'
+          description: Todos os alunos atualmente matriculados, exatamente uma vez.
+      required:
+        - alunos
+    Assessment:
+      type: object
+      properties:
+        lessonId:
+          type: string
+          description: ID da aula.
+        alunos:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentAssessment'
+        atualizadoEm:
+          type: string
+          description: Instante da última gravação; ISO 8601 em novos registros.
+          format: date-time
+        professorId:
+          type: string
+          description: Professor autor da gravação.
+      required:
+        - lessonId
+        - alunos
+        - atualizadoEm
+        - professorId
+    LegacyAssessment:
+      type: object
+      properties:
+        alunos:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentAssessment'
+        atualizadoEm:
+          type: string
+          description: Instante da última gravação; ISO 8601 em novos registros.
+          format: date-time
+        professorId:
+          type: string
+          description: Professor autor da gravação.
+      required:
+        - alunos
+        - atualizadoEm
+        - professorId
+    UnlinkedAssessment:
+      type: object
+      properties:
+        classId:
+          type: string
+          description: ID da turma.
+        date:
+          type: string
+          description: Data civil local, sem horário; não pode ser futura em mutações.
+          format: date
+        assessment:
+          $ref: '#/components/schemas/LegacyAssessment'
+      required:
+        - classId
+        - date
+        - assessment
+    Assessments:
+      type: object
+      properties:
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assessment'
+        legadasSemAula:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnlinkedAssessment'
+        avisoMigracao:
+          type: string
+          description: Mensagem de falha de migração no mock, ou vazio.
+      required:
+        - registros
+        - legadasSemAula
+        - avisoMigracao
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Código de erro.
+        message:
+          type: string
+          description: Mensagem apresentável ao usuário.
+        details:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Erros por campo, opcionais. O mock atual não emite details.
+      required:
+        - code
+        - message

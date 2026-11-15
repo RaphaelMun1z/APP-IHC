@@ -2,17 +2,29 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import type { CanActivateFn } from '@angular/router';
 import { AuthService } from './auth.service';
-export const authGuard: CanActivateFn = (_, state) =>
-  inject(AuthService).user()
-    ? true
-    : inject(Router).createUrlTree(['/login'], { queryParams: { retorno: state.url } });
+import { BootstrapService } from '../api/bootstrap.service';
+import { catchError, map, of, switchMap } from 'rxjs';
+export const authGuard: CanActivateFn = (_, state) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const bootstrap = inject(BootstrapService);
+  const login = () => router.createUrlTree(['/login'], { queryParams: { retorno: state.url } });
+  return auth.restore().pipe(
+    switchMap((authenticated) =>
+      authenticated
+        ? bootstrap.load().pipe(map(() => (auth.user() ? true : login())))
+        : of(login()),
+    ),
+    catchError(() => of(login())),
+  );
+};
 // canDeactivate runs before this guard, so cancellation keeps the session intact.
-export const loginEntryGuard: CanActivateFn = () => {
+export const loginEntryGuard: CanActivateFn = async () => {
   const router = inject(Router);
   const auth = inject(AuthService);
   if (router.currentNavigation()?.extras.info !== 'logout') return true;
   try {
-    auth.logout();
+    await auth.logout();
     return true;
   } catch {
     return false;

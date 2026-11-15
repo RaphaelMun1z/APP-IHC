@@ -1,3 +1,6 @@
+import { provideMockApi } from '../../core/api/api-test.providers';
+import { BootstrapService } from '../../core/api/bootstrap.service';
+import { firstValueFrom } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AuthService } from '../../core/auth/auth.service';
@@ -9,15 +12,16 @@ import type { AssessmentData, LegacyAssessmentData } from '../../core/models/dom
 import { AssessmentsStore } from './assessments.store';
 
 describe('Vínculo de avaliações às aulas', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideMockApi()] });
     initializeDemoData(TestBed.inject(StorageService));
-    TestBed.inject(AuthService).login('professor', 'ipb123', false);
+    await TestBed.inject(AuthService).login('professor', 'ipb123', false);
   });
 
-  it('migra avaliações com aula correspondente e preserva as que não têm aula', () => {
+  it('migra avaliações com aula correspondente e preserva as que não têm aula', async () => {
     const storage = TestBed.inject(StorageService);
     const legacy = storage.read<LegacyAssessmentData>(
       storageKeys.assessments,
@@ -32,12 +36,9 @@ describe('Vínculo de avaliações às aulas', () => {
       '6a': { ...legacy['6a'], [orphanDate]: orphan },
     });
 
+    await firstValueFrom(TestBed.inject(BootstrapService).load());
     const assessments = TestBed.inject(AssessmentsStore);
-    const migrated = storage.read<AssessmentData>(
-      storageKeys.lessonAssessments,
-      {},
-      isAssessments,
-    );
+    const migrated = storage.read<AssessmentData>(storageKeys.lessonAssessments, {}, isAssessments);
     const remaining = storage.read<LegacyAssessmentData>(
       storageKeys.assessments,
       {},

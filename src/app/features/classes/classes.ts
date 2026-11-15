@@ -158,10 +158,10 @@ export class Classes {
   toggleAll(): void {
     this.selected.set(this.allSelected() ? [] : this.filtered().map((group) => group.id));
   }
-  togglePin(id: string): void {
+  async togglePin(id: string): Promise<void> {
     try {
       const wasPinned = this.store.isPinned(id);
-      this.store.togglePinned(id);
+      await this.store.togglePinned(id);
       this.isError.set(false);
       this.message.set(
         wasPinned ? 'Turma removida da tela inicial.' : 'Turma fixada na tela inicial.',
@@ -171,7 +171,7 @@ export class Classes {
       this.message.set(errorMessage(error));
     }
   }
-  remove(ids: readonly string[]): void {
+  async remove(ids: readonly string[]): Promise<void> {
     if (
       !ids.length ||
       !window.confirm(
@@ -180,7 +180,7 @@ export class Classes {
     )
       return;
     try {
-      this.store.delete(ids);
+      await this.store.delete(ids);
       this.selected.set([]);
       this.isError.set(false);
       this.message.set('Turma(s) excluída(s).');

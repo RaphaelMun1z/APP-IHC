@@ -105,7 +105,7 @@ export class ClassEditor implements UnsavedChanges {
     this.step.update((current) => Math.min(this.steps.length - 1, current + 1));
     this.furthestStep.update((furthest) => Math.max(furthest, this.step()));
   }
-  save(): void {
+  async save(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.message.set('Preencha os dados obrigatórios da turma.');
@@ -128,7 +128,7 @@ export class ClassEditor implements UnsavedChanges {
         !window.confirm('Arquivar esta turma? Os registros serão preservados.')
       )
         return;
-      const saved = this.classes.save({
+      const saved = await this.classes.save({
         ...this.form.getRawValue(),
         id: this.existing?.id ?? '',
         dias: this.days(),

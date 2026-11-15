@@ -104,7 +104,7 @@ export class StudentRegistration implements UnsavedChanges {
     return this.name.dirty && this.name.value.trim().length > 0;
   }
 
-  save(): void {
+  async save(): Promise<void> {
     this.name.markAsTouched();
     if (this.name.invalid) {
       this.isError.set(true);
@@ -120,7 +120,7 @@ export class StudentRegistration implements UnsavedChanges {
     }
 
     try {
-      this.classes.addStudent(group.id, this.name.value);
+      await this.classes.addStudent(group.id, this.name.value);
       this.name.markAsPristine();
       void this.router.navigateByUrl(this.backLink);
     } catch (error: unknown) {
