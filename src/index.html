@@ -2,8 +2,25 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
+    <script>
+      (() => {
+        const route = new URLSearchParams(location.search).get('p');
+        if (!route) return;
+        const queryIndex = route.indexOf('?');
+        const path = queryIndex < 0 ? route : route.slice(0, queryIndex);
+        const query = queryIndex < 0 ? '' : route.slice(queryIndex + 1);
+        const base = document.querySelector('base')?.getAttribute('href') || '/';
+        const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        const normalizedPrefix = prefix === '/' ? '' : prefix;
+        const validPath = normalizedPath === normalizedPrefix || normalizedPath.startsWith(`${normalizedPrefix}/`);
+        if (!validPath) return;
+        const destination = `${normalizedPath}${query ? `?${query}` : ''}${location.hash}`;
+        history.replaceState(null, '', `${base}${destination.slice(normalizedPrefix.length).replace(/^\//, '')}`);
+      })();
+    </script>
     <title>IPB · APP 1</title>
-    <base href="/" />
+    <base href="./" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="assets/ipb_logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

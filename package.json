@@ -9,6 +9,8 @@
     "dev": "ng serve --host 127.0.0.1 --port 4173",
     "start": "npm run dev",
     "build": "ng build",
+    "build:github-pages": "ng build --configuration production --base-href /APP-IHC/ && node scripts/prepare-github-pages.cjs",
+    "deploy:github-pages": "npm run build:github-pages",
     "preview": "node scripts/preview.cjs",
     "test": "ng test --watch=false",
     "test:e2e": "playwright test",

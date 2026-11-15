@@ -1,6 +1,7 @@
 node_modules/
 .angular/
 dist/
+404.html
 out-tsc/
 coverage/
 playwright-report/

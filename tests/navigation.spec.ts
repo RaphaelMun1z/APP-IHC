@@ -135,18 +135,26 @@ test('professor cria turma, gerencia e confirma arquivamento e reativação', as
   await page.getByRole('button', { name: 'Selecionar todos', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar turma' }).click();
   await expect(page).toHaveURL(/\/turmas\/[^/]+\/visao-geral/);
+  const createdClassUrl = page.url();
   await expect(page.getByRole('main')).toContainText('Rafael Santos');
   await page
     .getByRole('navigation', { name: 'Navegação da turma' })
     .getByRole('link', { name: 'Alunos', exact: true })
     .click();
-  await page.getByRole('link', { name: 'Gerenciar matrículas' }).click();
+  const editClassLink = page.getByRole('banner').getByRole('link', {
+    name: 'Editar turma',
+    exact: true,
+  });
+  await editClassLink.click();
+  await expect(editClassLink).toHaveCount(0);
   await expect(page.getByLabel('Nome da turma')).toHaveValue('8º ano Angular');
   await page.getByLabel('Nome da turma').fill('8º ano Angular atualizado');
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
   await page.getByRole('button', { name: 'Salvar turma' }).click();
-  await expect(page.getByRole('main')).toContainText('Matriculado');
+  await expect(page).toHaveURL(/\/turmas$/);
+  await page.goto(createdClassUrl);
+  await expect(page.getByRole('main')).toContainText('matriculados');
   await page
     .getByRole('navigation', { name: 'Navegação da turma' })
     .getByRole('link', { name: 'Visão geral', exact: true })

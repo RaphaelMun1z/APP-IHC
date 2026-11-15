@@ -15,6 +15,12 @@ Abra `http://127.0.0.1:4173`. `npm start` também inicia o desenvolvimento. Para
 
 O acesso continua demonstrativo: existe apenas o perfil `professor`, com acesso a todas as funcionalidades. Credenciais de teste: usuário `professor` e senha pública `ipb123`. A opção de lembrar usuário não grava a senha. Google, cadastro e recuperação mantêm as mensagens explicativas existentes; não há integração externa para esses recursos.
 
+## Publicar no GitHub Pages
+
+O repositório publica automaticamente no GitHub Pages a cada push para `main` pelo workflow `.github/workflows/deploy-github-pages.yml`. Ative **Settings → Pages → Build and deployment → GitHub Actions** na configuração do repositório. O build usa a base `/APP-IHC/`, conforme o nome deste repositório. Para outro nome, ajuste a opção `--base-href` em `build:github-pages` no `package.json`.
+
+O build cria `404.html` junto ao `index.html` e restaura a rota original antes de iniciar o Angular. Assim, abrir, atualizar e compartilhar uma URL interna funciona no GitHub Pages sem mudar as URLs para fragmentos. Para gerar o pacote localmente, use `npm run build:github-pages`; os arquivos ficam em `dist/ipb-app/browser`.
+
 ## Build e verificações
 
 ```sh

@@ -21,6 +21,7 @@ for (const role of ['professor']) {
     await expect(title).toBeVisible();
     await expect(page.getByRole('heading', { name: '6º ano A', exact: true })).toHaveCount(0);
     await expect(editClass).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Gerenciar matrículas' })).toHaveCount(0);
     await expect(
       page.getByRole('navigation', { name: 'Navegação da turma' }).getByRole('link', {
         name: 'Gerenciar turma',
@@ -29,10 +30,22 @@ for (const role of ['professor']) {
     const titleBox = await title.boundingBox();
     const backBox = await back.boundingBox();
     const editClassBox = await editClass.boundingBox();
+    const titleRow = await page.locator('.page-title-row').boundingBox();
+    const classToolbar = await page.locator('.class-tabs-toolbar').boundingBox();
+    const registerLink = page.getByRole('link', { name: 'Cadastrar aluno', exact: true });
+    const registerBox = await registerLink.boundingBox();
     expect(titleBox!.x).toBeGreaterThan(backBox!.x + backBox!.width);
     expect(editClassBox!.x).toBeGreaterThan(titleBox!.x + titleBox!.width);
     expect(
       Math.abs(editClassBox!.y + editClassBox!.height / 2 - (titleBox!.y + titleBox!.height / 2)),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(
+        titleRow!.x +
+          titleRow!.width -
+          (editClassBox!.x + editClassBox!.width) -
+          (classToolbar!.x + classToolbar!.width - (registerBox!.x + registerBox!.width)),
+      ),
     ).toBeLessThan(2);
     await expect(editClass).toHaveCSS('border-radius', '999px');
     await expect(editClass).toHaveCSS('background-color', 'rgb(255, 251, 235)');

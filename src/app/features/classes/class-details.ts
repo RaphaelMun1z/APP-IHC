@@ -61,13 +61,6 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
               singular="aluno"
               plural="alunos"
             />
-            <a
-              appAction="manage_accounts"
-              class="app-button"
-              [routerLink]="['/turmas', group.id, 'gerenciar']"
-              [queryParams]="{ retorno: currentUrl }"
-              >Gerenciar matrículas</a
-            >
             <app-data-table label="Alunos matriculados na turma">
               <table class="students-table">
                 <caption class="sr-only">

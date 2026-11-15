@@ -55,6 +55,9 @@ import { Action } from '../../shared/ui/action';
 })
 export class ClassShell {
   readonly section = signal('');
+  constructor() {
+    this.updateSection();
+  }
   updateSection(): void {
     const segments =
       this.router
