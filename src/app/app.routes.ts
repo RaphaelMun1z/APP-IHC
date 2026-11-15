@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import type { Routes } from '@angular/router';
-import { authGuard, coordinatorGuard, loginEntryGuard } from './core/auth/auth.guards';
+import { authGuard, loginEntryGuard } from './core/auth/auth.guards';
 import { classAccessGuard } from './core/navigation/class-access.guard';
 import { unsavedChangesGuard } from './core/navigation/unsaved-changes';
 
@@ -54,6 +54,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/classes/class-shell').then((m) => m.ClassShell),
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'visao-geral' },
+          {
+            path: 'alunos/novo',
+            data: { section: 'student-registration' },
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/classes/student-registration').then((m) => m.StudentRegistration),
+          },
           ...['visao-geral', 'alunos', 'aulas'].map((section) => ({
             path: section,
             data: { section },
@@ -62,19 +69,43 @@ export const routes: Routes = [
           })),
           {
             path: 'aulas/nova',
+            data: { section: 'aulas' },
             canDeactivate: [unsavedChangesGuard],
             loadComponent: () =>
               import('./features/lessons/lesson-editor').then((m) => m.LessonEditor),
           },
           {
             path: 'aulas/:id/editar',
+            data: { section: 'aulas' },
             canDeactivate: [unsavedChangesGuard],
             loadComponent: () =>
               import('./features/lessons/lesson-editor').then((m) => m.LessonEditor),
           },
           {
             path: 'registros/:id',
-            loadComponent: () => import('./features/history/record-page').then((m) => m.RecordPage),
+            data: { section: 'lesson' },
+            loadComponent: () =>
+              import('./features/lessons/lesson-workspace').then((m) => m.LessonWorkspace),
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                loadComponent: () =>
+                  import('./features/history/record-page').then((m) => m.RecordPage),
+              },
+              {
+                path: 'frequencia',
+                canDeactivate: [unsavedChangesGuard],
+                loadComponent: () =>
+                  import('./features/attendance/attendance').then((m) => m.Attendance),
+              },
+              {
+                path: 'avaliacoes',
+                canDeactivate: [unsavedChangesGuard],
+                loadComponent: () =>
+                  import('./features/assessments/assessments').then((m) => m.Assessments),
+              },
+            ],
           },
           {
             path: 'frequencia',
@@ -89,8 +120,13 @@ export const routes: Routes = [
               import('./features/assessments/assessments').then((m) => m.Assessments),
           },
           {
+            path: 'avaliacoes/:aulaId',
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/assessments/assessments').then((m) => m.Assessments),
+          },
+          {
             path: 'gerenciar',
-            canActivate: [coordinatorGuard],
             canDeactivate: [unsavedChangesGuard],
             loadComponent: () =>
               import('./features/coordination/class-editor').then((m) => m.ClassEditor),
@@ -123,20 +159,28 @@ export const routes: Routes = [
           import('./features/assessments/assessments').then((module) => module.Assessments),
       },
       {
+        path: 'avaliacao/:aulaId',
+        title: 'Avaliação dos alunos | IPB · APP 1',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/assessments/assessments').then((module) => module.Assessments),
+      },
+      {
         path: 'historico',
-        title: 'Histórico | IPB · APP 1',
+        title: 'Auditoria | IPB · APP 1',
         loadComponent: () => import('./features/history/history').then((module) => module.History),
       },
       {
         path: 'coordenacao',
-        canActivate: [coordinatorGuard],
-        title: 'Coordenação pedagógica | IPB · APP 1',
-        loadComponent: () =>
-          import('./features/coordination/coordination').then((module) => module.Coordination),
+        pathMatch: 'full',
+        redirectTo: () => {
+          const router = inject(Router);
+          const queryParams = router.getCurrentNavigation()?.extractedUrl.queryParams;
+          return router.createUrlTree(['/turmas'], { queryParams });
+        },
       },
       {
         path: 'turma-form',
-        canActivate: [coordinatorGuard],
         canDeactivate: [unsavedChangesGuard],
         title: 'Turma | IPB · APP 1',
         loadComponent: () =>

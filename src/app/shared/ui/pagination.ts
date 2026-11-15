@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+export const PAGE_SIZES = [10, 15, 25, 50] as const;
+export const DEFAULT_PAGE_SIZE = 10;
+
 export class TablePage {
   readonly page = signal(1);
-  readonly size = signal(15);
+  readonly size = signal(DEFAULT_PAGE_SIZE);
   constructor(private readonly count: () => number) {}
   readonly current = computed(() =>
     Math.min(this.page(), Math.max(1, Math.ceil(this.count() / this.size()))),
@@ -28,7 +31,7 @@ export class TablePage {
           [ngModel]="size()"
           (ngModelChange)="sizeChange.emit($event)"
         >
-          @for (value of [10, 15, 25, 50]; track value) {
+          @for (value of pageSizes; track value) {
             <option [ngValue]="value">{{ value }}</option>
           }
         </select></label
@@ -76,7 +79,8 @@ export class TablePage {
 export class Pagination {
   readonly total = input.required<number>();
   readonly page = input(1);
-  readonly size = input(15);
+  readonly size = input(DEFAULT_PAGE_SIZE);
+  readonly pageSizes = PAGE_SIZES;
   readonly pageChange = output<number>();
   readonly sizeChange = output<number>();
   readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / this.size())));

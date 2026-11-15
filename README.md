@@ -1,6 +1,6 @@
 # IPB · APP 1
 
-Aplicação pedagógica em Angular para turmas, registro de aulas, frequência, avaliação observacional, histórico e coordenação. A identidade visual original, os assets e os dados locais foram mantidos.
+Aplicação pedagógica em Angular para gestão de turmas, registro de aulas, frequência, avaliação observacional e auditoria. A identidade visual original, os assets e os dados locais foram mantidos.
 
 ## Executar
 
@@ -13,7 +13,7 @@ npm run dev
 
 Abra `http://127.0.0.1:4173`. `npm start` também inicia o desenvolvimento. Para outra porta: `npx ng serve --host 127.0.0.1 --port 4200`.
 
-O acesso continua demonstrativo: usuário `professor` ou `coordenacao`, senha pública de teste `ipb123`. O professor acessa suas turmas; a coordenação gerencia todas. A opção de lembrar usuário não grava a senha. Google, cadastro e recuperação mantêm as mensagens explicativas existentes; não há integração externa para esses recursos.
+O acesso continua demonstrativo: existe apenas o perfil `professor`, com acesso a todas as funcionalidades. Credenciais de teste: usuário `professor` e senha pública `ipb123`. A opção de lembrar usuário não grava a senha. Google, cadastro e recuperação mantêm as mensagens explicativas existentes; não há integração externa para esses recursos.
 
 ## Build e verificações
 
@@ -73,9 +73,9 @@ scripts/              preview local do build
 ## Decisões arquiteturais
 
 - Componentes standalone com `OnPush`, Signals e renderização zoneless padrão do Angular. Os templates usam `@if`, `@for`, `@switch`, bindings e eventos Angular.
-- Cada funcionalidade tem seus componentes, estilos e, quando há regras/dados próprios, um store injetável. A agregação do histórico consulta os stores de aula, frequência e avaliação. O serviço de turmas centraliza autorização e exclusão dos registros associados, sem dependências circulares.
+- Cada funcionalidade tem seus componentes, estilos e, quando há regras/dados próprios, um store injetável. A agregação da auditoria consulta os stores de aula, frequência e avaliação. O serviço de turmas centraliza o acesso às turmas e a exclusão dos registros associados, sem dependências circulares.
 - Contratos usados por várias funcionalidades ficam em `core/models`; o catálogo preserva cursos, módulos, professores, critérios e alunos existentes. Formulários de edição usam Reactive Forms tipados. `computed` calcula estados derivados sem acesso ao armazenamento; `effect` só sincroniza a API nativa do diálogo. `toSignal` acompanha mudanças do formulário sem subscriptions manuais.
-- Angular Router carrega páginas sob demanda. Guards protegem sessão, coordenação e saída de formulários alterados; `beforeunload` cobre recarregamento/fechamento. URLs antigas como `/registro-aula.html?turma=6a` continuam funcionando e preservam os parâmetros. Rotas desconhecidas exibem uma página 404.
+- Angular Router carrega páginas sob demanda. Guards protegem sessão, existência da turma e saída de formulários alterados; `beforeunload` cobre recarregamento/fechamento. URLs antigas como `/registro-aula.html?turma=6a` continuam funcionando e preservam os parâmetros. Rotas desconhecidas exibem uma página 404.
 - SCSS encapsulado mantém os estilos das telas. Tokens centralizam a paleta e os valores globais. Tailwind, Flowbite, scripts de montagem de HTML e arquivos estáticos substituídos foram removidos. Nos celulares, as colunas fixas das tabelas foram ajustadas para permitir acessar as marcações.
 - O serviço de armazenamento fornece sinais somente para leitura e atualiza os stores após gravação bem-sucedida. A interface e as regras pedagógicas ficam separadas da persistência. Uma futura API pode substituir essa camada com contratos explícitos; nenhum backend, endpoint fictício, retry ou biblioteca de estado foi introduzido.
 
@@ -85,7 +85,7 @@ Foram preservadas as chaves `ipb-turmas-v1`, `ipb-aulas-v1`, `ipb-presencas-v1`,
 
 Para continuar usando dados de uma instalação anterior, sirva a aplicação na mesma origem (protocolo, host e porta) e no mesmo perfil do navegador. A migração dos arquivos não copia armazenamento entre origens.
 
-As gravações validam permissões, turma ativa, datas e entradas relevantes. Aulas duplicadas por turma/data são rejeitadas. Arquivar preserva o histórico; excluir remove turma e registros associados. Marcas históricas de alunos removidos da turma permanecem consultáveis. Uma falha em gravação composta tenta restaurar os valores anteriores; uma falha nessa restauração é exibida. Dados inválidos são mantidos no armazenamento e sua sobrescrita é bloqueada, com mensagem visível. Para recuperação, preserve/exporte os valores originais antes de corrigi-los e recarregue a aplicação após a correção.
+As gravações validam a existência e situação da turma, datas e entradas relevantes. Aulas duplicadas por turma/data são rejeitadas. Arquivar preserva o histórico; excluir remove turma e registros associados. Marcas históricas de alunos removidos da turma permanecem consultáveis. Uma falha em gravação composta tenta restaurar os valores anteriores; uma falha nessa restauração é exibida. Dados inválidos são mantidos no armazenamento e sua sobrescrita é bloqueada, com mensagem visível. Para recuperação, preserve/exporte os valores originais antes de corrigi-los e recarregue a aplicação após a correção.
 
 Trata-se de uma demonstração local, sem autenticação em servidor. A credencial pública de teste não representa um segredo. Nenhuma senha é persistida. As fontes Inter e Material Symbols continuam vindo do Google Fonts, como na interface original; requerem rede para sua aparência exata.
 

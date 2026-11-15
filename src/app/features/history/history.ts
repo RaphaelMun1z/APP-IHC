@@ -1,17 +1,14 @@
-import { Pagination } from '../../shared/ui/pagination';
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES, Pagination } from '../../shared/ui/pagination';
 import { ListHeader } from '../../shared/ui/list-header';
 import { DataTable } from '../../shared/ui/data-table';
 import { FilterPanel } from '../../shared/ui/filter-panel';
-import { Action } from '../../shared/ui/action';
 import { navigationUrl } from '../../core/navigation/context';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HistoryStore, filterHistory } from './history.store';
-import type { HistoryRecord } from './history.store';
 import { ClassesStore } from '../classes/classes.store';
 import { Feedback } from '../../shared/ui/feedback';
-import { AuthService } from '../../core/auth/auth.service';
 
 import { formatDate } from '../../shared/utils/dates';
 import { errorMessage } from '../../shared/utils/errors';
@@ -22,25 +19,17 @@ import { errorMessage } from '../../shared/utils/errors';
     ListHeader,
     DataTable,
     FilterPanel,
-    Action,
     FormsModule,
     ReactiveFormsModule,
     Feedback,
-    RouterLink,
   ],
   templateUrl: './history.html',
   styleUrl: './history.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class History {
-  editLink(item: HistoryRecord): string[] {
-    return item.tipo === 'aula'
-      ? ['/turmas', item.turmaId, 'aulas', item.id, 'editar']
-      : ['/turmas', item.turmaId, item.tipo === 'frequencia' ? 'frequencia' : 'avaliacoes'];
-  }
   readonly classes = inject(ClassesStore);
   private readonly store = inject(HistoryStore);
-  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly currentUrl = signal(navigationUrl(this.router));
@@ -51,7 +40,7 @@ export class History {
     inicio: this.params.get('inicio') ?? '',
     fim: this.params.get('fim') ?? '',
     conteudo: this.params.get('conteudo') ?? '',
-    professorId: this.auth.isCoordinator() ? (this.params.get('professor') ?? '') : '',
+    professorId: this.params.get('professor') ?? '',
   });
   readonly applied = signal(this.form.getRawValue());
   readonly filtered = computed(() => {
@@ -67,10 +56,8 @@ export class History {
       return [];
     }
   });
-  readonly pageSize = signal(
-    [10, 15, 25, 50].includes(Number(this.params.get('limite')))
-      ? Number(this.params.get('limite'))
-      : 10,
+  readonly pageSize = signal<number>(
+    PAGE_SIZES.find((size) => size === Number(this.params.get('limite'))) ?? DEFAULT_PAGE_SIZE,
   );
   readonly pageCount = computed(() =>
     Math.max(1, Math.ceil(this.filtered().length / this.pageSize())),
@@ -122,7 +109,7 @@ export class History {
         fim: v.fim || null,
         conteudo: v.conteudo || null,
         professor: v.professorId || null,
-        limite: this.pageSize() !== 10 ? this.pageSize() : null,
+        limite: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
         pagina: this.page() > 1 ? this.page() : null,
       },
     });

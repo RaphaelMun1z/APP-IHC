@@ -2,22 +2,37 @@ import { Action } from '../../shared/ui/action';
 import { ListHeader } from '../../shared/ui/list-header';
 import { PersonAvatar } from '../../shared/ui/person-avatar';
 import { Badge } from '../../shared/ui/badge';
+import { FilterPanel } from '../../shared/ui/filter-panel';
 import { navigationUrl } from '../../core/navigation/context';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
+import {
+  FormBuilder,
+  FormControl,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import type { Student } from '../../core/models/domain';
+import { lessonTypes } from '../../core/models/domain';
 import { HistoryStore } from '../history/history.store';
 import { ClassesStore } from './classes.store';
 import { contextParam } from '../../core/navigation/context';
-import { formatDate } from '../../shared/utils/dates';
+import { formatDate, isDate } from '../../shared/utils/dates';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage } from '../../shared/utils/errors';
 import { AttendanceStore } from '../attendance/attendance.store';
 import { DataTable } from '../../shared/ui/data-table';
 import { Modal } from '../../shared/ui/modal';
+import { Pagination, TablePage } from '../../shared/ui/pagination';
 
 @Component({
   selector: 'app-class-details',
@@ -25,11 +40,14 @@ import { Modal } from '../../shared/ui/modal';
     Action,
     Badge,
     DataTable,
+    FilterPanel,
+    FormsModule,
     ListHeader,
     PersonAvatar,
     RouterLink,
     Feedback,
     Modal,
+    Pagination,
     ReactiveFormsModule,
   ],
   styleUrl: './class-details.scss',
@@ -39,19 +57,17 @@ import { Modal } from '../../shared/ui/modal';
           @case ('alunos') {
             <app-list-header
               title="Alunos matriculados"
-              [count]="group.alunoIds.length"
+              [count]="students().length"
               singular="aluno"
               plural="alunos"
             />
-            @if (auth.isCoordinator()) {
-              <a
-                appAction="manage_accounts"
-                class="app-button"
-                [routerLink]="['/turmas', group.id, 'gerenciar']"
-                [queryParams]="{ retorno: currentUrl }"
-                >Gerenciar matrículas</a
-              >
-            }
+            <a
+              appAction="manage_accounts"
+              class="app-button"
+              [routerLink]="['/turmas', group.id, 'gerenciar']"
+              [queryParams]="{ retorno: currentUrl }"
+              >Gerenciar matrículas</a
+            >
             <app-data-table label="Alunos matriculados na turma">
               <table class="students-table">
                 <caption class="sr-only">
@@ -66,7 +82,7 @@ import { Modal } from '../../shared/ui/modal';
                   </tr>
                 </thead>
                 <tbody>
-                  @for (student of classes.roster(group.id); track student.id) {
+                  @for (student of visibleStudents(); track student.id) {
                     <tr>
                       <th scope="row">
                         <span class="person-name"
@@ -119,55 +135,155 @@ import { Modal } from '../../shared/ui/modal';
                 </tbody>
               </table>
             </app-data-table>
+            <app-pagination
+              [total]="students().length"
+              [page]="studentPaging.current()"
+              [size]="studentPaging.size()"
+              (pageChange)="studentPaging.page.set($event)"
+              (sizeChange)="studentPaging.resize($event)"
+            />
           }
           @case ('aulas') {
+            <app-filter-panel
+              (applyFilters)="applyLessonFilters()"
+              [chips]="lessonFilterChips()"
+              [activeCount]="lessonFilterChips().length"
+              [searchable]="true"
+              (removeFilter)="removeLessonFilter($event)"
+              (clearFilters)="clearLessonFilters()"
+            >
+              <form filter-search class="filter-search-form" (ngSubmit)="applyLessonFilters()">
+                <label class="sr-only" for="lesson-search">Conteúdo da aula</label>
+                <input
+                  id="lesson-search"
+                  name="conteudo"
+                  type="search"
+                  placeholder="Buscar no conteúdo das aulas"
+                  [ngModel]="lessonFilterForm.controls.conteudo.value"
+                  (ngModelChange)="lessonFilterForm.controls.conteudo.setValue($event)"
+                />
+                <button type="submit" title="Buscar" aria-label="Buscar">
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                </button>
+              </form>
+              <form
+                class="filter-bar aulas-filters"
+                [formGroup]="lessonFilterForm"
+                (ngSubmit)="applyLessonFilters()"
+              >
+                <label
+                  >Tipo de aula<select formControlName="tipo">
+                    <option value="">Todos os tipos</option>
+                    @for (type of lessonTypeOptions; track type[0]) {
+                      <option [value]="type[0]">{{ type[1] }}</option>
+                    }
+                  </select></label
+                >
+                <label>Data inicial<input type="date" formControlName="inicio" /></label
+                ><label>Data final<input type="date" formControlName="fim" /></label>
+              </form>
+            </app-filter-panel>
             <app-list-header
               title="Aulas registradas"
-              [count]="lessons().length"
+              [count]="filteredLessons().length"
               singular="aula"
               plural="aulas"
             />
-            @if (group.ativa) {
-              <a
-                appAction="add"
-                class="app-button primary"
-                [routerLink]="['/turmas', group.id, 'aulas', 'nova']"
-                [queryParams]="{ retorno: currentUrl }"
-                >Registrar aula</a
-              >
-            }
-            <ul class="context-list">
-              @for (item of lessons(); track item.id) {
-                <li>
-                  <div>
-                    <strong>{{ formatDate(item.data) }}</strong>
-                    <p>{{ item.resumo }}</p>
-                  </div>
-                  <div class="row-actions">
-                    <a
-                      appAction="open_in_new"
-                      class="icon-button"
-                      title="Abrir registro"
-                      [attr.aria-label]="'Abrir registro de ' + formatDate(item.data)"
-                      [routerLink]="['/turmas', group.id, 'registros', item.id]"
-                      [queryParams]="{ retorno: currentUrl }"
-                    ></a>
-                    @if (group.ativa) {
-                      <a
-                        appAction="edit"
-                        class="icon-button"
-                        title="Editar aula"
-                        [attr.aria-label]="'Editar aula de ' + formatDate(item.data)"
-                        [routerLink]="['/turmas', group.id, 'aulas', item.id, 'editar']"
-                        [queryParams]="{ retorno: currentUrl }"
-                      ></a>
-                    }
-                  </div>
-                </li>
-              } @empty {
-                <li>Nenhuma aula registrada nesta turma.</li>
-              }
-            </ul>
+            <app-data-table label="Aulas registradas na turma">
+              <table class="lessons-table">
+                <caption class="sr-only">
+                  Data, tipo, conteúdo e ações das aulas registradas
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Data</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Conteúdo</th>
+                    <th scope="col" class="actions-cell">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of visibleLessons(); track item.id) {
+                    <tr>
+                      <td>{{ formatDate(item.data) }}</td>
+                      <td>
+                        @if (item.tipo === 'aula') {
+                          <span
+                            class="table-badge lesson-type-badge"
+                            [attr.data-lesson-type]="item.registro.tipo"
+                            >{{ lessonTypes[item.registro.tipo] }}</span
+                          >
+                        }
+                      </td>
+                      <td>{{ item.resumo }}</td>
+                      <td class="actions-cell">
+                        <div class="row-actions">
+                          <a
+                            appAction="open_in_new"
+                            class="icon-button"
+                            title="Abrir registro"
+                            [attr.aria-label]="'Abrir registro de ' + formatDate(item.data)"
+                            [routerLink]="['/turmas', group.id, 'registros', item.id]"
+                            [queryParams]="{ retorno: currentUrl }"
+                          ></a>
+                          @if (group.ativa) {
+                            <a
+                              appAction="edit"
+                              class="icon-button"
+                              title="Editar aula"
+                              [attr.aria-label]="'Editar aula de ' + formatDate(item.data)"
+                              [routerLink]="['/turmas', group.id, 'aulas', item.id, 'editar']"
+                              [queryParams]="{ retorno: currentUrl }"
+                            ></a>
+                            <a
+                              appAction="event_available"
+                              class="icon-button"
+                              title="Realizar chamada"
+                              [attr.aria-label]="'Realizar chamada de ' + formatDate(item.data)"
+                              [routerLink]="[
+                                '/turmas',
+                                group.id,
+                                'registros',
+                                item.id,
+                                'frequencia',
+                              ]"
+                              [queryParams]="{ data: item.data, retorno: currentUrl }"
+                            ></a>
+                            <a
+                              appAction="fact_check"
+                              class="icon-button"
+                              title="Avaliar alunos"
+                              [attr.aria-label]="
+                                'Avaliar alunos da aula de ' + formatDate(item.data)
+                              "
+                              [routerLink]="[
+                                '/turmas',
+                                group.id,
+                                'registros',
+                                item.id,
+                                'avaliacoes',
+                              ]"
+                              [queryParams]="{ retorno: currentUrl }"
+                            ></a>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="app-empty">Nenhuma aula registrada nesta turma.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </app-data-table>
+            <app-pagination
+              [total]="filteredLessons().length"
+              [page]="lessonPaging.current()"
+              [size]="lessonPaging.size()"
+              (pageChange)="lessonPaging.page.set($event)"
+              (sizeChange)="lessonPaging.resize($event)"
+            />
           }
           @default {
             <section class="overview-grid" aria-label="Informações da turma">
@@ -223,16 +339,14 @@ import { Modal } from '../../shared/ui/modal';
                     group.ativa ? 'Ativa' : 'Arquivada'
                   }}</app-badge>
                 </p>
-                @if (auth.isCoordinator()) {
-                  <button
-                    [appAction]="group.ativa ? 'archive' : 'unarchive'"
-                    class="overview-text-action"
-                    type="button"
-                    (click)="toggleStatus()"
-                  >
-                    {{ group.ativa ? 'Arquivar turma' : 'Reativar turma' }}
-                  </button>
-                }
+                <button
+                  [appAction]="group.ativa ? 'archive' : 'unarchive'"
+                  class="overview-text-action"
+                  type="button"
+                  (click)="toggleStatus()"
+                >
+                  {{ group.ativa ? 'Arquivar turma' : 'Reativar turma' }}
+                </button>
               </article>
               <article class="overview-card overview-actions-card">
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
@@ -265,14 +379,12 @@ import { Modal } from '../../shared/ui/modal';
                     ><span class="material-symbols-outlined" aria-hidden="true">fact_check</span
                     >Avaliações</a
                   >
-                  @if (auth.isCoordinator()) {
-                    <a
-                      [routerLink]="['/turmas', group.id, 'gerenciar']"
-                      [queryParams]="{ retorno: currentUrl }"
-                      ><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar
-                      turma</a
-                    >
-                  }
+                  <a
+                    [routerLink]="['/turmas', group.id, 'gerenciar']"
+                    [queryParams]="{ retorno: currentUrl }"
+                    ><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar
+                    turma</a
+                  >
                 </nav>
               </article>
             </section>
@@ -319,11 +431,19 @@ import { Modal } from '../../shared/ui/modal';
 })
 export class ClassDetails {
   readonly classes = inject(ClassesStore);
-  readonly auth = inject(AuthService);
+  readonly lessonTypes = lessonTypes;
   private readonly attendance = inject(AttendanceStore);
   private readonly history = inject(HistoryStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+  readonly lessonFilterForm = inject(FormBuilder).nonNullable.group({
+    ...this.initialLessonFilters(),
+  });
+  readonly appliedLessonFilters = signal(this.lessonFilterForm.getRawValue());
+  readonly lessonTypeOptions = Object.entries(lessonTypes);
   private readonly parentParams = toSignal(this.route.parent!.paramMap, {
     initialValue: this.route.parent!.snapshot.paramMap,
   });
@@ -332,12 +452,54 @@ export class ClassDetails {
       this.parentParams().get('turma') ?? contextParam(this.route.snapshot, 'turma') ?? '',
     ),
   );
+  readonly students = computed(() => {
+    const group = this.group();
+    return group ? this.classes.roster(group.id) : [];
+  });
+  readonly studentPaging = new TablePage(() => this.students().length);
+  readonly visibleStudents = computed(() => this.studentPaging.slice(this.students()));
   readonly section = this.route.snapshot.data['section'] as string;
   readonly lessons = computed(() =>
     this.history
       .records()
       .filter((item) => item.turmaId === this.group()?.id && item.tipo === 'aula'),
   );
+  readonly filteredLessons = computed(() => {
+    const filters = this.appliedLessonFilters();
+    const query = filters.conteudo.trim().toLocaleLowerCase('pt-BR');
+    return this.lessons().filter(
+      (item) =>
+        (!filters.tipo || (item.tipo === 'aula' && item.registro.tipo === filters.tipo)) &&
+        (!filters.inicio || item.data >= filters.inicio) &&
+        (!filters.fim || item.data <= filters.fim) &&
+        (!query || `${item.titulo} ${item.resumo}`.toLocaleLowerCase('pt-BR').includes(query)),
+    );
+  });
+  readonly lessonPaging = new TablePage(() => this.filteredLessons().length);
+  readonly visibleLessons = computed(() => this.lessonPaging.slice(this.filteredLessons()));
+  readonly lessonFilterChips = computed(() => {
+    const filters = this.appliedLessonFilters();
+    return [
+      ...(filters.tipo
+        ? [
+            {
+              key: 'tipo',
+              label: 'Tipo',
+              value:
+                Object.entries(lessonTypes).find(([type]) => type === filters.tipo)?.[1] ??
+                filters.tipo,
+            },
+          ]
+        : []),
+      ...(filters.inicio
+        ? [{ key: 'inicio', label: 'Desde', value: formatDate(filters.inicio) }]
+        : []),
+      ...(filters.fim ? [{ key: 'fim', label: 'Até', value: formatDate(filters.fim) }] : []),
+      ...(filters.conteudo
+        ? [{ key: 'conteudo', label: 'Conteúdo', value: filters.conteudo }]
+        : []),
+    ];
+  });
   readonly teacher = computed(
     () => this.classes.teachers.find((item) => item.id === this.group()?.professorId)?.nome,
   );
@@ -346,7 +508,9 @@ export class ClassDetails {
       (day) => day[studentId] === 'falta',
     ).length;
   }
-  readonly currentUrl = navigationUrl(this.router);
+  get currentUrl(): string {
+    return navigationUrl(this.router);
+  }
   private readonly weekdays = [
     'domingo',
     'segunda-feira',
@@ -369,6 +533,57 @@ export class ClassDetails {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(100), Validators.pattern(/\S/)],
   });
+  constructor() {
+    effect(() => {
+      const filters = this.initialLessonFilters(this.queryParams());
+      this.lessonFilterForm.setValue(filters, { emitEvent: false });
+      this.appliedLessonFilters.set(filters);
+    });
+  }
+  private initialLessonFilters(params = this.route.snapshot.queryParamMap) {
+    const type = params.get('tipo') ?? '';
+    return {
+      tipo: Object.hasOwn(lessonTypes, type) ? type : '',
+      inicio: this.validFilterDate(params.get('inicio')),
+      fim: this.validFilterDate(params.get('fim')),
+      conteudo: params.get('conteudo') ?? '',
+    };
+  }
+  private validFilterDate(value: string | null): string {
+    return value && isDate(value) ? value : '';
+  }
+  applyLessonFilters(): void {
+    const filters = this.lessonFilterForm.getRawValue();
+    if (filters.inicio && filters.fim && filters.inicio > filters.fim) {
+      this.message.set('A data inicial deve ser anterior ou igual à data final.');
+      return;
+    }
+    this.appliedLessonFilters.set(filters);
+    this.lessonPaging.page.set(1);
+    this.message.set('');
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        tipo: filters.tipo || null,
+        inicio: filters.inicio || null,
+        fim: filters.fim || null,
+        conteudo: filters.conteudo || null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+  clearLessonFilters(): void {
+    this.lessonFilterForm.reset({ tipo: '', inicio: '', fim: '', conteudo: '' });
+    this.applyLessonFilters();
+  }
+  removeLessonFilter(key: string): void {
+    if (key === 'tipo') this.lessonFilterForm.controls.tipo.setValue('');
+    else if (key === 'inicio') this.lessonFilterForm.controls.inicio.setValue('');
+    else if (key === 'fim') this.lessonFilterForm.controls.fim.setValue('');
+    else if (key === 'conteudo') this.lessonFilterForm.controls.conteudo.setValue('');
+    this.applyLessonFilters();
+  }
   editStudent(student: Student): void {
     this.studentName.reset(student.nome);
     this.editMessage.set('');

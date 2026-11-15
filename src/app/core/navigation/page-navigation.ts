@@ -4,7 +4,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { ClassesStore } from '../../features/classes/classes.store';
 import { HistoryStore } from '../../features/history/history.store';
-import { AuthService } from '../auth/auth.service';
 import { navigationUrl } from './context';
 import { safeReturn } from '../auth/auth.guards';
 import { formatDate } from '../../shared/utils/dates';
@@ -25,7 +24,6 @@ export class PageNavigation {
   private readonly router = inject(Router);
   private readonly classes = inject(ClassesStore);
   private readonly history = inject(HistoryStore);
-  private readonly auth = inject(AuthService);
   readonly url = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -40,8 +38,7 @@ export class PageNavigation {
     const query = tree.queryParamMap;
     const home: BreadcrumbItem = { label: 'Início', url: '/inicio' };
     const classes: BreadcrumbItem = { label: 'Turmas', url: '/turmas' };
-    const history: BreadcrumbItem = { label: 'Histórico', url: '/historico' };
-    const coordination: BreadcrumbItem = { label: 'Coordenação', url: '/coordenacao' };
+    const audit: BreadcrumbItem = { label: 'Auditoria', url: '/historico' };
     const record = this.history
       .records()
       .find(
@@ -73,8 +70,8 @@ export class PageNavigation {
     if (contextual) {
       context = undefined;
       const section = segments[2] ?? 'visao-geral';
-      title = group?.nome ?? 'Turma indisponível';
       parent = '/turmas';
+      const lessonSection = section === 'registros' ? segments[4] : undefined;
       const labels: Record<string, string> = {
         alunos: 'Alunos',
         aulas: 'Aulas',
@@ -90,8 +87,14 @@ export class PageNavigation {
             classUrl + (record.tipo === 'frequencia' ? '/frequencia' : '/avaliacoes'),
           );
         title = recordLabel;
-        add(title, this.url());
-        parent = crumbs.at(-2)!.url;
+        add(title, classUrl + '/registros/' + encodeURIComponent(segments[3] ?? ''));
+        if (lessonSection && labels[lessonSection]) {
+          title = labels[lessonSection];
+          add(title, this.url());
+          parent = classUrl + '/registros/' + encodeURIComponent(segments[3] ?? '');
+        } else {
+          parent = crumbs.at(-2)!.url;
+        }
       } else if (section !== 'visao-geral') {
         title = labels[section] ?? 'Página não encontrada';
         add(title, classUrl + '/' + section);
@@ -104,7 +107,7 @@ export class PageNavigation {
       }
       const subpage =
         section === 'registros'
-          ? recordLabel
+          ? `${recordLabel}${lessonSection && labels[lessonSection] ? ` · ${labels[lessonSection]}` : ''}`
           : section === 'visao-geral'
             ? 'Visão geral'
             : section === 'aulas' && segments[3]
@@ -117,24 +120,21 @@ export class PageNavigation {
       title = 'Minhas turmas';
       add('Turmas', '/turmas');
     } else if (root === 'historico') {
-      title = 'Histórico';
-      crumbs.push(history);
+      title = 'Auditoria';
+      crumbs.push(audit);
       if (segments[1]) {
         title = recordLabel;
         add(title, this.url());
         parent = '/historico';
       }
-    } else if (root === 'coordenacao') {
-      title = 'Coordenação pedagógica';
-      crumbs.push(coordination);
     } else if (root === 'turma-form') {
       title = classId ? 'Editar turma' : 'Nova turma';
       if (group) {
         crumbs.push(classes, groupCrumb);
         parent = groupCrumb.url;
       } else {
-        crumbs.push(coordination);
-        parent = '/coordenacao';
+        crumbs.push(classes);
+        parent = '/turmas';
       }
       add(title, this.url());
     } else if (['registro-aula', 'presencas', 'avaliacao'].includes(root)) {
@@ -156,7 +156,7 @@ export class PageNavigation {
   });
   readonly back = computed<UrlTree>(() => {
     const raw = this.router.parseUrl(this.url()).queryParamMap.get('retorno');
-    const candidate = safeReturn(raw, this.auth.isCoordinator());
+    const candidate = safeReturn(raw);
     return this.router.parseUrl(
       raw && (candidate !== '/inicio' || raw === '/inicio') && candidate !== this.url()
         ? candidate

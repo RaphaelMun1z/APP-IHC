@@ -1,46 +1,166 @@
 <main class="app-page avaliacao-page" [appUnsavedChanges]="dirty()">
-  <app-filter-panel
-    (applyFilters)="load()"
-    [chips]="chips()"
-    [activeCount]="chips().length"
-    [context]="formatDate(applied().data)"
-    (removeFilter)="removeFilter($event)"
-    (clearFilters)="resetFilters()"
-  >
-    <div class="filter-bar avaliacao-filters" [formGroup]="form">
-      <label
-        >Turma<select formControlName="turmaId" (change)="load()">
-          @for (group of classes.accessible(); track group.id) {
-            <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
-              {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
-            </option>
-          }
-        </select></label
-      >
-      <label
-        >Data da avaliação<input type="date" formControlName="data" [max]="today" (change)="load()"
-      /></label>
-    </div>
-  </app-filter-panel>
-  <section class="surface data-panel avaliacao-panel" aria-label="Avaliação dos alunos">
-    <app-list-header
-      title="Avaliação dos alunos"
-      [count]="rows().length"
-      singular="aluno"
-      plural="alunos"
-    />
-    <app-feedback [message]="message()" [error]="isError()" />
-    <div class="avaliacao-legend">
-      <span><i class="evaluation-dot ok">✓</i>Atendeu ao critério</span
-      ><span><i class="evaluation-dot no">×</i>Precisa desenvolver</span
-      ><span><i class="evaluation-dot pending">—</i>Sem avaliação</span>
-    </div>
-    @if (group()) {
+  @if (!selectedLesson()) {
+    <app-filter-panel
+      (applyFilters)="load()"
+      [chips]="chips()"
+      [activeCount]="chips().length"
+      (removeFilter)="removeFilter($event)"
+      (clearFilters)="resetFilters()"
+    >
+      <form class="filter-bar avaliacao-filters" [formGroup]="form" (ngSubmit)="load()">
+        @if (!fixedClass) {
+          <label
+            >Turma<select formControlName="turmaId">
+              @for (group of classes.accessible(); track group.id) {
+                <option [value]="group.id">
+                  {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+                </option>
+              }
+            </select></label
+          >
+        }
+      </form>
+    </app-filter-panel>
+    <section class="surface data-panel avaliacao-panel" aria-label="Aulas para avaliação">
+      <app-list-header
+        title="Aulas registradas"
+        [count]="listLessons().length"
+        singular="aula"
+        plural="aulas"
+      />
+      <app-feedback [message]="store.migrationMessage()" [error]="true" />
+      <app-feedback [message]="message()" [error]="isError()" />
+      <app-data-table label="Aulas disponíveis para avaliação">
+        <table class="avaliacao-lessons-table">
+          <caption class="sr-only">
+            Aulas e avaliações vinculadas
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              @if (!fixedClass) {
+                <th scope="col">Turma</th>
+              }
+              <th scope="col">Conteúdo</th>
+              <th scope="col">Avaliação</th>
+              <th scope="col" class="actions-cell">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lesson of visibleLessons(); track lesson.id) {
+              <tr>
+                <td>{{ formatDate(lesson.data) }}</td>
+                @if (!fixedClass) {
+                  <td>{{ classes.get(lesson.turmaId)?.nome }}</td>
+                }
+                <td>{{ lesson.licoes.join(' · ') }}</td>
+                <td>
+                  @if (store.records()[lesson.id]) {
+                    <span class="table-badge" data-tone="success">Registrada</span>
+                  } @else {
+                    <span class="table-badge">Pendente</span>
+                  }
+                </td>
+                <td class="actions-cell">
+                  <a
+                    appAction="fact_check"
+                    class="icon-button"
+                    title="Avaliar alunos"
+                    [attr.aria-label]="'Avaliar alunos da aula de ' + formatDate(lesson.data)"
+                    [routerLink]="['/turmas', lesson.turmaId, 'registros', lesson.id, 'avaliacoes']"
+                    [queryParams]="{ retorno: currentUrl }"
+                  ></a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="fixedClass ? 4 : 5" class="app-empty">
+                  Nenhuma aula disponível para avaliação.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-data-table>
+      <app-pagination
+        [total]="listLessons().length"
+        [page]="lessonPaging.current()"
+        [size]="lessonPaging.size()"
+        (pageChange)="lessonPaging.page.set($event)"
+        (sizeChange)="lessonPaging.resize($event)"
+      />
+    </section>
+    @if (unlinkedLegacy().length) {
+      <section class="surface legacy-assessments" aria-label="Avaliações antigas sem aula">
+        <h2>Avaliações antigas sem aula correspondente</h2>
+        <p>
+          Os registros foram preservados. Para vinculá-los, registre uma aula na mesma turma e data.
+        </p>
+        <app-data-table label="Avaliações antigas pendentes de associação">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Turma</th>
+                <th scope="col">Data</th>
+                <th scope="col" class="actions-cell">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of visibleLegacy(); track item.classId + item.date) {
+                <tr>
+                  <td>{{ classes.get(item.classId)?.nome ?? 'Turma indisponível' }}</td>
+                  <td>{{ formatDate(item.date) }}</td>
+                  <td class="actions-cell">
+                    @if (classes.get(item.classId)?.ativa) {
+                      <a
+                        appAction="add"
+                        class="app-button"
+                        [routerLink]="['/turmas', item.classId, 'aulas', 'nova']"
+                        [queryParams]="{ data: item.date, retorno: currentUrl }"
+                        >Registrar aula nessa data</a
+                      >
+                    } @else {
+                      <span>Turma arquivada</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-data-table>
+        <app-pagination
+          [total]="unlinkedLegacy().length"
+          [page]="legacyPaging.current()"
+          [size]="legacyPaging.size()"
+          (pageChange)="legacyPaging.page.set($event)"
+          (sizeChange)="legacyPaging.resize($event)"
+        />
+      </section>
+    }
+  } @else if (selectedLesson(); as lesson) {
+    <section class="surface data-panel avaliacao-panel" aria-label="Avaliação da aula">
+      <app-list-header
+        title="Avaliação da aula"
+        [count]="rows().length"
+        singular="aluno"
+        plural="alunos"
+      />
+      <app-feedback [message]="store.migrationMessage()" [error]="true" />
+      <app-feedback [message]="message()" [error]="isError()" />
+      <div class="avaliacao-legend">
+        <span><i class="evaluation-dot ok">✓</i>Atendeu ao critério</span
+        ><span><i class="evaluation-dot no">×</i>Precisa desenvolver</span
+        ><span><i class="evaluation-dot pending">—</i>Sem avaliação</span>
+      </div>
       <app-data-table class="avaliacao-table-scroll" label="Tabela de avaliação dos alunos">
         <table class="avaliacao-table">
           <caption class="sr-only">
-            Avaliação em dez critérios. Ative cada marcação para alternar entre atendeu, precisa
-            desenvolver e sem avaliação.
+            Avaliação da aula de
+            {{
+              formatDate(lesson.data)
+            }}
+            em dez critérios. Ative cada marcação para alternar entre atendeu, precisa desenvolver e
+            sem avaliação.
           </caption>
           <thead>
             <tr>
@@ -89,7 +209,7 @@
               </tr>
             } @empty {
               <tr>
-                <td>Esta turma não tem alunos.</td>
+                <td colspan="11" class="app-empty">Esta aula não tem alunos disponíveis.</td>
               </tr>
             }
           </tbody>
@@ -102,15 +222,15 @@
         (pageChange)="paging.page.set($event)"
         (sizeChange)="paging.resize($event)"
       />
-      <footer class="avaliacao-footer">
-        @if (group()?.ativa) {
-          <button appAction="save" type="button" [disabled]="!dirty()" (click)="save()">
-            Salvar avaliação
-          </button>
-        }
-      </footer>
-    } @else {
-      <p class="app-empty">Nenhuma turma disponível para este perfil.</p>
-    }
-  </section>
+      @if (group()?.ativa && dirty()) {
+        <footer class="avaliacao-footer">
+          <button appAction="save" type="button" (click)="save()">Salvar alterações</button>
+        </footer>
+      }
+    </section>
+  } @else {
+    <p class="app-empty" role="status">
+      A aula selecionada não está disponível. Escolha uma aula para avaliar.
+    </p>
+  }
 </main>

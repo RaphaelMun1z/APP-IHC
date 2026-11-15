@@ -11,10 +11,11 @@ import { ClassesStore } from '../classes/classes.store';
 import { criteria } from '../../core/data/catalog';
 import { lessonTypes } from '../../core/models/domain';
 import { formatDate } from '../../shared/utils/dates';
+import { LessonTabs } from '../lessons/lesson-tabs';
 @Component({
   selector: 'app-record-details',
   host: { '[class.tabular]': "record().tipo !== 'aula'" },
-  imports: [Pagination, ListHeader, DataTable, PersonAvatar, Badge, Action, RouterLink],
+  imports: [Pagination, ListHeader, DataTable, PersonAvatar, Badge, Action, RouterLink, LessonTabs],
   templateUrl: './record-details.html',
   styleUrl: './record-details.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +23,7 @@ import { formatDate } from '../../shared/utils/dates';
 export class RecordDetails {
   readonly returnUrl = input('/historico');
   readonly record = input.required<HistoryRecord>();
+  readonly showLessonTabs = input(true);
   readonly classes = inject(ClassesStore);
   readonly criteria = criteria;
   readonly types = lessonTypes;

@@ -2,13 +2,13 @@
 
 ## Escopo
 
-Este relatório descreve a implementação Angular existente: componentes, templates, rotas, permissões, dados locais e interações implementadas. O acesso é demonstrativo: usuário `professor` ou `coordenacao`, senha pública de teste `ipb123`. Não há autenticação de servidor.
+Este relatório descreve a implementação Angular existente: componentes, templates, rotas, permissões, dados locais e interações implementadas. O acesso é demonstrativo: existe apenas o perfil Professor, com todas as funcionalidades. Credenciais de teste: usuário `professor` e senha pública `ipb123`. Não há autenticação de servidor.
 
 ## 1. Páginas
 
 ### Login — `/login`
 
-**Propósito:** entrar na demonstração como professor ou coordenação.
+**Propósito:** entrar na demonstração com o perfil Professor.
 
 **Elementos:** fotografia, marca IPB / APP 1 e mensagem de apresentação; campos Usuário e Senha; opção “Lembrar meu usuário”; botão Entrar; ações “Esqueceu a senha?”, “Continuar com Google”, “Cadastre-se” e “Preencher credenciais de teste”; diálogo de ajuda.
 
@@ -16,31 +16,31 @@ Este relatório descreve a implementação Angular existente: componentes, templ
 
 **Propósito:** apresentar atalhos para o trabalho pedagógico.
 
-**Elementos:** cartões Minhas turmas, Registrar aula, Frequência, Avaliação e Histórico. A coordenação também vê Coordenação.
+**Elementos:** atalhos para Turmas e Auditoria e uma área de turmas fixadas. Cada turma fixada abre sua visão geral; sem fixações, a página orienta a escolher turmas para acesso rápido.
 
 ### Minhas turmas — `/turmas`
 
-**Propósito:** consultar as turmas acessíveis e permitir que a coordenação as administre.
+**Propósito:** consultar e administrar todas as turmas.
 
-**Elementos:** busca por nome, contagem e lista de turmas. Abrir uma turma exibe um diálogo com curso, horário e alunos matriculados, além de atalhos para aula, frequência e avaliação. A coordenação vê Nova turma, caixas de seleção, edição e exclusão individual ou em massa. O professor vê suas turmas e pode abrir a relação de alunos.
+**Elementos:** busca por nome, contagem, filtros e tabela de turmas, com ações para abrir, editar, excluir e fixar/desafixar. As turmas fixadas aparecem na tela inicial. Dentro de uma turma, o cabeçalho contextual exibe o título junto ao botão Voltar; **Editar turma** aparece na mesma linha, sem repetir o nome da turma. As abas ficam reservadas para Visão geral, Alunos e Aulas. O cadastro de aluno abre um formulário de página inteira no padrão do registro de aula. Na lista de aulas, cada item oferece ações para abrir/editar o registro, realizar a chamada no mês da aula e avaliar os alunos daquela aula.
 
 ### Registro de aula — `/registro-aula`
 
-**Propósito:** registrar ou editar uma aula.
+**Propósito:** registrar ou editar uma aula e acessar seus detalhes, frequência e avaliações.
 
-**Elementos:** ligação para Histórico; formulário em três etapas; turma, data, curso, módulo, tipo (Regular, Revisão, PR1, PR2 ou PR3), lições, observações opcionais; Voltar, Próxima etapa e Salvar. Depois de salvar, surgem atalhos para frequência e histórico. `?id=...` abre um registro existente; `?turma=...` preseleciona uma turma.
+**Elementos:** formulário multi-step de três etapas com timeline vertical ampliada à esquerda; campos empilhados a partir do topo, com títulos centralizados e destacados e opções de turma, curso, módulo, tipo e lições em tags maiores e selecionáveis; data e observações em campos de texto. A navegação permite retornar a etapas concluídas e valida os campos antes de avançar. Continuar fica centralizado com o ícone à direita, e Voltar aparece logo abaixo. Depois de salvar, surgem atalhos para frequência e histórico. `?id=...` abre um registro existente; `?turma=...` preseleciona uma turma. A listagem oferece busca por conteúdo e filtros de tipo e período. Ao abrir uma aula específica, a aba principal **Aulas** permanece selecionada e uma navegação interna oferece **Aula**, **Frequência** e **Avaliações**; a visão geral organiza data, turma, tipo e curso/módulo em cartões, mostra os conteúdos como tags e posiciona Editar junto às abas somente na visão geral; frequência abre a grade mensal no mês da aula, sem filtro de período nem subtítulo, e avaliações abre os critérios vinculados àquela aula, sem botão de retorno ou subtítulo. Nas duas telas, **Salvar alterações** aparece no rodapé quando há mudanças pendentes.
 
 ### Frequência — `/presencas`
 
 **Propósito:** consultar e registrar presenças mensais por turma.
 
-**Elementos:** filtros de turma, ano e mês; botão Buscar; legenda; tabela de alunos por dia; resumo de presenças e botão Salvar frequência. As colunas refletem os dias agendados para a turma e datas com registros anteriores. Cada célula alterna entre presente, falta e sem registro. Dias futuros e turmas arquivadas são somente leitura. A rota aceita `?turma=...&data=...`.
+**Elementos:** nas rotas gerais, filtros de turma, ano e mês; botão Buscar; legenda; tabela de alunos por dia; resumo de faltas e botão **Salvar alterações** no rodapé quando há mudanças pendentes. As colunas refletem os dias agendados para a turma e datas com registros anteriores. Cada célula alterna entre presente, falta e sem registro. Dias futuros e turmas arquivadas são somente leitura. Na aba Frequência dentro de uma aula, o período é definido pela data da aula selecionada e os filtros de período são ocultados. A rota aceita `?turma=...&data=...`.
 
 ### Avaliação observacional — `/avaliacao`
 
 **Propósito:** registrar o desenvolvimento dos alunos em critérios observacionais.
 
-**Elementos:** filtros de turma e data; tabela de alunos por dez critérios; legenda e dois botões Salvar avaliação, no cabeçalho e no rodapé. Cada célula alterna entre Atendeu, Precisa desenvolver e Sem avaliação. Turmas arquivadas ficam somente para consulta. A rota aceita turma e data por parâmetros.
+**Elementos:** lista de aulas disponíveis para avaliação e tabela de alunos por dez critérios na aula selecionada; legenda e botão **Salvar alterações** no rodapé quando há mudanças pendentes. Cada célula alterna entre Atendeu, Precisa desenvolver e Sem avaliação. Avaliações são associadas a uma aula; a aba Avaliações nos detalhes da aula abre sua avaliação. Registros antigos sem aula correspondente são preservados e sinalizados. Turmas arquivadas ficam somente para consulta. Rotas antigas com turma/data continuam sendo resolvidas quando há uma aula correspondente.
 
 ### Histórico — `/historico`
 
@@ -48,59 +48,54 @@ Este relatório descreve a implementação Angular existente: componentes, templ
 
 **Elementos:** filtros de tipo, turma, intervalo de datas e texto; Buscar e Limpar filtros; tabela de data, tipo, turma, resumo e Abrir; paginação de dez itens; diálogo com detalhes e atalhos para abrir ou editar registros. A rota aceita filtros de tipo e turma pela query string.
 
-### Coordenação pedagógica — `/coordenacao`
-
-**Propósito:** consultar e administrar turmas de todos os professores. Acesso exclusivo da coordenação.
-
-**Elementos:** Nova turma; filtros de nome, professor e situação; tabela com turma, curso, módulo, professor, horário, número de alunos, status e ações Editar e Registros.
-
 ### Cadastro/edição de turma — `/turma-form`
 
-**Propósito:** criar ou configurar uma turma. Acesso exclusivo da coordenação.
+**Propósito:** criar ou configurar uma turma a partir da página Turmas.
 
-**Elementos:** nome, professor, curso, módulo, dias, horários, alunos e opção de arquivamento; botões Salvar turma, Cancelar e Voltar às turmas. `?turma=...` seleciona uma turma para edição.
+**Elementos:** formulário multi-step de três etapas preenchendo a área disponível, com timeline vertical ampliada à esquerda: dados da turma (nome, professor, curso e módulo), horários (dias e período) e alunos (matrículas e opção de arquivamento). Os campos começam no topo, ficam centralizados e têm títulos destacados; opções como professor, curso, módulo, dias e alunos são tags maiores e selecionáveis. As etapas futuras ficam indisponíveis até o avanço válido; etapas já concluídas podem ser revisitadas. Continuar centralizado com ícone à direita; Voltar centralizado logo abaixo; Salvar turma na etapa final. `?turma=...` seleciona uma turma para edição.
 
 ### Página não encontrada
 
 Qualquer rota sem correspondência apresenta “Página não encontrada” e o link Voltar ao início. Rotas internas exigem sessão e seguem o redirecionamento ao login quando necessário.
 
+A rota legada `/coordenacao` redireciona para a listagem padrão `/turmas`.
+
 ## 2. Funcionalidades e ações
 
-| Página | O que a pessoa pode fazer |
-|---|---|
-| Login | Validar as credenciais demonstrativas, iniciar sessão do navegador, lembrar apenas o nome de usuário, preencher credenciais de teste ou abrir mensagens explicativas de ajuda. Google, cadastro e recuperação não iniciam processos reais. |
-| Início | Abrir as áreas do aplicativo; a Coordenação aparece apenas no perfil correspondente. |
-| Minhas turmas | Buscar turmas e abrir a relação de alunos; iniciar aula, frequência ou avaliação. A coordenação também cria, edita e exclui turmas, individualmente ou em grupo, com confirmação antes de excluir. |
-| Registro de aula | Preencher as três etapas, escolher conteúdo e tipo, avançar/voltar, salvar ou editar. Validam-se data, turma ativa, módulo e lições; não se aceita mais de uma aula por turma/data. Alterações pendentes pedem confirmação antes de sair. |
-| Frequência | Aplicar filtros de turma/mês/ano, alternar marcações, salvar o mês e consultar o histórico. Alterar filtros ou navegar com rascunho exige confirmação. |
-| Avaliação | Aplicar turma/data, alternar o estado de cada aluno/critério, salvar e consultar o histórico. Alterações pendentes exigem confirmação ao trocar filtro ou rota. |
-| Histórico | Filtrar, limpar critérios, paginar e abrir detalhes. A partir deles, editar aula ou abrir frequência/avaliação quando a turma estiver ativa. Intervalo de datas invertido exibe erro. |
-| Coordenação | Pesquisar e filtrar por professor e status; abrir cadastro/edição e histórico filtrado da turma. |
-| Cadastro/edição de turma | Configurar dados, agenda e alunos; selecionar/limpar todos; arquivar ou reativar; validar nome duplicado, dias, horário e matrícula; salvar ou cancelar. Alterações pendentes são protegidas. |
-| Menu de conta | Consultar perfil demonstrativo, ir a Minhas turmas ou sair da conta. O guard preserva a sessão se a pessoa cancelar o descarte de alterações. |
+| Página                   | O que a pessoa pode fazer                                                                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Login                    | Validar as credenciais demonstrativas, iniciar sessão do navegador, lembrar apenas o nome de usuário, preencher credenciais de teste ou abrir mensagens explicativas de ajuda. Google, cadastro e recuperação não iniciam processos reais.                                                                               |
+| Início                   | Abrir as áreas do aplicativo, incluindo Turmas e Auditoria.                                                                                                                                                                                                                                                              |
+| Turmas                   | Buscar, filtrar, criar, editar e excluir turmas, individualmente ou em grupo, com confirmação antes de excluir; abrir a relação de alunos e iniciar aula, frequência ou avaliação.                                                                                                                                       |
+| Registro de aula         | Preencher as três etapas com timeline lateral, campos empilhados e opções em tags; avançar/voltar, salvar ou editar; na lista, filtrar por conteúdo, tipo e período. Validam-se data, turma ativa, módulo e lições; não se aceita mais de uma aula por turma/data. Alterações pendentes pedem confirmação antes de sair. |
+| Frequência               | Nas rotas gerais, aplicar filtros de turma/mês/ano; dentro de uma aula, usar o mês da aula selecionada sem filtros de período. Alternar marcações, salvar e consultar o histórico. Alterar filtros ou navegar com rascunho exige confirmação.                                                                            |
+| Avaliação                | Aplicar turma/data, alternar o estado de cada aluno/critério, salvar e consultar o histórico. Alterações pendentes exigem confirmação ao trocar filtro ou rota.                                                                                                                                                          |
+| Histórico                | Filtrar, limpar critérios, paginar e abrir detalhes. A partir deles, editar aula ou abrir frequência/avaliação quando a turma estiver ativa. Intervalo de datas invertido exibe erro.                                                                                                                                    |
+| Cadastro/edição de turma | Configurar dados, agenda e alunos em etapas com timeline lateral e opções em tags; selecionar/limpar todos; arquivar ou reativar; validar nome duplicado, dias, horário e matrícula; salvar ou cancelar. Alterações pendentes são protegidas.                                                                            |
+| Menu de conta            | Consultar perfil demonstrativo, ir a Minhas turmas ou sair da conta. O guard preserva a sessão se a pessoa cancelar o descarte de alterações.                                                                                                                                                                            |
 
-Dados e erros ficam no navegador. Turmas, aulas, frequência e avaliações usam `localStorage`; a sessão usa `sessionStorage`. As chaves legadas foram preservadas e dados demonstrativos são inseridos apenas quando a chave ainda não existe. Professor consulta as turmas atribuídas a si; coordenação acessa todas. Arquivar preserva o histórico e impede novos registros; excluir turma remove também os registros associados. Falha de leitura é informada e preserva os dados armazenados.
+Dados e erros ficam no navegador. Turmas, aulas, frequência e avaliações usam `localStorage`; a sessão usa `sessionStorage`. As chaves legadas foram preservadas e dados demonstrativos são inseridos apenas quando a chave ainda não existe. O perfil Professor consulta e administra todas as turmas. Arquivar preserva o histórico e impede novos registros; excluir turma remove também os registros associados. Falha de leitura é informada e preserva os dados armazenados.
 
 ## 3. Navegação e jornadas atuais
 
-A moldura de todas as páginas internas oferece navegação lateral para Início, Turmas, Registro de aula, Frequência, Avaliação e Histórico. Coordenação aparece para o perfil coordenador. O avatar abre perfil e saída da conta. No celular, os nomes ficam abreviados visualmente, mantendo rótulos acessíveis.
+A moldura de todas as páginas internas oferece navegação para Início, Turmas e Auditoria. O avatar abre perfil e saída da conta. No celular, os nomes ficam abreviados visualmente, mantendo rótulos acessíveis.
 
 As conexões explícitas são:
 
-- **Início →** turmas, aula, frequência, avaliação e histórico; **coordenação → gestão**.
-- **Turmas → diálogo dos alunos →** aula, frequência ou avaliação; coordenação → cadastro, edição e exclusão.
-- **Aula → Histórico**; após salvar → frequência da turma/data ou histórico.
+- **Início →** turmas e auditoria.
+- **Turmas →** filtros, cadastro, edição, exclusão e diálogo dos alunos → aula, frequência ou avaliação.
+- **Aula registrada → Aulas permanece selecionada → abas internas →** detalhes, frequência mensal no mês da aula ou avaliação daquela aula; detalhes também permitem editar o registro.
 - **Histórico →** detalhes; aula → editar; frequência/avaliação → abrir na turma/data.
-- **Coordenação →** criar/editar turma e abrir histórico filtrado da turma.
-- **Login →** destino solicitado quando a rota é autorizada ao perfil. Acesso do professor à coordenação retorna a Início.
+- **Turmas →** criar/editar turma e abrir auditoria filtrada por turma.
+- **Login →** destino solicitado após autenticação do perfil Professor.
 
 Principais jornadas implementadas:
 
 1. Professor: Login → Início/Turmas → Registro de aula (3 etapas) → salvar → Frequência ou Histórico.
-2. Professor: Turmas → selecionar turma → Frequência → mês → marcar alunos → salvar → Histórico.
-3. Professor: Início/Turmas → Avaliação → turma/data → marcar critérios → salvar → Histórico.
+2. Professor: Turmas → Aulas → abrir aula → aba Frequência → marcar alunos no mês da aula → salvar → Histórico.
+3. Professor: Turmas → Aulas → abrir aula → aba Avaliações → marcar critérios → salvar → Histórico.
 4. Professor: Histórico → filtros → detalhes → editar aula ou abrir frequência/avaliação.
-5. Coordenação: Login → Coordenação/Turmas → criar/editar configuração e matrícula → salvar; opcionalmente arquivar ou consultar histórico.
+5. Professor: Login → Turmas → criar/editar configuração e matrícula → salvar; opcionalmente arquivar ou consultar auditoria.
 
 Rotas antigas com sufixo `.html` são redirecionadas às rotas Angular, preservando os parâmetros da URL.
 
@@ -110,7 +105,7 @@ Rotas antigas com sufixo `.html` são redirecionadas às rotas Angular, preserva
 
 - Recuperação de senha, login Google e cadastro apenas abrem mensagens explicativas; não existem processos, páginas ou integrações reais para concluí-los.
 - Meu perfil exibe nome, perfil demonstrativo e explicação sobre os dados locais; não permite editar informações.
-- “Ver registros” da coordenação abre o Histórico filtrado por turma, sem painel analítico próprio.
+- A ação “Registros” na tabela de Turmas abre a Auditoria filtrada por turma, sem painel analítico próprio.
 
 ### Áreas que não existem
 
@@ -135,9 +130,9 @@ Rotas antigas com sufixo `.html` são redirecionadas às rotas Angular, preserva
 
 ## 5. Contexto e objetivo
 
-O APP 1 é uma ferramenta pedagógica de demonstração para organizar turmas e acompanhar estudantes. O professor registra conteúdo ministrado, presença e observações de desenvolvimento; o Histórico reúne os registros. A coordenação configura turmas, curso/módulo, professor responsável, agenda e alunos, além de poder arquivar turmas.
+O APP 1 é uma ferramenta pedagógica de demonstração para organizar turmas e acompanhar estudantes. O professor registra conteúdo ministrado, presença e observações de desenvolvimento; a Auditoria reúne os registros. O perfil Professor configura turmas, curso/módulo, professor responsável, agenda e alunos, além de poder arquivar turmas.
 
-O catálogo de demonstração contém dois cursos, quatro módulos, dois professores, quatro turmas, quinze estudantes e dez critérios de avaliação. Os registros são locais ao navegador e à origem da aplicação. A jornada central é acompanhar uma turma ao longo do tempo por aula, frequência e avaliação; a coordenação prepara e mantém a estrutura em que essa jornada ocorre.
+O catálogo de demonstração contém dois cursos, quatro módulos, dois professores, quatro turmas, quinze estudantes e dez critérios de avaliação. Os registros são locais ao navegador e à origem da aplicação. A jornada central é acompanhar uma turma ao longo do tempo por aula, frequência e avaliação; o professor prepara e mantém a estrutura em que essa jornada ocorre.
 
 ## Referências da implementação
 

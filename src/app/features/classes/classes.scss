@@ -1,25 +1,42 @@
-.turmas-list {
-  margin: 0;
-  padding: 0;
+.turmas-table {
+  min-width: 60rem;
 }
-.turma-row,
+.turmas-table th[scope='row'] {
+  text-align: left;
+}
+.turmas-table thead .actions-cell {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #f8fafc;
+}
+.turmas-table tbody .actions-cell {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+}
+.class-status {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.class-status.archived {
+  background: #f1f5f9;
+  color: #475569;
+}
 .turmas-bulk-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-height: 3.5rem;
-  padding: 0.625rem 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
   border-bottom: 1px solid #e2e8f0;
-}
-.turma-row:last-child {
-  border-bottom: 0;
-}
-.turma-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 .turmas-bulk-actions label {
   display: flex;
@@ -29,16 +46,4 @@
 }
 .turmas-bulk-actions .icon-button {
   margin-left: auto;
-}
-@media (max-width: 24rem) {
-  .turma-row {
-    flex-wrap: wrap;
-    padding: 0.5rem 0;
-  }
-  .turma-row .row-actions {
-    flex: none;
-  }
-  .turma-name {
-    flex-basis: calc(100% - 3rem);
-  }
 }

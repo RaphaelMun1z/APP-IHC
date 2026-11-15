@@ -17,6 +17,22 @@ describe('Datas, navegação e estados', () => {
     expect(columns.map((column) => column.date)).not.toContain('2026-11-12');
     expect(new Set(columns.map((column) => column.date)).size).toBe(columns.length);
   });
+  it('habilita a chamada de hoje e mantém chamadas passadas bloqueadas por padrão', () => {
+    const today = new Date();
+    const todayValue = localDate(today);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayValue = localDate(yesterday);
+    const columns = attendanceColumns(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      [],
+      [yesterdayValue],
+    );
+
+    expect(columns.find((column) => column.date === todayValue)?.editable).toBe(true);
+    expect(columns.find((column) => column.date === yesterdayValue)?.editable).toBe(false);
+  });
   it('cicla marcas sem perder o estado vazio', () => {
     expect(nextAttendance(null)).toBe('presente');
     expect(nextAttendance('presente')).toBe('falta');
@@ -25,12 +41,14 @@ describe('Datas, navegação e estados', () => {
     expect(nextAssessment('ok')).toBe('nao-ok');
     expect(nextAssessment('nao-ok')).toBeNull();
   });
-  it('aceita links antigos com parâmetros e restringe retornos por perfil', () => {
-    expect(safeReturn('./registro-aula.html?turma=6a', false)).toBe('/registro-aula?turma=6a');
-    expect(safeReturn('//evil.test', true)).toBe('/inicio');
-    expect(safeReturn('https://evil.test', true)).toBe('/inicio');
-    expect(safeReturn('/coordenacao', false)).toBe('/inicio');
-    expect(safeReturn('/turma-form', true)).toBe('/turma-form');
+  it('aceita links antigos e rotas de gestão, restringindo retornos externos', () => {
+    expect(safeReturn('./registro-aula.html?turma=6a')).toBe('/registro-aula?turma=6a');
+    expect(safeReturn('//evil.test')).toBe('/inicio');
+    expect(safeReturn('https://evil.test')).toBe('/inicio');
+    expect(safeReturn('/coordenacao')).toBe('/turmas');
+    expect(safeReturn('/coordenacao?busca=Angular')).toBe('/turmas?busca=Angular');
+    expect(safeReturn('/turma-form')).toBe('/turma-form');
+    expect(safeReturn('/turmas/6a/gerenciar')).toBe('/turmas/6a/gerenciar');
   });
   it('rejeita intervalos invertidos no histórico', () => {
     expect(() =>

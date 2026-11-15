@@ -1,6 +1,5 @@
 import { Action } from '../../shared/ui/action';
 import { contextParam, returnTo } from '../../core/navigation/context';
-import { AuthService } from '../../core/auth/auth.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -13,7 +12,8 @@ import { UnsavedChangesDirective } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
-import { localDate } from '../../shared/utils/dates';
+import { isDate, localDate } from '../../shared/utils/dates';
+import { safeReturn } from '../../core/auth/auth.guards';
 
 @Component({
   selector: 'app-lesson-editor',
@@ -27,6 +27,7 @@ export class LessonEditor implements UnsavedChanges {
   private readonly lessons = inject(LessonsStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly requestedDate = this.route.snapshot.queryParamMap.get('data');
   private readonly initialId = contextParam(this.route.snapshot, 'id');
   private readonly existing = this.lessons.records().find((lesson) => lesson.id === this.initialId);
   readonly fixedClass = this.route.snapshot.pathFromRoot.some((node) => node.paramMap.has('turma'));
@@ -34,7 +35,6 @@ export class LessonEditor implements UnsavedChanges {
   readonly back = returnTo(
     this.route.snapshot,
     this.contextClass ? `/turmas/${this.contextClass}/aulas` : '/historico',
-    inject(AuthService).isCoordinator(),
   );
   readonly recordId = signal(this.existing?.id);
   readonly unavailable =
@@ -51,7 +51,11 @@ export class LessonEditor implements UnsavedChanges {
         '',
       Validators.required,
     ],
-    data: [this.existing?.data ?? localDate(), Validators.required],
+    data: [
+      this.existing?.data ??
+        (this.requestedDate && isDate(this.requestedDate) ? this.requestedDate : localDate()),
+      Validators.required,
+    ],
     cursoId: [this.existing?.cursoId ?? '', Validators.required],
     moduloId: [this.existing?.moduloId ?? '', Validators.required],
     tipo: [this.existing?.tipo ?? ('regular' as LessonType), Validators.required],
@@ -69,7 +73,13 @@ export class LessonEditor implements UnsavedChanges {
   readonly selectedLessons = computed(() => this.value().licoes ?? []);
   readonly types = Object.entries(lessonTypes).map(([value, label]) => ({ value, label }));
   readonly today = localDate();
+  readonly steps = [
+    { title: 'Informações da aula', description: 'Turma, data e conteúdo' },
+    { title: 'Lições', description: 'Conteúdo trabalhado' },
+    { title: 'Observações', description: 'Contexto adicional' },
+  ];
   readonly step = signal(0);
+  readonly furthestStep = signal(0);
   readonly message = signal('');
   readonly isError = signal(false);
   readonly saved = signal(false);
@@ -98,6 +108,12 @@ export class LessonEditor implements UnsavedChanges {
     this.form.controls.licoes.setValue(toggleValue(this.form.controls.licoes.value, lesson));
     this.form.markAsDirty();
   }
+  goToStep(index: number): void {
+    if (index >= 0 && index <= this.furthestStep()) {
+      this.step.set(index);
+      this.message.set('');
+    }
+  }
   next(): void {
     const values = this.form.getRawValue();
     if (
@@ -119,6 +135,7 @@ export class LessonEditor implements UnsavedChanges {
     }
     this.message.set('');
     this.step.update((step) => Math.min(2, step + 1));
+    this.furthestStep.update((furthest) => Math.max(furthest, this.step()));
   }
   save(): void {
     if (this.form.invalid) {
@@ -133,14 +150,22 @@ export class LessonEditor implements UnsavedChanges {
       this.form.markAsPristine();
       this.isError.set(false);
       this.saved.set(true);
-      this.message.set('Aula salva. O registro já está disponível no histórico.');
+      this.message.set('Aula salva. O registro já está disponível na auditoria.');
       void this.router.navigate(['/turmas', saved.turmaId, 'registros', saved.id], {
-        queryParams: { retorno: this.back },
+        queryParams: { retorno: this.recordReturn() },
       });
     } catch (error: unknown) {
       this.isError.set(true);
       this.message.set(errorMessage(error));
     }
+  }
+  private recordReturn(): string {
+    const target = this.router.parseUrl(this.back);
+    const segments = target.root.children['primary']?.segments.map((segment) => segment.path);
+    const origin = target.queryParamMap.get('retorno');
+    return segments?.[0] === 'turmas' && segments[2] === 'registros' && origin
+      ? safeReturn(origin)
+      : this.back;
   }
   readonly backLink = inject(Router).parseUrl(this.back);
 }

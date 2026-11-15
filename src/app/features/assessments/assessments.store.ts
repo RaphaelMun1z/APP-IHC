@@ -1,35 +1,110 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { StorageService } from '../../core/data/storage.service';
 import { storageKeys } from '../../core/data/storage-keys';
 import { criteria } from '../../core/data/catalog';
-import { isAssessments } from '../../core/data/validators';
-import type { AssessmentData, AssessmentMark, StudentAssessment } from '../../core/models/domain';
+import { isAssessments, isLegacyAssessments } from '../../core/data/validators';
+import type {
+  Assessment,
+  AssessmentData,
+  AssessmentMark,
+  LegacyAssessment,
+  LegacyAssessmentData,
+  StudentAssessment,
+} from '../../core/models/domain';
 import { requirePastDate } from '../../shared/utils/dates';
 import { ClassesStore } from '../classes/classes.store';
+import { LessonsStore } from '../lessons/lessons.store';
 
 export function nextAssessment(mark: AssessmentMark): AssessmentMark {
   return mark === null ? 'ok' : mark === 'ok' ? 'nao-ok' : null;
 }
+
+export interface UnlinkedAssessment {
+  readonly classId: string;
+  readonly date: string;
+  readonly assessment: LegacyAssessment;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AssessmentsStore {
   private readonly storage = inject(StorageService);
   private readonly classes = inject(ClassesStore);
+  private readonly lessons = inject(LessonsStore);
   private readonly auth = inject(AuthService);
   private readonly all = this.storage.collection<AssessmentData>(
-    storageKeys.assessments,
+    storageKeys.lessonAssessments,
     {},
     isAssessments,
   );
-  readonly records = computed<AssessmentData>(() =>
-    Object.fromEntries(
-      this.classes.accessible().map((group) => [group.id, this.all()[group.id] ?? {}]),
-    ),
+  private readonly legacy = this.storage.collection<LegacyAssessmentData>(
+    storageKeys.assessments,
+    {},
+    isLegacyAssessments,
   );
+  readonly records = computed<AssessmentData>(() => {
+    const records: Record<string, Assessment> = {};
+    for (const lesson of this.lessons.records()) {
+      const saved = this.all()[lesson.id];
+      const legacy = this.legacy()[lesson.turmaId]?.[lesson.data];
+      const assessment = saved ?? (legacy ? { ...legacy, lessonId: lesson.id } : undefined);
+      if (assessment) records[lesson.id] = assessment;
+    }
+    return records;
+  });
+  readonly unlinkedLegacy = computed<readonly UnlinkedAssessment[]>(() => {
+    const accessibleIds = new Set(this.classes.accessible().map((group) => group.id));
+    const lessons = this.lessons.records();
+    return Object.entries(this.legacy()).flatMap(([classId, dates]) =>
+      accessibleIds.has(classId)
+        ? Object.entries(dates)
+            .filter(
+              ([date]) =>
+                !lessons.some((lesson) => lesson.turmaId === classId && lesson.data === date),
+            )
+            .map(([date, assessment]) => ({ classId, date, assessment }))
+        : [],
+    );
+  });
   readonly criteria = criteria;
-  roster(classId: string, date: string): readonly StudentAssessment[] {
-    const previous = this.records()[classId]?.[date]?.alunos ?? [];
-    return this.classes.roster(classId).map((student) => ({
+  readonly migrationMessage = signal('');
+
+  constructor() {
+    const linked: Record<string, Assessment> = { ...this.all() };
+    const remaining: Record<string, Record<string, LegacyAssessment>> = {};
+    let migrated = false;
+    for (const [classId, dates] of Object.entries(this.legacy())) {
+      for (const [date, legacy] of Object.entries(dates)) {
+        const lesson = this.lessons
+          .records()
+          .find((item) => item.turmaId === classId && item.data === date);
+        if (!lesson) {
+          (remaining[classId] ??= {})[date] = legacy;
+          continue;
+        }
+        linked[lesson.id] ??= { ...legacy, lessonId: lesson.id };
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      try {
+        this.storage.writeMany([
+          [storageKeys.lessonAssessments, linked],
+          [storageKeys.assessments, remaining],
+        ]);
+      } catch (error: unknown) {
+        this.migrationMessage.set(
+          `As avaliações antigas foram preservadas, mas a vinculação às aulas não foi salva. ${error instanceof Error ? error.message : 'Tente novamente.'}`,
+        );
+      }
+    }
+  }
+
+  roster(lessonId: string): readonly StudentAssessment[] {
+    const lesson = this.lessons.records().find((item) => item.id === lessonId);
+    if (!lesson) return [];
+    const previous = this.records()[lessonId]?.alunos ?? [];
+    return this.classes.roster(lesson.turmaId).map((student) => ({
       ...student,
       avaliacoes: Object.fromEntries(
         criteria.map((criterion) => [
@@ -39,9 +114,12 @@ export class AssessmentsStore {
       ),
     }));
   }
-  save(classId: string, date: string, values: readonly StudentAssessment[]): void {
-    const group = this.classes.require(classId, true);
-    requirePastDate(date);
+
+  save(lessonId: string, values: readonly StudentAssessment[]): void {
+    const lesson = this.lessons.records().find((item) => item.id === lessonId);
+    if (!lesson) throw new Error('Aula não encontrada.');
+    const group = this.classes.require(lesson.turmaId, true);
+    requirePastDate(lesson.data);
     const user = this.auth.user();
     if (!user) throw new Error('Entre na sua conta para salvar.');
     if (
@@ -59,19 +137,27 @@ export class AssessmentsStore {
     )
       throw new Error('A avaliação contém alunos ou critérios inválidos.');
     const oldStudents =
-      this.all()[classId]?.[date]?.alunos.filter(
-        (student) => !group.alunoIds.includes(student.id),
-      ) ?? [];
-    this.storage.write(storageKeys.assessments, {
-      ...this.all(),
-      [classId]: {
-        ...this.all()[classId],
-        [date]: {
-          alunos: [...oldStudents, ...values],
-          atualizadoEm: new Date().toISOString(),
-          professorId: user.id,
+      this.records()[lessonId]?.alunos.filter((student) => !group.alunoIds.includes(student.id)) ??
+      [];
+    const remainingLegacy = { ...this.legacy() };
+    const classLegacy = { ...(remainingLegacy[lesson.turmaId] ?? {}) };
+    delete classLegacy[lesson.data];
+    if (Object.keys(classLegacy).length) remainingLegacy[lesson.turmaId] = classLegacy;
+    else delete remainingLegacy[lesson.turmaId];
+    this.storage.writeMany([
+      [
+        storageKeys.lessonAssessments,
+        {
+          ...this.all(),
+          [lessonId]: {
+            lessonId,
+            alunos: [...oldStudents, ...values],
+            atualizadoEm: new Date().toISOString(),
+            professorId: user.id,
+          },
         },
-      },
-    });
+      ],
+      [storageKeys.assessments, remainingLegacy],
+    ]);
   }
 }

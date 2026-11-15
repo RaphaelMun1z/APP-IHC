@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { ClassesStore } from '../classes/classes.store';
 @Component({
   selector: 'app-home',
   imports: [RouterLink],
@@ -9,7 +9,7 @@ import { AuthService } from '../../core/auth/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
-  readonly auth = inject(AuthService);
+  readonly classes = inject(ClassesStore);
   readonly links = [
     {
       path: '/turmas',
@@ -20,8 +20,8 @@ export class Home {
     {
       path: '/historico',
       icon: 'history',
-      title: 'Histórico',
-      description: 'Registros anteriores',
+      title: 'Auditoria',
+      description: 'Consulta de registros pedagógicos',
     },
   ];
 }

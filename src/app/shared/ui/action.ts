@@ -16,6 +16,10 @@ export class Action {
       icon,
       this.element.nativeElement.firstChild,
     );
-    effect(() => this.renderer.setProperty(icon, 'textContent', this.icon()));
+    effect(() => {
+      const action = this.icon();
+      this.renderer.setProperty(icon, 'textContent', action);
+      this.renderer.setAttribute(this.element.nativeElement, 'data-action', action);
+    });
   }
 }

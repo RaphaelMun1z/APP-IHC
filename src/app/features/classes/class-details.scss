@@ -19,3 +19,12 @@
   color: #17211b;
   font-size: 0.875rem;
 }
+
+.lessons-table {
+  min-width: 40rem;
+}
+
+.lessons-table td:first-child,
+.lessons-table td:nth-child(2) {
+  white-space: nowrap;
+}

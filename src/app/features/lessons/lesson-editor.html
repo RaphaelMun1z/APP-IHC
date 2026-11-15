@@ -5,130 +5,185 @@
   >
     @if (unavailable) {
       <p class="app-empty">
-        Registro não encontrado ou turma arquivada. Consulte os registros no histórico.
+        Registro não encontrado ou turma arquivada. Consulte os registros na Auditoria.
       </p>
     } @else if (!classes.active().length) {
       <p class="app-empty">
-        Nenhuma turma ativa disponível. A coordenação pode cadastrar ou reativar uma turma.
+        Nenhuma turma ativa disponível. Cadastre ou reative uma turma na página Turmas.
       </p>
     } @else {
-      <form class="registro-form" [formGroup]="form" (ngSubmit)="save()">
-        <ol class="registro-progress" aria-label="Etapas do formulário">
-          @for (label of ['1. Informações da aula', '2. Lições', '3. Observações']; track label) {
-            <li [attr.aria-current]="$index === step() ? 'step' : null">{{ label }}</li>
-          }
-        </ol>
-        <app-feedback [message]="message()" [error]="isError()" />
-        <div class="registro-fields">
-          <section class="registro-card" [hidden]="step() !== 0">
-            <h2>Informações da aula</h2>
-            <div class="registro-field-grid">
-              <label class="registro-field"
-                >Turma<select formControlName="turmaId" (change)="selectClass()">
-                  <option value="">Selecione a turma</option>
-                  @for (group of classes.active(); track group.id) {
-                    <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
-                      {{ group.nome }}
-                    </option>
-                  }
-                </select></label
-              >
-              <label class="registro-field"
-                >Data da aula<input type="date" formControlName="data" [max]="today" required
-              /></label>
-              <label class="registro-field"
-                >Curso<select formControlName="cursoId" (change)="selectCourse()">
-                  <option value="">Selecione o curso</option>
-                  @for (course of classes.courses; track course.id) {
-                    <option [value]="course.id">{{ course.nome }}</option>
-                  }
-                </select></label
-              >
-              <label class="registro-field"
-                >Módulo<select formControlName="moduloId" (change)="selectModule()">
-                  <option value="">Selecione o módulo</option>
-                  @for (module of modules(); track module.id) {
-                    <option [value]="module.id">{{ module.nome }}</option>
-                  }
-                </select></label
-              >
-            </div>
-            <fieldset class="registro-types">
-              <legend>Tipo de aula</legend>
-              @for (type of types; track type.value) {
-                <label
-                  ><input type="radio" formControlName="tipo" [value]="type.value" />{{
-                    type.label
-                  }}</label
-                >
+      <form class="registro-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
+        <header class="form-wizard-header">
+          <a appAction="arrow_back" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
+        </header>
+        <div class="form-wizard-layout">
+          <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
+            <ol>
+              @for (item of steps; track item.title) {
+                <li [class.is-complete]="$index < step()">
+                  <button
+                    type="button"
+                    [disabled]="$index > furthestStep()"
+                    [attr.aria-current]="$index === step() ? 'step' : null"
+                    (click)="goToStep($index)"
+                  >
+                    <span class="form-wizard-step-number">{{ $index + 1 }}</span>
+                    <span class="form-wizard-step-copy">
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ item.description }}</small>
+                    </span>
+                  </button>
+                </li>
               }
-            </fieldset>
-          </section>
-          <section class="registro-card" [hidden]="step() !== 1">
-            <div class="registro-section-heading">
+            </ol>
+          </nav>
+          <div class="form-wizard-content">
+            <section class="form-wizard-panel" [hidden]="step() !== 0">
+              <h2>Informações da aula</h2>
+              <p>Defina a turma, a data e o conteúdo da aula.</p>
+              <div class="form-wizard-field-stack">
+                <fieldset class="form-wizard-choice">
+                  <legend>Turma</legend>
+                  <div class="form-wizard-option-list">
+                    @for (group of classes.active(); track group.id) {
+                      @if (!fixedClass || group.id === contextClass) {
+                        <label class="form-wizard-option"
+                          ><input
+                            type="radio"
+                            formControlName="turmaId"
+                            [value]="group.id"
+                            (change)="selectClass()"
+                          /><span>{{ group.nome }}</span></label
+                        >
+                      }
+                    }
+                  </div>
+                </fieldset>
+                <label class="registro-field"
+                  >Data da aula<input type="date" formControlName="data" [max]="today" required
+                /></label>
+                <fieldset class="form-wizard-choice">
+                  <legend>Curso</legend>
+                  <div class="form-wizard-option-list">
+                    @for (course of classes.courses; track course.id) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="radio"
+                          formControlName="cursoId"
+                          [value]="course.id"
+                          (change)="selectCourse()"
+                        /><span>{{ course.nome }}</span></label
+                      >
+                    }
+                  </div>
+                </fieldset>
+                <fieldset class="form-wizard-choice">
+                  <legend>Módulo</legend>
+                  <div class="form-wizard-option-list">
+                    @for (module of modules(); track module.id) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="radio"
+                          formControlName="moduloId"
+                          [value]="module.id"
+                          (change)="selectModule()"
+                        /><span>{{ module.nome }}</span></label
+                      >
+                    } @empty {
+                      <p class="form-wizard-hint">Selecione um curso para ver os módulos.</p>
+                    }
+                  </div>
+                </fieldset>
+                <fieldset class="form-wizard-choice">
+                  <legend>Tipo de aula</legend>
+                  <div class="form-wizard-option-list">
+                    @for (type of types; track type.value) {
+                      <label class="form-wizard-option"
+                        ><input type="radio" formControlName="tipo" [value]="type.value" /><span>{{
+                          type.label
+                        }}</span></label
+                      >
+                    }
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+            <section class="form-wizard-panel" [hidden]="step() !== 1">
               <h2>Lições ministradas</h2>
-              <span>{{ selectedLessons().length }} selecionadas</span>
-            </div>
-            <p>Marque uma ou mais lições trabalhadas nesta aula.</p>
-            <div class="registro-lessons">
-              @for (lesson of availableLessons(); track lesson) {
-                <label
-                  ><input
-                    type="checkbox"
-                    [checked]="selectedLessons().includes(lesson)"
-                    (change)="toggleLesson(lesson)"
-                  /><span
-                    ><small>Lição {{ $index + 1 }}</small
-                    ><strong>{{ lesson }}</strong></span
-                  ></label
-                >
-              } @empty {
-                <p>Selecione um curso e um módulo para ver as lições.</p>
+              <p>
+                Marque uma ou mais lições trabalhadas nesta aula. {{ selectedLessons().length }}
+                selecionadas.
+              </p>
+              <fieldset class="form-wizard-choice">
+                <legend>Lições</legend>
+                <div class="form-wizard-option-list">
+                  @for (lesson of availableLessons(); track lesson) {
+                    <label class="form-wizard-option"
+                      ><input
+                        type="checkbox"
+                        [checked]="selectedLessons().includes(lesson)"
+                        (change)="toggleLesson(lesson)"
+                      /><span>{{ lesson }}</span></label
+                    >
+                  } @empty {
+                    <p class="form-wizard-hint">
+                      Selecione um curso e um módulo para ver as lições.
+                    </p>
+                  }
+                </div>
+              </fieldset>
+            </section>
+            <section class="form-wizard-panel" [hidden]="step() !== 2">
+              <h2>Observações</h2>
+              <p>Adicione algum contexto importante sobre esta aula (opcional).</p>
+              <label class="registro-field"
+                >Observações<textarea
+                  rows="4"
+                  formControlName="notas"
+                  maxlength="600"
+                  placeholder="Algum contexto importante sobre a aula?"
+                ></textarea>
+              </label>
+            </section>
+            <app-feedback [message]="message()" [error]="isError()" />
+            <nav class="form-wizard-actions" aria-label="Navegação das etapas">
+              @if (step() < steps.length - 1) {
+                <button class="primary" type="button" data-step-next (click)="next()">
+                  Próxima etapa<span class="material-symbols-outlined" aria-hidden="true"
+                    >arrow_forward</span
+                  >
+                </button>
+              } @else {
+                <button appAction="save" class="primary" type="submit" data-step-save>
+                  {{ recordId() ? 'Salvar alterações' : 'Salvar registro' }}
+                </button>
               }
-            </div>
-          </section>
-          <section class="registro-card" [hidden]="step() !== 2">
-            <label class="registro-field"
-              >Observações <span class="registro-optional">(opcional)</span
-              ><textarea
-                rows="4"
-                formControlName="notas"
-                maxlength="600"
-                placeholder="Algum contexto importante sobre a aula?"
-              ></textarea>
-            </label>
-          </section>
-        </div>
-        <nav class="registro-step-actions" aria-label="Navegação das etapas">
-          <button
-            appAction="chevron_left"
-            type="button"
-            [disabled]="step() === 0"
-            (click)="step.update((step) => step - 1)"
-          >
-            Etapa anterior</button
-          ><button
-            appAction="chevron_right"
-            type="button"
-            data-step-next
-            [hidden]="step() === 2"
-            (click)="next()"
-          >
-            Próxima etapa</button
-          ><button appAction="save" type="submit" data-step-save [hidden]="step() !== 2">
-            {{ recordId() ? 'Salvar alterações' : 'Salvar registro' }}
-          </button>
-        </nav>
-        @if (saved()) {
-          <div class="app-actions">
-            <a
-              class="app-button primary"
-              routerLink="/presencas"
-              [queryParams]="{ turma: form.controls.turmaId.value, data: form.controls.data.value }"
-              >Registrar frequência</a
-            ><a class="app-button" routerLink="/historico">Consultar registros</a>
+              @if (step() > 0) {
+                <button
+                  appAction="arrow_back"
+                  class="form-wizard-back"
+                  type="button"
+                  (click)="goToStep(step() - 1)"
+                >
+                  Voltar
+                </button>
+              }
+            </nav>
+            @if (saved()) {
+              <div class="app-actions">
+                <a
+                  class="app-button primary"
+                  routerLink="/presencas"
+                  [queryParams]="{
+                    turma: form.controls.turmaId.value,
+                    data: form.controls.data.value,
+                  }"
+                  >Registrar frequência</a
+                ><a class="app-button" routerLink="/historico">Consultar registros</a>
+              </div>
+            }
           </div>
-        }
+        </div>
       </form>
     }
   </section>

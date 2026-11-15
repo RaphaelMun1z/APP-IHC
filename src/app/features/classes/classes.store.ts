@@ -7,13 +7,16 @@ import {
   isAssessments,
   isAttendance,
   isClasses,
+  isLegacyAssessments,
   isLessons,
+  isPinnedClassIds,
   isStudents,
   normalizeAttendance,
 } from '../../core/data/validators';
 import type {
   AssessmentData,
   AttendanceData,
+  LegacyAssessmentData,
   Lesson,
   SchoolClass,
   Student,
@@ -22,19 +25,27 @@ import { weekdays } from '../../shared/utils/dates';
 
 @Injectable({ providedIn: 'root' })
 export class ClassesStore {
-  private readonly storage = inject(StorageService);
   private readonly auth = inject(AuthService);
+  private readonly storage = inject(StorageService);
   private readonly all = this.storage.collection<readonly SchoolClass[]>(
     storageKeys.classes,
     defaultClasses,
     isClasses,
   );
-  readonly accessible = computed(() =>
-    this.all().filter(
-      (group) => this.auth.isCoordinator() || group.professorId === this.auth.user()?.id,
-    ),
+  private readonly pinnedIds = this.storage.collection<readonly string[]>(
+    storageKeys.pinnedClasses,
+    [],
+    isPinnedClassIds,
   );
+  readonly accessible = computed(() => (this.auth.user() ? this.all() : []));
   readonly active = computed(() => this.accessible().filter((group) => group.ativa));
+  readonly pinned = computed(() => {
+    const groups = this.accessible();
+    return this.pinnedIds().flatMap((id) => {
+      const group = groups.find((item) => item.id === id);
+      return group ? [group] : [];
+    });
+  });
   private readonly studentList = this.storage.collection<readonly Student[]>(
     storageKeys.students,
     students,
@@ -48,9 +59,20 @@ export class ClassesStore {
   get(id: string): SchoolClass | undefined {
     return this.accessible().find((group) => group.id === id);
   }
+  isPinned(id: string): boolean {
+    return this.pinnedIds().includes(id);
+  }
+  togglePinned(id: string): void {
+    this.require(id);
+    const pinned = this.pinnedIds();
+    this.storage.write(
+      storageKeys.pinnedClasses,
+      pinned.includes(id) ? pinned.filter((item) => item !== id) : [...pinned, id],
+    );
+  }
   require(id: string, active = false): SchoolClass {
     const group = this.get(id);
-    if (!group) throw new Error('Turma não disponível para este perfil.');
+    if (!group) throw new Error('Turma não encontrada.');
     if (active && !group.ativa) throw new Error('Esta turma está arquivada.');
     return group;
   }
@@ -109,7 +131,6 @@ export class ClassesStore {
     return `${group.dias.map((day) => weekdays[day]).join(' e ')} · ${group.inicio}–${group.fim}`;
   }
   save(input: SchoolClass): SchoolClass {
-    this.requireCoordinator();
     if (
       !input.nome.trim() ||
       input.nome.trim().length > 60 ||
@@ -154,7 +175,6 @@ export class ClassesStore {
     return saved;
   }
   delete(ids: readonly string[]): void {
-    this.requireCoordinator();
     if (!ids.length || ids.some((id) => !this.get(id))) throw new Error('Turma não encontrada.');
     const lessons = this.storage.read<readonly Lesson[]>(storageKeys.lessons, [], isLessons);
     const attendance = this.storage.read<AttendanceData>(
@@ -163,13 +183,22 @@ export class ClassesStore {
       isAttendance,
       normalizeAttendance,
     );
-    const assessments = this.storage.read<AssessmentData>(
+    const assessments = this.storage.read<LegacyAssessmentData>(
       storageKeys.assessments,
+      {},
+      isLegacyAssessments,
+    );
+    const lessonAssessments = this.storage.read<AssessmentData>(
+      storageKeys.lessonAssessments,
       {},
       isAssessments,
     );
+    const deletedLessons = new Set(
+      lessons.filter((lesson) => ids.includes(lesson.turmaId)).map((lesson) => lesson.id),
+    );
     this.storage.writeMany([
       [storageKeys.classes, this.all().filter((group) => !ids.includes(group.id))],
+      [storageKeys.pinnedClasses, this.pinnedIds().filter((id) => !ids.includes(id))],
       [storageKeys.lessons, lessons.filter((lesson) => !ids.includes(lesson.turmaId))],
       [
         storageKeys.attendance,
@@ -179,9 +208,12 @@ export class ClassesStore {
         storageKeys.assessments,
         Object.fromEntries(Object.entries(assessments).filter(([id]) => !ids.includes(id))),
       ],
+      [
+        storageKeys.lessonAssessments,
+        Object.fromEntries(
+          Object.entries(lessonAssessments).filter(([lessonId]) => !deletedLessons.has(lessonId)),
+        ),
+      ],
     ]);
-  }
-  private requireCoordinator(): void {
-    if (!this.auth.isCoordinator()) throw new Error('Acesso exclusivo da coordenação.');
   }
 }

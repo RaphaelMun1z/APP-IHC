@@ -15,7 +15,7 @@ describe('Hierarquia de páginas', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
     initializeDemoData(TestBed.inject(StorageService));
-    TestBed.inject(AuthService).login('coordenacao', 'ipb123', false);
+    TestBed.inject(AuthService).login('professor', 'ipb123', false);
   });
   it('breadcrumbs seguem a hierarquia, enquanto Voltar preserva a origem', async () => {
     const harness = await RouterTestingHarness.create();
@@ -28,7 +28,7 @@ describe('Hierarquia de páginas', () => {
       'Aulas',
       'Registrar aula',
     ]);
-    expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/coordenacao?busca=6');
+    expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/turmas?busca=6');
   });
   it('detalhes e edição usam o registro e a turma da rota', async () => {
     const harness = await RouterTestingHarness.create();
@@ -50,7 +50,7 @@ describe('Hierarquia de páginas', () => {
       'Editar aula',
     ]);
   });
-  it('mantém a hierarquia do Histórico global e restringe retornos externos', async () => {
+  it('mantém a hierarquia da Auditoria global e restringe retornos externos', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/historico/demo-aula-6a?retorno=https%3A%2F%2Fexample.com');
     const navigation = TestBed.inject(PageNavigation);
@@ -59,7 +59,7 @@ describe('Hierarquia de páginas', () => {
         .page()
         .crumbs.map((item) => item.label)
         .slice(0, 2),
-    ).toEqual(['Início', 'Histórico']);
+    ).toEqual(['Início', 'Auditoria']);
     expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/historico');
   });
 });

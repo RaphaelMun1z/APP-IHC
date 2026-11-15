@@ -9,20 +9,21 @@ export function navigationUrl(router: Router): string {
 }
 
 /** Recover the originating class list even from a record/editor return chain. */
-export function classListReturn(
-  route: ActivatedRouteSnapshot,
-  router: Router,
-  coordinator: boolean,
-): string {
-  let raw = route.queryParamMap.get('retorno');
+function findClassListReturn(raw: string | null, router: Router): string {
   for (let depth = 0; raw && depth < 10; depth++) {
-    const safe = safeReturn(raw, coordinator);
+    const safe = safeReturn(raw);
     const tree = router.parseUrl(safe);
     const path = tree.root.children['primary']?.segments.map((segment) => segment.path).join('/');
-    if (path === 'turmas' || (coordinator && path === 'coordenacao')) return safe;
+    if (path === 'turmas') return safe;
     raw = tree.queryParamMap.get('retorno');
   }
   return '/turmas';
+}
+export function classListReturn(route: ActivatedRouteSnapshot, router: Router): string {
+  return findClassListReturn(route.queryParamMap.get('retorno'), router);
+}
+export function classListReturnFromUrl(url: string, router: Router): string {
+  return findClassListReturn(router.parseUrl(url).queryParamMap.get('retorno'), router);
 }
 
 /** Path identity wins over legacy query parameters. */
@@ -33,12 +34,8 @@ export function contextParam(route: ActivatedRouteSnapshot, key: string): string
   }
   return route.queryParamMap.get(key);
 }
-export function returnTo(
-  route: ActivatedRouteSnapshot,
-  fallback: string,
-  coordinator: boolean,
-): string {
+export function returnTo(route: ActivatedRouteSnapshot, fallback: string): string {
   const raw = route.queryParamMap.get('retorno');
-  const safe = safeReturn(raw, coordinator);
+  const safe = safeReturn(raw);
   return raw && (safe !== '/inicio' || raw === '/inicio') ? safe : fallback;
 }

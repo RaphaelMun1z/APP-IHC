@@ -10,6 +10,29 @@
 .avaliacao-context strong {
   font-size: 0.875rem;
 }
+.avaliacao-footer {
+  justify-content: flex-end;
+}
+.avaliacao-lessons-table {
+  min-width: 40rem;
+}
+.legacy-assessments {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: 30%;
+  padding: 0.75rem;
+  overflow: auto;
+}
+.legacy-assessments h2,
+.legacy-assessments p {
+  margin: 0;
+}
+.legacy-assessments p {
+  color: #64748b;
+  font-size: 0.8125rem;
+}
 .avaliacao-legend {
   display: flex;
   flex: none;

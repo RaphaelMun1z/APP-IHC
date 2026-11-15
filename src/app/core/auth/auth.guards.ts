@@ -6,8 +6,6 @@ export const authGuard: CanActivateFn = (_, state) =>
   inject(AuthService).user()
     ? true
     : inject(Router).createUrlTree(['/login'], { queryParams: { retorno: state.url } });
-export const coordinatorGuard: CanActivateFn = () =>
-  inject(AuthService).isCoordinator() ? true : inject(Router).createUrlTree(['/inicio']);
 // canDeactivate runs before this guard, so cancellation keeps the session intact.
 export const loginEntryGuard: CanActivateFn = () => {
   const router = inject(Router);
@@ -21,13 +19,14 @@ export const loginEntryGuard: CanActivateFn = () => {
   } // AuthService exposes the failure to the existing layout.
 };
 
-export function safeReturn(raw: string | null, coordinator: boolean): string {
+export function safeReturn(raw: string | null): string {
   if (!raw || raw.startsWith('//') || raw.includes('://') || raw.includes('\\')) return '/inicio';
-  const target = raw.replace(/^\.\//, '').replace(/^\//, '');
+  let target = raw.replace(/^\.\//, '').replace(/^\//, '');
+  target = target.replace(/^coordenacao(?:\.html)?(?=\?|$)/, 'turmas');
   const [path] = target.split('?');
   const normalized = path.replace(/\.html$/, '');
   const contextual = new RegExp(
-    `^turmas/[^/]+(?:/(?:visao-geral|alunos|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar${coordinator ? '|gerenciar' : ''}))?$`,
+    '^turmas/[^/]+(?:/(?:visao-geral|alunos|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar|gerenciar))?$',
   ).test(normalized);
   if (
     !contextual &&
@@ -39,7 +38,7 @@ export function safeReturn(raw: string | null, coordinator: boolean): string {
       'presencas',
       'avaliacao',
       'historico',
-      ...(coordinator ? ['coordenacao', 'turma-form'] : []),
+      'turma-form',
     ].includes(normalized)
   )
     return '/inicio';

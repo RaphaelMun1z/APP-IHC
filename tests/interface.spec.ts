@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function login(page: Page, role = 'coordenacao') {
+async function login(page: Page, role = 'professor') {
   await page.goto('/login');
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
   await page.getByLabel('Usuário', { exact: true }).fill(role);
@@ -28,9 +28,8 @@ test('páginas usam um título, breadcrumb hierárquico e retorno circular com �
   const checks: [string, string[]][] = [
     ['/inicio', ['Início']],
     ['/turmas', ['Início', 'Turmas']],
-    ['/historico', ['Início', 'Histórico']],
-    ['/coordenacao', ['Início', 'Coordenação']],
-    ['/turma-form', ['Início', 'Coordenação', 'Nova turma']],
+    ['/historico', ['Início', 'Auditoria']],
+    ['/turma-form', ['Início', 'Turmas', 'Nova turma']],
     ['/turmas/6a/visao-geral?retorno=%2Fcoordenacao', ['Início', 'Turmas', '6º ano A']],
     ['/turmas/6a/aulas/nova', ['Início', 'Turmas', '6º ano A', 'Aulas', 'Registrar aula']],
     [
@@ -69,22 +68,16 @@ test('páginas usam um título, breadcrumb hierárquico e retorno circular com �
     await viewportDoesNotScroll(page);
     if (route.startsWith('/turmas/6a/')) {
       const section = route.split('/')[3]?.split('?')[0];
-      const label =
-        section === 'visao-geral'
-          ? 'Visão geral'
-          : section === 'aulas'
-            ? 'Aulas'
-            : section === 'frequencia'
-              ? 'Frequência'
-              : section === 'avaliacoes'
-                ? 'Avaliações'
-                : '';
+      const label = section === 'visao-geral' ? 'Visão geral' : section === 'aulas' ? 'Aulas' : '';
+      const classNavigation = page.getByRole('navigation', { name: 'Navegação da turma' });
       if (label)
         await expect(
-          page
-            .getByRole('navigation', { name: 'Navegação da turma' })
-            .getByRole('link', { name: label, exact: true }),
+          classNavigation.getByRole('link', { name: label, exact: true }),
         ).toHaveAttribute('aria-current', 'page');
+      if (section === 'frequencia')
+        await expect(classNavigation.getByRole('link', { name: 'Frequência' })).toHaveCount(0);
+      if (section === 'avaliacoes')
+        await expect(classNavigation.getByRole('link', { name: 'Avaliações' })).toHaveCount(0);
     }
   }
 });
@@ -93,12 +86,7 @@ test('filtros externos e tabelas ocupam o espaço disponível sem rolar a viewpo
   page,
 }) => {
   await login(page);
-  for (const route of [
-    '/historico',
-    '/coordenacao',
-    '/turmas/6a/frequencia',
-    '/turmas/6a/avaliacoes',
-  ]) {
+  for (const route of ['/historico', '/turmas', '/turmas/6a/frequencia', '/turmas/6a/avaliacoes']) {
     await page.goto(route);
     const region = page.locator('.table-scroll');
     await expect(region).toBeVisible();
@@ -148,6 +136,8 @@ test('conteúdo extenso, filtros compactos e ações continuam alcançáveis em 
       });
       await viewportDoesNotScroll(page);
       if (route.endsWith('gerenciar')) {
+        await page.getByRole('button', { name: 'Próxima etapa' }).click();
+        await page.getByRole('button', { name: 'Próxima etapa' }).click();
         await page.getByRole('button', { name: 'Salvar turma' }).scrollIntoViewIfNeeded();
         await expect(page.getByRole('button', { name: 'Salvar turma' })).toBeInViewport();
       }
@@ -163,9 +153,11 @@ test('conteúdo extenso, filtros compactos e ações continuam alcançáveis em 
   }
 });
 
-test('ações de ícone têm tooltip, nome acessível e respeitam o perfil', async ({ page }) => {
+test('ações de ícone são acessíveis e todas as ações estão disponíveis ao professor', async ({
+  page,
+}) => {
   await login(page);
-  for (const route of ['/turmas', '/coordenacao', '/historico', '/turmas/6a/aulas']) {
+  for (const route of ['/turmas', '/historico', '/turmas/6a/aulas']) {
     await page.goto(route);
     for (const control of await page.locator('.icon-button').all()) {
       await expect(control).toHaveAttribute('title', /.+/);
@@ -176,8 +168,8 @@ test('ações de ícone têm tooltip, nome acessível e respeitam o perfil', asy
   await page.getByRole('button', { name: 'Sair do sistema' }).click();
   await login(page, 'professor');
   await page.goto('/turmas');
-  await expect(page.locator('.icon-button.danger')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /^Editar / })).toHaveCount(0);
+  await expect(page.locator('.icon-button.danger')).toHaveCount(4);
+  await expect(page.getByRole('link', { name: /^Editar / })).toHaveCount(4);
   await expect(page.getByRole('button', { name: 'Meu perfil' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Meu perfil' })).toHaveAccessibleDescription(
     'Mariana Oliveira Professor',
@@ -207,7 +199,7 @@ test('listas extensas e detalhes de avaliação usam somente a área interna de 
     localStorage.setItem('ipb-turmas-v1', JSON.stringify([...original, ...groups]));
   });
   await page.goto('/turmas');
-  const list = page.locator('.turmas-list');
+  const list = page.locator('.turmas-table-scroll');
   expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
   const last = page.getByRole('link', { name: 'Abrir Turma adicional 59', exact: true });
   await last.scrollIntoViewIfNeeded();

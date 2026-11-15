@@ -1,21 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-} from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../core/auth/auth.service';
 import { classListReturn } from '../../core/navigation/context';
 import { ClassesStore } from './classes.store';
 import { ClassNavigationState } from '../../core/navigation/class-navigation-state';
-import { StudentRegistration } from './student-registration';
+import { Action } from '../../shared/ui/action';
 
 @Component({
   selector: 'app-class-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, StudentRegistration],
+  imports: [Action, RouterLink, RouterOutlet],
   styleUrl: './class-shell.scss',
   template: `
     <div class="class-workspace">
@@ -27,31 +20,31 @@ import { StudentRegistration } from './student-registration';
                 #tabLink
                 [routerLink]="['/turmas', id(), tab.path]"
                 [queryParams]="tabParams(tab.path)"
-                routerLinkActive="active"
-                (isActiveChange)="$event && revealTab(tabLink)"
-                [routerLinkActiveOptions]="activeOptions"
-                ariaCurrentWhenActive="page"
+                [class.active]="isSelected(tab.path)"
+                [attr.aria-current]="isSelected(tab.path) ? 'page' : null"
+                (click)="revealTab(tabLink)"
                 ><span class="material-symbols-outlined" aria-hidden="true">{{ tab.icon }}</span
                 >{{ tab.title }}</a
-              >
-            }
-            @if (auth.isCoordinator()) {
-              <a
-                #manageLink
-                [routerLink]="['/turmas', id(), 'gerenciar']"
-                [queryParams]="{ retorno: back }"
-                routerLinkActive="active"
-                (isActiveChange)="$event && revealTab(manageLink)"
-                [routerLinkActiveOptions]="activeOptions"
-                ariaCurrentWhenActive="page"
-                ><span class="material-symbols-outlined" aria-hidden="true">settings</span>Gerenciar
-                turma</a
               >
             }
           </nav>
         </div>
         @if (section() === 'alunos' && group()?.ativa) {
-          <app-student-registration [classId]="id()" />
+          <a
+            appAction="person_add"
+            class="app-button primary class-toolbar-action"
+            [routerLink]="['/turmas', id(), 'alunos', 'novo']"
+            [queryParams]="{ retorno: studentListUrl() }"
+            >Cadastrar aluno</a
+          >
+        } @else if (isSelected('aulas') && group()?.ativa) {
+          <a
+            appAction="add"
+            class="app-button primary class-toolbar-action"
+            [routerLink]="['/turmas', id(), 'aulas', 'nova']"
+            [queryParams]="{ retorno: back }"
+            >Registrar aula</a
+          >
         }
       </div>
 
@@ -63,35 +56,46 @@ import { StudentRegistration } from './student-registration';
 export class ClassShell {
   readonly section = signal('');
   updateSection(): void {
-    this.section.set(this.route.firstChild?.snapshot.data['section'] ?? '');
+    const segments =
+      this.router
+        .parseUrl(this.router.url)
+        .root.children['primary']?.segments.map((segment) => segment.path) ?? [];
+    const section = segments[2] ?? '';
+    this.section.set(
+      section === 'alunos' && segments[3] === 'novo'
+        ? 'student-registration'
+        : section === 'registros'
+          ? 'lesson'
+          : section,
+    );
   }
   revealTab(link: HTMLAnchorElement): void {
     link.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
-  readonly activeOptions = {
-    paths: 'subset',
-    queryParams: 'ignored',
-    matrixParams: 'ignored',
-    fragment: 'ignored',
-  } as const;
+  isSelected(path: string): boolean {
+    return (
+      this.section() === path ||
+      (path === 'alunos' && this.section() === 'student-registration') ||
+      (path === 'aulas' && this.section() === 'lesson')
+    );
+  }
   private readonly navigationState = inject(ClassNavigationState);
+  private readonly router = inject(Router);
   tabParams(section: string) {
     return { ...this.navigationState.params(this.id(), section), retorno: this.back };
   }
   readonly classes = inject(ClassesStore);
-  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly params = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
   });
   readonly id = computed(() => this.params().get('turma') ?? '');
   readonly group = computed(() => this.classes.get(this.id()));
-  readonly back = classListReturn(this.route.snapshot, inject(Router), this.auth.isCoordinator());
+  readonly studentListUrl = computed(() => `/turmas/${this.id()}/alunos`);
+  readonly back = classListReturn(this.route.snapshot, inject(Router));
   readonly tabs = [
     { path: 'visao-geral', title: 'Visão geral', icon: 'dashboard' },
     { path: 'alunos', title: 'Alunos', icon: 'groups' },
     { path: 'aulas', title: 'Aulas', icon: 'menu_book' },
-    { path: 'frequencia', title: 'Frequência', icon: 'event_available' },
-    { path: 'avaliacoes', title: 'Avaliações', icon: 'fact_check' },
   ];
 }

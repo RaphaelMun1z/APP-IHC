@@ -11,11 +11,16 @@ import { contextParam } from '../../core/navigation/context';
   imports: [RecordDetails],
   template: `<main class="app-page surface content-scroll record-page">
     @if (record(); as item) {
-      <app-record-details [record]="item" [returnUrl]="currentUrl" />
+      <app-record-details
+        [record]="item"
+        [returnUrl]="currentUrl"
+        [showLessonTabs]="!nestedLessonContext"
+      />
     } @else {
-      <p>O registro não existe ou não está disponível para seu perfil nesta turma.</p>
+      <p>O registro não existe ou não pertence a esta turma.</p>
     }
   </main>`,
+  styleUrl: './record-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecordPage {
@@ -24,14 +29,21 @@ export class RecordPage {
   private readonly params = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
   });
+  private readonly parentParams = toSignal(this.route.parent!.paramMap, {
+    initialValue: this.route.parent!.snapshot.paramMap,
+  });
   readonly contextual = !!contextParam(this.route.snapshot, 'turma');
+  readonly nestedLessonContext = this.route.parent?.snapshot.routeConfig?.path === 'registros/:id';
   readonly currentUrl = navigationUrl(inject(Router));
+  private readonly recordId = computed(
+    () => this.params().get('id') ?? this.parentParams().get('id'),
+  );
   readonly record = computed(() =>
     this.history
       .records()
       .find(
         (item) =>
-          item.id === this.params().get('id') &&
+          item.id === this.recordId() &&
           (!this.contextual || item.turmaId === contextParam(this.route.snapshot, 'turma')),
       ),
   );

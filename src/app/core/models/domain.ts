@@ -4,7 +4,7 @@ export interface Person {
 }
 export type Student = Person;
 export type Criterion = Person;
-export type Role = 'professor' | 'coordenacao';
+export type Role = 'professor';
 export interface Session extends Person {
   readonly perfil: Role;
 }
@@ -48,11 +48,20 @@ export interface StudentAssessment extends Person {
   readonly avaliacoes: Readonly<Record<string, AssessmentMark>>;
 }
 export interface Assessment {
+  readonly lessonId: string;
   readonly alunos: readonly StudentAssessment[];
   readonly atualizadoEm: string;
   readonly professorId: string;
 }
-export type AssessmentData = Readonly<Record<string, Readonly<Record<string, Assessment>>>>;
+export interface LegacyAssessment {
+  readonly alunos: readonly StudentAssessment[];
+  readonly atualizadoEm: string;
+  readonly professorId: string;
+}
+export type AssessmentData = Readonly<Record<string, Assessment>>;
+export type LegacyAssessmentData = Readonly<
+  Record<string, Readonly<Record<string, LegacyAssessment>>>
+>;
 export const lessonTypes: Readonly<Record<LessonType, string>> = {
   regular: 'Regular',
   revisao: 'Revisão',

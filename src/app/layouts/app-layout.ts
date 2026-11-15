@@ -24,7 +24,7 @@ export class AppLayout {
   readonly navigation = [
     { path: '/inicio', icon: 'home', title: 'Início' },
     { path: '/turmas', icon: 'groups', title: 'Turmas' },
-    { path: '/historico', icon: 'history', title: 'Histórico' },
+    { path: '/historico', icon: 'history', title: 'Auditoria' },
   ];
   readonly storageMessages = computed(() => Object.values(this.storage.errors()));
   logout(): void {

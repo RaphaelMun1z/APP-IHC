@@ -43,7 +43,7 @@ export class LessonsStore {
       )
     )
       throw new Error(
-        'Já existe uma aula nesta data para a turma. Abra o registro no Histórico para editá-lo.',
+        'Já existe uma aula nesta data para a turma. Abra o registro na Auditoria para editá-lo.',
       );
     const user = this.auth.user();
     if (!user) throw new Error('Entre na sua conta para salvar.');

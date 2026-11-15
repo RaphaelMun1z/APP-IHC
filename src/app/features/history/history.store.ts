@@ -73,19 +73,20 @@ export class HistoryStore {
             registro: marks,
           });
       }
-    for (const [turmaId, dates] of Object.entries(this.assessments.records()))
-      for (const [data, value] of Object.entries(dates)) {
-        const marks = value.alunos.flatMap((student) => Object.values(student.avaliacoes));
-        result.push({
-          id: `avaliacao-${turmaId}-${data}`,
-          tipo: 'avaliacao',
-          turmaId,
-          data,
-          titulo: 'Avaliação observacional',
-          resumo: `${marks.filter((mark) => mark === 'ok').length} OK · ${marks.filter((mark) => mark === 'nao-ok').length} Não OK`,
-          registro: value,
-        });
-      }
+    for (const value of Object.values(this.assessments.records())) {
+      const lesson = this.lessons.records().find((item) => item.id === value.lessonId);
+      if (!lesson) continue;
+      const marks = value.alunos.flatMap((student) => Object.values(student.avaliacoes));
+      result.push({
+        id: `avaliacao-${lesson.turmaId}-${lesson.data}`,
+        tipo: 'avaliacao',
+        turmaId: lesson.turmaId,
+        data: lesson.data,
+        titulo: 'Avaliação observacional',
+        resumo: `${marks.filter((mark) => mark === 'ok').length} OK · ${marks.filter((mark) => mark === 'nao-ok').length} Não OK`,
+        registro: value,
+      });
+    }
     return result.sort((a, b) => b.data.localeCompare(a.data) || a.titulo.localeCompare(b.titulo));
   });
 }

@@ -5,7 +5,6 @@ import { DataTable } from '../../shared/ui/data-table';
 import { FilterPanel } from '../../shared/ui/filter-panel';
 import { Action } from '../../shared/ui/action';
 import { contextParam, returnTo } from '../../core/navigation/context';
-import { AuthService } from '../../core/auth/auth.service';
 import { ClassNavigationState } from '../../core/navigation/class-navigation-state';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -18,6 +17,7 @@ import { errorMessage } from '../../shared/utils/errors';
 import { isDate, localDate } from '../../shared/utils/dates';
 import { UnsavedChangesDirective, confirmDiscard } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
+import { LessonsStore } from '../lessons/lessons.store';
 
 @Component({
   selector: 'app-attendance',
@@ -40,17 +40,28 @@ export class Attendance implements UnsavedChanges {
   private readonly navigationState = inject(ClassNavigationState);
   readonly classes = inject(ClassesStore);
   private readonly store = inject(AttendanceStore);
+  private readonly lessons = inject(LessonsStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly params = this.route.snapshot.queryParamMap;
+  readonly lessonContext = this.route.snapshot.pathFromRoot.some(
+    (node) => node.routeConfig?.path === 'registros/:id',
+  );
   readonly fixedClass = this.route.snapshot.pathFromRoot.some((node) => node.paramMap.has('turma'));
   readonly contextClass = contextParam(this.route.snapshot, 'turma');
+  private readonly lessonId = this.route.snapshot.pathFromRoot
+    .find((node) => node.routeConfig?.path === 'registros/:id')
+    ?.paramMap.get('id');
+  readonly selectedLessonDate =
+    this.lessons
+      .records()
+      .find((lesson) => lesson.id === this.lessonId && lesson.turmaId === this.contextClass)
+      ?.data ?? '';
   readonly back = returnTo(
     this.route.snapshot,
     this.contextClass ? `/turmas/${this.contextClass}/visao-geral` : '/turmas',
-    inject(AuthService).isCoordinator(),
   );
-  private readonly initialDate = this.params.get('data');
+  private readonly initialDate = this.selectedLessonDate || this.params.get('data');
   private readonly date =
     this.initialDate && isDate(this.initialDate)
       ? new Date(`${this.initialDate}T12:00:00`)
@@ -93,6 +104,7 @@ export class Attendance implements UnsavedChanges {
     ].sort((a, b) => b - a),
   );
   readonly draft = signal<Readonly<Record<string, AttendanceDay>>>({});
+  readonly editingPastDates = signal<ReadonlySet<string>>(new Set());
   readonly dirty = signal(false);
   readonly message = signal('');
   readonly isError = signal(false);
@@ -119,6 +131,7 @@ export class Attendance implements UnsavedChanges {
     this.paging.page.set(1);
     this.rememberPeriod();
     this.draft.set({});
+    this.editingPastDates.set(new Set());
     this.dirty.set(false);
     this.message.set('');
     void this.router.navigate([], {
@@ -139,7 +152,7 @@ export class Attendance implements UnsavedChanges {
     );
   }
   cycle(studentId: string, date: string): void {
-    if (!this.group()?.ativa || date > localDate()) return;
+    if (!this.group()?.ativa || !this.canEdit(date)) return;
     const day = Object.fromEntries(
       this.roster().map((student) => [student.id, this.mark(student.id, date)]),
     );
@@ -150,20 +163,36 @@ export class Attendance implements UnsavedChanges {
     this.dirty.set(true);
     this.message.set('');
   }
+  hasRecordedCall(date: string): boolean {
+    return Object.hasOwn(this.store.records()[this.applied().turmaId] ?? {}, date);
+  }
+  canEdit(date: string): boolean {
+    return date === localDate() || this.editingPastDates().has(date);
+  }
+  togglePastEdit(date: string): void {
+    if (date >= localDate() || !this.hasRecordedCall(date)) return;
+    this.editingPastDates.update((dates) => {
+      const next = new Set(dates);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
+    });
+  }
   label(mark: AttendanceMark): string {
     return mark === 'presente' ? 'Presente' : mark === 'falta' ? 'Falta' : 'Sem registro';
   }
   summary(studentId: string): string {
     const marks = this.columns().map((column) => this.mark(studentId, column.date));
-    return `${marks.filter((mark) => mark === 'presente').length} / ${marks.filter((mark) => mark !== null).length}`;
+    return String(marks.filter((mark) => mark === 'falta').length);
   }
   save(): void {
     try {
       this.store.saveMonth(this.applied().turmaId, this.draft());
       this.dirty.set(false);
       this.draft.set({});
+      this.editingPastDates.set(new Set());
       this.isError.set(false);
-      this.message.set('Frequência salva. Os registros já estão disponíveis no histórico.');
+      this.message.set('Frequência salva. Os registros já estão disponíveis na auditoria.');
     } catch (error: unknown) {
       this.isError.set(true);
       this.message.set(errorMessage(error));

@@ -2,14 +2,10 @@
   align-items: flex-end;
 }
 
-.presencas-context {
-  display: grid;
-  gap: 0.25rem;
-  font-size: 0.75rem;
+.presencas-footer {
+  justify-content: flex-end;
 }
-.presencas-context strong {
-  font-size: 0.875rem;
-}
+
 .presencas-legend {
   display: flex;
   flex: none;
@@ -39,9 +35,31 @@
   z-index: 4;
   background: #f1f5f9;
 }
+.attendance-date-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.125rem;
+}
+.attendance-date-edit-slot {
+  display: grid;
+  place-items: center;
+  height: 2rem;
+}
 .presencas-table th:last-child,
 .presencas-table td:last-child {
   text-align: center;
+}
+.attendance-edit-toggle {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  min-height: 1.5rem;
+  margin-top: 0.25rem;
+}
+.attendance-edit-toggle.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 .attendance-mark,
 .eval-mark {

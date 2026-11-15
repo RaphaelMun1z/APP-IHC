@@ -1,8 +1,8 @@
 import { criteria, courses, defaultClasses, students } from './catalog';
 import type {
-  AssessmentData,
   AssessmentMark,
   AttendanceData,
+  LegacyAssessmentData,
   Lesson,
   LessonType,
 } from '../models/domain';
@@ -43,7 +43,7 @@ export function initializeDemoData(storage: StorageService): void {
       },
     ]),
   );
-  const assessments: AssessmentData = Object.fromEntries(
+  const assessments: LegacyAssessmentData = Object.fromEntries(
     defaultClasses.map((group, groupIndex) => [
       group.id,
       {

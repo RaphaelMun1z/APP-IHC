@@ -1,5 +1,35 @@
 <main class="app-page inicio-page">
-  <section class="surface content-scroll inicio-panel" aria-label="Visão geral demonstrativa">
+  <section class="surface content-scroll inicio-panel" aria-label="Página inicial">
+    @if (classes.pinned().length) {
+      <section class="home-pinned" aria-labelledby="pinned-classes-title">
+        <h2 id="pinned-classes-title">Turmas fixadas</h2>
+        <div class="pinned-class-grid">
+          @for (group of classes.pinned(); track group.id) {
+            <a class="pinned-class-link" [routerLink]="['/turmas', group.id]">
+              <span class="pinned-class-icon material-symbols-outlined" aria-hidden="true"
+                >push_pin</span
+              >
+              <span>
+                <strong>{{ group.nome }}</strong>
+                <small
+                  >{{ classes.course(group.cursoId)?.nome }} · {{ classes.schedule(group) }}</small
+                >
+                <small>{{ group.ativa ? 'Ativa' : 'Arquivada' }}</small>
+              </span>
+              <span class="quick-arrow material-symbols-outlined" aria-hidden="true"
+                >chevron_right</span
+              >
+            </a>
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="home-pinned home-pinned-empty" aria-labelledby="pinned-classes-title">
+        <h2 id="pinned-classes-title">Turmas fixadas</h2>
+        <p>Fixe as turmas mais utilizadas para acessá-las rapidamente nesta tela.</p>
+        <a class="app-button" routerLink="/turmas">Escolher turmas</a>
+      </section>
+    }
     <div class="inicio-quick-links">
       @for (link of links; track link.path) {
         <a [routerLink]="link.path"
@@ -9,15 +39,6 @@
           ><span
             ><strong>{{ link.title }}</strong
             ><small>{{ link.description }}</small></span
-          ><span class="quick-arrow material-symbols-outlined" aria-hidden="true"
-            >chevron_right</span
-          ></a
-        >
-      }
-      @if (auth.isCoordinator()) {
-        <a routerLink="/coordenacao"
-          ><span class="quick-icon material-symbols-outlined" aria-hidden="true">settings</span
-          ><span><strong>Coordenação</strong><small>Gestão de turmas e professores</small></span
           ><span class="quick-arrow material-symbols-outlined" aria-hidden="true"
             >chevron_right</span
           ></a

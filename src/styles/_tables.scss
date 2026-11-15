@@ -333,6 +333,66 @@ app-list-header {
   border-color: #fecaca;
   background: #fef2f2;
 }
+.app-page .icon-button[data-action='open_in_new'] {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+.app-page .icon-button[data-action='open_in_new']:hover {
+  color: #1e40af;
+  border-color: #93c5fd;
+  background: #dbeafe;
+}
+.app-page .icon-button[data-action='edit'] {
+  color: #b45309;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.app-page .icon-button[data-action='edit']:hover {
+  color: #92400e;
+  border-color: #fcd34d;
+  background: #fef3c7;
+}
+.app-page .icon-button[data-action='delete'] {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.app-page .icon-button[data-action='event_available'] {
+  color: #047857;
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+.app-page .icon-button[data-action='event_available']:hover {
+  color: #065f46;
+  border-color: #6ee7b7;
+  background: #d1fae5;
+}
+.app-page .icon-button[data-action='fact_check'] {
+  color: #6d28d9;
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+.app-page .icon-button[data-action='fact_check']:hover {
+  color: #5b21b6;
+  border-color: #c4b5fd;
+  background: #ede9fe;
+}
+.app-page .icon-button.pin-action {
+  color: #64748b;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+.app-page .icon-button.pin-action:hover {
+  color: #92400e;
+  border-color: #fcd34d;
+  background: #fef3c7;
+}
+.app-page .icon-button.pin-action.is-pinned {
+  color: #a16207;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
 .icon-button .material-symbols-outlined {
   font-size: 1.125rem;
 }
@@ -368,6 +428,31 @@ app-list-header {
   background: #fffbeb;
   border-color: #fef3c7;
   color: #92400e;
+}
+.lesson-type-badge[data-lesson-type='regular'] {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+.lesson-type-badge[data-lesson-type='revisao'] {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+.lesson-type-badge[data-lesson-type='PR1'] {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+.lesson-type-badge[data-lesson-type='PR2'] {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+.lesson-type-badge[data-lesson-type='PR3'] {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
 }
 .historico-table :is(th, td):is(:first-child, :nth-child(2), :last-child) {
   width: 1%;

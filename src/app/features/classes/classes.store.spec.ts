@@ -12,7 +12,7 @@ import { AssessmentsStore } from '../assessments/assessments.store';
 import { HistoryStore } from '../history/history.store';
 import { localDate } from '../../shared/utils/dates';
 
-describe('Regras pedagógicas e perfis', () => {
+describe('Regras pedagógicas e acesso do professor', () => {
   let auth: AuthService;
   let classes: ClassesStore;
   let lessons: LessonsStore;
@@ -51,12 +51,16 @@ describe('Regras pedagógicas e perfis', () => {
     assessments = TestBed.inject(AssessmentsStore);
     auth.login('professor', 'ipb123', false);
   });
-  it('limita turmas e registros ao professor e atualiza sinais ao trocar perfil', () => {
-    expect(classes.active().map((group) => group.id)).toEqual(['6a', '6b']);
-    expect(lessons.records()).toHaveLength(2);
-    auth.login('coordenacao', 'ipb123', false);
+  it('disponibiliza todas as turmas e registros ao único perfil de professor', () => {
     expect(classes.active()).toHaveLength(4);
     expect(lessons.records()).toHaveLength(4);
+    expect(auth.user()?.perfil).toBe('professor');
+  });
+  it('aceita somente credenciais do perfil Professor', () => {
+    expect(() => auth.login('coordenacao', 'ipb123', false)).toThrow(
+      'Usuário ou senha incorretos.',
+    );
+    expect(auth.user()?.perfil).toBe('professor');
   });
   it('mantém senha fora dos armazenamentos e encerra a sessão', () => {
     expect(sessionStorage.getItem(storageKeys.session)).not.toContain('ipb123');
@@ -65,14 +69,35 @@ describe('Regras pedagógicas e perfis', () => {
     expect(auth.user()).toBeNull();
     expect(classes.active()).toHaveLength(0);
   });
-  it('nega gravação em turmas de outro professor', () => {
-    expect(() => lessons.save({ ...lesson(), turmaId: '7a' })).toThrow('não disponível');
-    expect(() => attendance.saveMonth('7a', {})).toThrow('não disponível');
-    expect(() => assessments.save('7a', localDate(), [])).toThrow('não disponível');
+  it('permite ao professor salvar registros em qualquer turma', () => {
+    const otherLesson = lessons.records().find((item) => item.turmaId === '7a')!;
+    lessons.save({ ...otherLesson, notas: 'Registro atualizado pelo professor' });
+    expect(lessons.records().find((item) => item.id === otherLesson.id)?.notas).toBe(
+      'Registro atualizado pelo professor',
+    );
+    const student = classes.roster('7a')[0];
+    attendance.saveMonth('7a', { [localDate()]: { [student.id]: 'presente' } });
+    expect(attendance.records()['7a'][localDate()][student.id]).toBe('presente');
+    assessments.save('demo-aula-7a', assessments.roster('demo-aula-7a'));
+    expect(assessments.records()['demo-aula-7a']).toBeDefined();
   });
-  it('reserva criação e exclusão de turmas à coordenação', () => {
-    expect(() => classes.save(newClass())).toThrow('exclusivo');
-    expect(() => classes.delete(['6a'])).toThrow('exclusivo');
+  it('permite ao professor criar e excluir turmas', () => {
+    const created = classes.save(newClass());
+    expect(classes.get(created.id)).toEqual(created);
+    classes.delete([created.id]);
+    expect(classes.get(created.id)).toBeUndefined();
+  });
+  it('fixa turmas na ordem escolhida e remove fixações ao excluir uma turma', () => {
+    classes.togglePinned('7a');
+    classes.togglePinned('6a');
+    expect(classes.pinned().map((group) => group.id)).toEqual(['7a', '6a']);
+    expect(localStorage.getItem(storageKeys.pinnedClasses)).toBe('["7a","6a"]');
+
+    classes.togglePinned('7a');
+    expect(classes.pinned().map((group) => group.id)).toEqual(['6a']);
+    classes.delete(['6a']);
+    expect(classes.pinned()).toEqual([]);
+    expect(localStorage.getItem(storageKeys.pinnedClasses)).toBe('[]');
   });
   it('cadastra um aluno e persiste sua matrícula apenas na turma escolhida', () => {
     const otherGroup = classes.get('6b');
@@ -81,19 +106,19 @@ describe('Regras pedagógicas e perfis', () => {
     expect(classes.roster('6a')).toContainEqual(student);
     expect(classes.get('6a')?.alunoIds).toHaveLength(16);
     expect(classes.get('6b')).toEqual(otherGroup);
-    expect(assessments.roster('6a', localDate()).some((item) => item.id === student.id)).toBe(true);
+    expect(assessments.roster('demo-aula-6a').some((item) => item.id === student.id)).toBe(true);
     TestBed.resetTestingModule();
     expect(TestBed.inject(ClassesStore).roster('6a')).toContainEqual(student);
   });
-  it('valida o nome e o acesso à turma antes de cadastrar um aluno', () => {
+  it('valida o nome e o estado da turma antes de cadastrar um aluno', () => {
     expect(() => classes.addStudent('6a', '   ')).toThrow('Informe um nome');
     expect(() => classes.addStudent('6a', 'a'.repeat(101))).toThrow('100');
-    expect(() => classes.addStudent('7a', 'Beatriz Souza')).toThrow('não disponível');
-    expect(classes.students).toHaveLength(15);
-    auth.login('coordenacao', 'ipb123', false);
+    const student = classes.addStudent('7a', 'Beatriz Souza');
+    expect(classes.roster('7a')).toContainEqual(student);
+    expect(classes.students).toHaveLength(16);
     classes.save({ ...classes.require('6a'), ativa: false });
     expect(() => classes.addStudent('6a', 'Beatriz Souza')).toThrow('arquivada');
-    expect(classes.students).toHaveLength(15);
+    expect(classes.students).toHaveLength(16);
   });
   it('permite editar alunos das próprias turmas e persiste o nome nas listas relacionadas', () => {
     const id = 'aluno-01';
@@ -101,7 +126,7 @@ describe('Regras pedagógicas e perfis', () => {
     expect(classes.roster('6a').find((student) => student.id === id)?.nome).toBe(
       'Ana Clara Santos Silva',
     );
-    expect(assessments.roster('6a', localDate()).find((student) => student.id === id)?.nome).toBe(
+    expect(assessments.roster('demo-aula-6a').find((student) => student.id === id)?.nome).toBe(
       'Ana Clara Santos Silva',
     );
     TestBed.resetTestingModule();
@@ -114,8 +139,11 @@ describe('Regras pedagógicas e perfis', () => {
   it('valida nome, matrícula e acesso ao editar ou excluir alunos', () => {
     expect(() => classes.renameStudent('6a', 'aluno-01', '   ')).toThrow('Informe um nome');
     expect(() => classes.renameStudent('6a', 'aluno-01', 'a'.repeat(101))).toThrow('100');
-    expect(() => classes.renameStudent('7a', 'aluno-01', 'Ana')).toThrow('não disponível');
-    expect(() => classes.removeStudent('7a', 'aluno-01')).toThrow('não disponível');
+    const otherStudentId = classes.roster('7a')[0].id;
+    classes.renameStudent('7a', otherStudentId, 'Ana');
+    expect(classes.roster('7a').find((student) => student.id === otherStudentId)?.nome).toBe('Ana');
+    classes.removeStudent('7a', otherStudentId);
+    expect(classes.roster('7a').some((student) => student.id === otherStudentId)).toBe(false);
     expect(() => classes.renameStudent('6a', 'inexistente', 'Ana')).toThrow('não matriculado');
     expect(() => classes.removeStudent('6a', 'inexistente')).toThrow('não matriculado');
     classes.removeStudent('6a', 'aluno-01');
@@ -124,20 +152,19 @@ describe('Regras pedagógicas e perfis', () => {
   it('exclui apenas a matrícula escolhida e preserva os registros históricos e as outras turmas', () => {
     const otherGroup = classes.get('6b');
     const previousAttendance = localStorage.getItem(storageKeys.attendance);
-    const previousAssessments = localStorage.getItem(storageKeys.assessments);
+    const previousAssessments = localStorage.getItem(storageKeys.lessonAssessments);
     classes.removeStudent('6a', 'aluno-01');
     expect(classes.roster('6a').some((student) => student.id === 'aluno-01')).toBe(false);
     expect(classes.get('6a')?.alunoIds).toHaveLength(14);
     expect(classes.get('6b')).toEqual(otherGroup);
     expect(classes.students.some((student) => student.id === 'aluno-01')).toBe(true);
     expect(localStorage.getItem(storageKeys.attendance)).toBe(previousAttendance);
-    expect(localStorage.getItem(storageKeys.assessments)).toBe(previousAssessments);
+    expect(localStorage.getItem(storageKeys.lessonAssessments)).toBe(previousAssessments);
   });
   it('preserva o último aluno e bloqueia edição e exclusão em turmas arquivadas', () => {
     const group = classes.require('6a');
     for (const id of group.alunoIds.slice(1)) classes.removeStudent('6a', id);
     expect(() => classes.removeStudent('6a', group.alunoIds[0])).toThrow('pelo menos um aluno');
-    auth.login('coordenacao', 'ipb123', false);
     classes.save({ ...classes.require('6a'), ativa: false });
     expect(() => classes.renameStudent('6a', 'aluno-01', 'Ana')).toThrow('arquivada');
     expect(() => classes.removeStudent('6a', 'aluno-01')).toThrow('arquivada');
@@ -156,14 +183,12 @@ describe('Regras pedagógicas e perfis', () => {
     expect(() => lessons.save({ ...lesson(), notas: 'x'.repeat(601) })).toThrow('600');
   });
   it('valida nomes duplicados, horário e matrícula da turma', () => {
-    auth.login('coordenacao', 'ipb123', false);
     expect(() => classes.save({ ...newClass(), nome: ' 6º ANO a ' })).toThrow('esse nome');
     expect(() => classes.save({ ...newClass(), fim: '07:00' })).toThrow('horário final');
     expect(() => classes.save({ ...newClass(), alunoIds: [] })).toThrow('aluno válido');
     expect(() => classes.save({ ...newClass(), dias: [7] })).toThrow('dias');
   });
   it('arquiva sem perder histórico e bloqueia novas gravações', () => {
-    auth.login('coordenacao', 'ipb123', false);
     const group = classes.require('6a');
     classes.save({ ...group, ativa: false });
     expect(classes.active().some((item) => item.id === '6a')).toBe(false);
@@ -174,10 +199,9 @@ describe('Regras pedagógicas e perfis', () => {
     ).toBe(true);
     expect(() => lessons.save(lesson())).toThrow('arquivada');
     expect(() => attendance.saveMonth('6a', {})).toThrow('arquivada');
-    expect(() => assessments.save('6a', localDate(), [])).toThrow('arquivada');
+    expect(() => assessments.save('demo-aula-6a', [])).toThrow('arquivada');
   });
   it('exclui em conjunto turma e registros associados, atualizando stores já abertos', () => {
-    auth.login('coordenacao', 'ipb123', false);
     const history = TestBed.inject(HistoryStore);
     expect(history.records().filter((item) => item.turmaId === '6a')).toHaveLength(3);
     classes.delete(['6a']);
@@ -185,11 +209,12 @@ describe('Regras pedagógicas e perfis', () => {
     expect(history.records().some((item) => item.turmaId === '6a')).toBe(false);
     expect(localStorage.getItem(storageKeys.lessons)).not.toContain('demo-aula-6a');
     expect(localStorage.getItem(storageKeys.attendance)).not.toContain('"6a"');
+    expect(localStorage.getItem(storageKeys.lessonAssessments)).not.toContain('demo-aula-6a');
   });
-  it('salva frequência e avaliação no histórico, preservando outros perfis', () => {
-    const before = localStorage.getItem(storageKeys.assessments);
+  it('salva frequência e avaliação no histórico sem limitar outros registros', () => {
+    const otherAssessment = assessments.records()['demo-aula-7a'];
     attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' } });
-    assessments.save('6a', localDate(), assessments.roster('6a', localDate()));
+    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     const history = TestBed.inject(HistoryStore);
     expect(
       history
@@ -199,20 +224,18 @@ describe('Regras pedagógicas e perfis', () => {
             item.turmaId === '6a' && item.data === localDate() && item.tipo === 'frequencia',
         )?.resumo,
     ).toBe('1 presentes · 1 faltas');
-    auth.login('coordenacao', 'ipb123', false);
-    expect(assessments.records()['7a']).toEqual(JSON.parse(before ?? '{}')['7a']);
+    expect(assessments.records()['demo-aula-7a']).toEqual(otherAssessment);
   });
   it('preserva marcas históricas ao remover um aluno da turma', () => {
     attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'presente', 'aluno-02': 'falta' } });
-    assessments.save('6a', localDate(), assessments.roster('6a', localDate()));
-    auth.login('coordenacao', 'ipb123', false);
+    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     const group = classes.require('6a');
     classes.save({ ...group, alunoIds: group.alunoIds.filter((id) => id !== 'aluno-02') });
     attendance.saveMonth('6a', { [localDate()]: { 'aluno-01': 'falta' } });
-    assessments.save('6a', localDate(), assessments.roster('6a', localDate()));
+    assessments.save('demo-aula-6a', assessments.roster('demo-aula-6a'));
     expect(attendance.records()['6a'][localDate()]['aluno-02']).toBe('falta');
     expect(
-      assessments.records()['6a'][localDate()].alunos.some((student) => student.id === 'aluno-02'),
+      assessments.records()['demo-aula-6a'].alunos.some((student) => student.id === 'aluno-02'),
     ).toBe(true);
   });
 });

@@ -63,7 +63,7 @@ export class Login {
       this.auth.login(username, password, remember);
       this.form.controls.password.reset();
       void this.router.navigateByUrl(
-        safeReturn(this.route.snapshot.queryParamMap.get('retorno'), this.auth.isCoordinator()),
+        safeReturn(this.route.snapshot.queryParamMap.get('retorno')),
       );
     } catch (error: unknown) {
       this.message.set(errorMessage(error));

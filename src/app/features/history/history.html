@@ -16,7 +16,7 @@
         [ngModel]="form.controls.conteudo.value"
         (ngModelChange)="form.controls.conteudo.setValue($event)"
       /><button type="submit" title="Buscar" aria-label="Buscar">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
       </button>
     </form>
 
@@ -37,31 +37,29 @@
           }
         </select></label
       >
-      @if (auth.isCoordinator()) {
-        <label
-          >Professor<select
-            formControlName="professorId"
-            title="Autor em aulas e avaliações; professor responsável atual em frequência"
-          >
-            <option value="">Todos os professores</option>
-            @for (teacher of classes.teachers; track teacher.id) {
-              <option [value]="teacher.id">{{ teacher.nome }}</option>
-            }
-          </select></label
+      <label
+        >Professor<select
+          formControlName="professorId"
+          title="Autor em aulas e avaliações; professor responsável atual em frequência"
         >
-      }
+          <option value="">Todos os professores</option>
+          @for (teacher of classes.teachers; track teacher.id) {
+            <option [value]="teacher.id">{{ teacher.nome }}</option>
+          }
+        </select></label
+      >
       <label>Data inicial<input type="date" formControlName="inicio" /></label
       ><label>Data final<input type="date" formControlName="fim" /></label>
     </form>
   </app-filter-panel>
   <section
     class="surface data-panel historico-panel"
-    aria-label="Histórico de registros pedagógicos"
+    aria-label="Auditoria de registros pedagógicos"
   >
     <app-list-header title="Registros pedagógicos" [count]="filtered().length" />
     <app-feedback [message]="message()" [error]="true" />
 
-    <app-data-table class="historico-table-scroll" label="Registros históricos">
+    <app-data-table class="historico-table-scroll" label="Registros de auditoria">
       <table class="historico-table">
         <caption class="sr-only">
           Registros pedagógicos por turma e data
@@ -72,7 +70,6 @@
             <th scope="col">Tipo</th>
             <th scope="col">Turma</th>
             <th scope="col">Resumo</th>
-            <th scope="col" class="actions-cell">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -96,34 +93,10 @@
               </td>
               <td>{{ classes.get(item.turmaId)?.nome }}</td>
               <td>{{ item.resumo }}</td>
-              <td class="actions-cell">
-                <div class="row-actions">
-                  <a
-                    appAction="open_in_new"
-                    class="icon-button record-open"
-                    title="Abrir registro"
-                    [attr.aria-label]="'Abrir ' + item.titulo + ' de ' + formatDate(item.data)"
-                    [routerLink]="['/historico', item.id]"
-                    [queryParams]="{ retorno: currentUrl() }"
-                  >
-                  </a>
-
-                  @if (classes.get(item.turmaId)?.ativa) {
-                    <a
-                      appAction="edit"
-                      class="icon-button"
-                      title="Editar registro"
-                      [attr.aria-label]="'Editar ' + item.titulo + ' de ' + formatDate(item.data)"
-                      [routerLink]="editLink(item)"
-                      [queryParams]="{ data: item.data, retorno: currentUrl() }"
-                    ></a>
-                  }
-                </div>
-              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="app-empty">
+              <td colspan="4" class="app-empty">
                 Nenhum registro encontrado. Ajuste os filtros ou registre uma aula, frequência ou
                 avaliação.
               </td>

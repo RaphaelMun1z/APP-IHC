@@ -3,96 +3,180 @@
     @if (unavailable) {
       <p class="app-empty">Turma não encontrada. Confira a lista de turmas e tente novamente.</p>
     } @else {
-      <form class="management-form" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field-grid">
-          <label class="field"
-            >Nome da turma<input
-              formControlName="nome"
-              maxlength="60"
-              placeholder="Ex.: 8º ano A"
-              required /></label
-          ><label class="field"
-            >Professor responsável<select formControlName="professorId" required>
-              <option value="">Selecione</option>
-              @for (teacher of classes.teachers; track teacher.id) {
-                <option [value]="teacher.id">{{ teacher.nome }}</option>
+      <form class="management-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
+        <header class="form-wizard-header">
+          <a appAction="arrow_back" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
+        </header>
+        <div class="form-wizard-layout">
+          <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
+            <ol>
+              @for (item of steps; track item.title) {
+                <li [class.is-complete]="$index < step()">
+                  <button
+                    type="button"
+                    [disabled]="$index > furthestStep()"
+                    [attr.aria-current]="$index === step() ? 'step' : null"
+                    (click)="goToStep($index)"
+                  >
+                    <span class="form-wizard-step-number">{{ $index + 1 }}</span>
+                    <span class="form-wizard-step-copy">
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ item.description }}</small>
+                    </span>
+                  </button>
+                </li>
               }
-            </select></label
-          ><label class="field"
-            >Curso<select formControlName="cursoId" required (change)="selectCourse()">
-              <option value="">Selecione</option>
-              @for (course of classes.courses; track course.id) {
-                <option [value]="course.id">{{ course.nome }}</option>
-              }
-            </select></label
-          ><label class="field"
-            >Módulo<select formControlName="moduloId" required>
-              <option value="">Selecione</option>
-              @for (module of modules(); track module.id) {
-                <option [value]="module.id">{{ module.nome }}</option>
-              }
-            </select></label
-          >
-        </div>
-        <fieldset>
-          <legend>Dias da semana</legend>
-          <div class="choices">
-            @for (day of weekdays; track day) {
-              <label
-                ><input
-                  type="checkbox"
-                  [checked]="days().includes($index)"
-                  (change)="toggleDay($index)"
-                />{{ day }}</label
-              >
-            }
-          </div>
-        </fieldset>
-        <div class="field-grid">
-          <label class="field">Início<input type="time" formControlName="inicio" required /></label
-          ><label class="field">Término<input type="time" formControlName="fim" required /></label>
-        </div>
-        <fieldset>
-          <legend>Alunos da turma</legend>
-          <div class="selection-heading">
-            <p>Selecione os alunos matriculados.</p>
-            <button appAction="checklist" type="button" (click)="toggleAll()">
-              {{
-                students().length === classes.students.length
-                  ? 'Limpar seleção'
-                  : 'Selecionar todos'
-              }}
-            </button>
-          </div>
-          <ul class="student-list">
-            @for (student of classes.students; track student.id) {
-              <li>
-                <label
-                  ><input
-                    type="checkbox"
-                    [checked]="students().includes(student.id)"
-                    (change)="toggleStudent(student.id)"
-                  />{{ student.nome }}</label
+            </ol>
+          </nav>
+          <div class="form-wizard-content">
+            <section class="form-wizard-panel" [hidden]="step() !== 0">
+              <h2>Dados da turma</h2>
+              <p>Informe a identificação da turma e o conteúdo que será estudado.</p>
+              <div class="form-wizard-field-stack">
+                <label class="field"
+                  >Nome da turma<input
+                    formControlName="nome"
+                    maxlength="60"
+                    placeholder="Ex.: 8º ano A"
+                    required
+                /></label>
+                <fieldset class="form-wizard-choice">
+                  <legend>Professor responsável</legend>
+                  <div class="form-wizard-option-list">
+                    @for (teacher of classes.teachers; track teacher.id) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="radio"
+                          formControlName="professorId"
+                          [value]="teacher.id"
+                        /><span>{{ teacher.nome }}</span></label
+                      >
+                    }
+                  </div>
+                </fieldset>
+                <fieldset class="form-wizard-choice">
+                  <legend>Curso</legend>
+                  <div class="form-wizard-option-list">
+                    @for (course of classes.courses; track course.id) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="radio"
+                          formControlName="cursoId"
+                          [value]="course.id"
+                          (change)="selectCourse()"
+                        /><span>{{ course.nome }}</span></label
+                      >
+                    }
+                  </div>
+                </fieldset>
+                <fieldset class="form-wizard-choice">
+                  <legend>Módulo</legend>
+                  <div class="form-wizard-option-list">
+                    @for (module of modules(); track module.id) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="radio"
+                          formControlName="moduloId"
+                          [value]="module.id"
+                        /><span>{{ module.nome }}</span></label
+                      >
+                    } @empty {
+                      <p class="form-wizard-hint">Selecione um curso para ver os módulos.</p>
+                    }
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+            <section class="form-wizard-panel" [hidden]="step() !== 1">
+              <h2>Horários</h2>
+              <p>Escolha os dias da semana e o período dos encontros.</p>
+              <div class="form-wizard-field-stack">
+                <fieldset class="form-wizard-choice">
+                  <legend>Dias da semana</legend>
+                  <div class="form-wizard-option-list">
+                    @for (day of weekdays; track day) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="checkbox"
+                          [checked]="days().includes($index)"
+                          (change)="toggleDay($index)"
+                        /><span>{{ day }}</span></label
+                      >
+                    }
+                  </div>
+                </fieldset>
+                <label class="field"
+                  >Início<input type="time" formControlName="inicio" required /></label
+                ><label class="field"
+                  >Término<input type="time" formControlName="fim" required
+                /></label>
+              </div>
+            </section>
+            <section class="form-wizard-panel" [hidden]="step() !== 2">
+              <h2>Alunos</h2>
+              <p>Selecione os alunos matriculados nesta turma.</p>
+              <fieldset class="form-wizard-choice">
+                <legend>Alunos da turma</legend>
+                <div class="selection-heading">
+                  <p>Escolha pelo menos um aluno para continuar.</p>
+                  <button appAction="checklist" type="button" (click)="toggleAll()">
+                    {{
+                      students().length === classes.students.length
+                        ? 'Limpar seleção'
+                        : 'Selecionar todos'
+                    }}
+                  </button>
+                </div>
+                <ul class="form-wizard-option-list student-options">
+                  @for (student of classes.students; track student.id) {
+                    <li>
+                      <label class="form-wizard-option"
+                        ><input
+                          type="checkbox"
+                          [checked]="students().includes(student.id)"
+                          (change)="toggleStudent(student.id)"
+                        /><span>{{ student.nome }}</span></label
+                      >
+                    </li>
+                  }
+                </ul>
+                <p role="status">{{ students().length }} alunos selecionados</p>
+              </fieldset>
+              @if (existing) {
+                <label class="archive-choice"
+                  ><input type="checkbox" formControlName="ativa" /><span
+                    ><strong>Turma ativa</strong
+                    ><small
+                      >Desmarque para arquivar. Os registros existentes continuam disponíveis na
+                      auditoria.</small
+                    ></span
+                  ></label
                 >
-              </li>
-            }
-          </ul>
-          <p role="status">{{ students().length }} alunos selecionados</p>
-        </fieldset>
-        @if (existing) {
-          <label class="archive-choice"
-            ><input type="checkbox" formControlName="ativa" /><span
-              ><strong>Turma ativa</strong
-              ><small
-                >Desmarque para arquivar. Os registros existentes continuam no histórico.</small
-              ></span
-            ></label
-          >
-        }
-        <app-feedback [message]="message()" [error]="true" />
-        <div class="app-actions end">
-          <a appAction="close" class="app-button" [routerLink]="backLink">Cancelar</a
-          ><button appAction="save" class="app-button primary" type="submit">Salvar turma</button>
+              }
+            </section>
+            <app-feedback [message]="message()" [error]="true" />
+            <nav class="form-wizard-actions" aria-label="Navegação das etapas">
+              @if (step() < steps.length - 1) {
+                <button class="primary" type="button" (click)="next()">
+                  Próxima etapa<span class="material-symbols-outlined" aria-hidden="true"
+                    >arrow_forward</span
+                  >
+                </button>
+              } @else {
+                <button appAction="save" class="primary" type="submit">Salvar turma</button>
+              }
+              @if (step() > 0) {
+                <button
+                  appAction="arrow_back"
+                  class="form-wizard-back"
+                  type="button"
+                  (click)="goToStep(step() - 1)"
+                >
+                  Voltar
+                </button>
+              }
+            </nav>
+          </div>
         </div>
       </form>
     }

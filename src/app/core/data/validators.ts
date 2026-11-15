@@ -1,6 +1,7 @@
 import type {
   AssessmentData,
   AttendanceData,
+  LegacyAssessmentData,
   Lesson,
   SchoolClass,
   Session,
@@ -19,7 +20,7 @@ export function isSession(value: unknown): value is Session {
     record(value) &&
     typeof value['id'] === 'string' &&
     typeof value['nome'] === 'string' &&
-    (value['perfil'] === 'professor' || value['perfil'] === 'coordenacao')
+    value['perfil'] === 'professor'
   );
 }
 export function isStudents(value: unknown): value is Student[] {
@@ -51,6 +52,9 @@ export function isClass(value: unknown): value is SchoolClass {
 }
 export function isClasses(value: unknown): value is SchoolClass[] {
   return Array.isArray(value) && value.every(isClass);
+}
+export function isPinnedClassIds(value: unknown): value is string[] {
+  return strings(value) && value.every((id) => !!id.trim()) && new Set(value).size === value.length;
 }
 export function isLessons(value: unknown): value is Lesson[] {
   return (
@@ -89,6 +93,29 @@ export function normalizeAttendance(value: unknown): unknown {
   return record(value) && Object.keys(value).some(isDate) ? { '6a': value } : value;
 }
 export function isAssessments(value: unknown): value is AssessmentData {
+  return (
+    record(value) &&
+    Object.entries(value).every(
+      ([lessonId, item]) =>
+        record(item) &&
+        item['lessonId'] === lessonId &&
+        typeof item['professorId'] === 'string' &&
+        typeof item['atualizadoEm'] === 'string' &&
+        Array.isArray(item['alunos']) &&
+        item['alunos'].every(
+          (student) =>
+            record(student) &&
+            typeof student['id'] === 'string' &&
+            typeof student['nome'] === 'string' &&
+            record(student['avaliacoes']) &&
+            Object.values(student['avaliacoes']).every(
+              (mark) => mark === null || mark === 'ok' || mark === 'nao-ok',
+            ),
+        ),
+    )
+  );
+}
+export function isLegacyAssessments(value: unknown): value is LegacyAssessmentData {
   return (
     record(value) &&
     Object.values(value).every(

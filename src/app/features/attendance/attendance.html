@@ -1,38 +1,42 @@
 <main class="app-page presencas-page" [appUnsavedChanges]="dirty()">
-  <app-filter-panel
-    (applyFilters)="search()"
-    [chips]="chips()"
-    [activeCount]="chips().length"
-    [context]="monthLabel()"
-    (removeFilter)="removeFilter($event)"
-    (clearFilters)="resetFilters()"
-  >
-    <form class="filter-bar presencas-filters" [formGroup]="form" (ngSubmit)="search()">
-      <label
-        >Turma<select formControlName="turmaId">
-          @for (group of classes.accessible(); track group.id) {
-            <option [value]="group.id" [hidden]="fixedClass && group.id !== contextClass">
-              {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
-            </option>
-          }
-        </select></label
-      >
-      <label
-        >Ano<select formControlName="year">
-          @for (year of years(); track year) {
-            <option [ngValue]="year">{{ year }}</option>
-          }
-        </select></label
-      >
-      <label
-        >Mês<select formControlName="month">
-          @for (month of months; track month.value) {
-            <option [ngValue]="month.value">{{ month.label }}</option>
-          }
-        </select></label
-      >
-    </form>
-  </app-filter-panel>
+  @if (!lessonContext) {
+    <app-filter-panel
+      (applyFilters)="search()"
+      [chips]="chips()"
+      [activeCount]="chips().length"
+      [context]="fixedClass ? '' : monthLabel()"
+      (removeFilter)="removeFilter($event)"
+      (clearFilters)="resetFilters()"
+    >
+      <form class="filter-bar presencas-filters" [formGroup]="form" (ngSubmit)="search()">
+        @if (!fixedClass) {
+          <label
+            >Turma<select formControlName="turmaId">
+              @for (group of classes.accessible(); track group.id) {
+                <option [value]="group.id">
+                  {{ group.nome }}{{ group.ativa ? '' : ' · Arquivada' }}
+                </option>
+              }
+            </select></label
+          >
+        }
+        <label
+          >Ano<select formControlName="year">
+            @for (year of years(); track year) {
+              <option [ngValue]="year">{{ year }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Mês<select formControlName="month">
+            @for (month of months; track month.value) {
+              <option [ngValue]="month.value">{{ month.label }}</option>
+            }
+          </select></label
+        >
+      </form>
+    </app-filter-panel>
+  }
   <section class="surface data-panel presencas-panel" aria-label="Frequência dos alunos">
     <app-list-header
       title="Frequência dos alunos"
@@ -64,10 +68,35 @@
               <th scope="col" class="student-column">Aluno</th>
               @for (column of columns(); track column.date) {
                 <th scope="col">
-                  {{ column.day }}<br /><span>{{ column.number }}</span>
+                  <div class="attendance-date-header">
+                    <div class="attendance-date-edit-slot">
+                      @if (!column.editable && hasRecordedCall(column.date) && group()?.ativa) {
+                        <button
+                          appAction="edit"
+                          type="button"
+                          class="icon-button attendance-edit-toggle"
+                          [class.active]="editingPastDates().has(column.date)"
+                          [attr.aria-pressed]="editingPastDates().has(column.date)"
+                          [attr.aria-label]="
+                            (editingPastDates().has(column.date)
+                              ? 'Bloquear edição da chamada de '
+                              : 'Editar chamada de ') + column.date
+                          "
+                          [title]="
+                            editingPastDates().has(column.date)
+                              ? 'Bloquear edição'
+                              : 'Editar chamada passada'
+                          "
+                          (click)="togglePastEdit(column.date)"
+                        ></button>
+                      }
+                    </div>
+                    <span>{{ column.day }}</span>
+                    <span>{{ column.number }}</span>
+                  </div>
                 </th>
               }
-              <th scope="col" class="summary-column">Presenças</th>
+              <th scope="col" class="summary-column">Faltas</th>
             </tr>
           </thead>
           <tbody>
@@ -85,7 +114,7 @@
                       class="attendance-mark"
                       [class.present]="mark(student.id, column.date) === 'presente'"
                       [class.absent]="mark(student.id, column.date) === 'falta'"
-                      [disabled]="!column.editable || !group()?.ativa"
+                      [disabled]="!canEdit(column.date) || !group()?.ativa"
                       [attr.aria-label]="
                         student.nome +
                         ', ' +
@@ -122,15 +151,13 @@
         (pageChange)="paging.page.set($event)"
         (sizeChange)="paging.resize($event)"
       />
-      <footer class="presencas-footer">
-        @if (group()?.ativa) {
-          <button appAction="save" type="button" [disabled]="!dirty()" (click)="save()">
-            Salvar frequência
-          </button>
-        }
-      </footer>
+      @if (group()?.ativa && dirty()) {
+        <footer class="presencas-footer">
+          <button appAction="save" type="button" (click)="save()">Salvar alterações</button>
+        </footer>
+      }
     } @else {
-      <p class="app-empty">Nenhuma turma disponível para este perfil.</p>
+      <p class="app-empty">Nenhuma turma ativa disponível.</p>
     }
   </section>
 </main>

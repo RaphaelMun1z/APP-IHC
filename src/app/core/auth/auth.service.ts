@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import type { Session } from '../models/domain';
 import { isSession } from '../data/validators';
 import { storageKeys } from '../data/storage-keys';
@@ -7,19 +7,15 @@ import { storageKeys } from '../data/storage-keys';
 export class AuthService {
   private readonly current = signal<Session | null>(this.readSession());
   readonly user = this.current.asReadonly();
-  readonly isCoordinator = computed(() => this.user()?.perfil === 'coordenacao');
   private readonly sessionError = signal('');
   readonly error = this.sessionError.asReadonly();
 
   login(username: string, password: string, remember: boolean): void {
     const role = username.trim().toLowerCase();
     // Public demonstration access, retained from the original app; this is not server authentication.
-    if ((role !== 'professor' && role !== 'coordenacao') || password !== 'ipb123')
+    if (role !== 'professor' || password !== 'ipb123')
       throw new Error('Usuário ou senha incorretos.');
-    const user: Session =
-      role === 'professor'
-        ? { id: 'professor-01', nome: 'Mariana Oliveira', perfil: role }
-        : { id: 'coordenacao-01', nome: 'Coordenação pedagógica', perfil: role };
+    const user: Session = { id: 'professor-01', nome: 'Mariana Oliveira', perfil: role };
     try {
       sessionStorage.setItem(storageKeys.session, JSON.stringify(user));
     } catch {

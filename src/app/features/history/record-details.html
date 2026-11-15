@@ -1,39 +1,74 @@
 @let item = record();
-<p>{{ classes.get(item.turmaId)?.nome }} · {{ formatDate(item.data) }}</p>
+@if (item.tipo !== 'aula') {
+  <p>{{ classes.get(item.turmaId)?.nome }} · {{ formatDate(item.data) }}</p>
+}
 @switch (item.tipo) {
   @case ('aula') {
-    <dl>
-      <div>
-        <dt>Curso</dt>
-        <dd>{{ classes.course(item.registro.cursoId)?.nome }}</dd>
-      </div>
-      <div>
-        <dt>Módulo</dt>
-        <dd>{{ classes.module(item.registro.cursoId, item.registro.moduloId)?.nome }}</dd>
-      </div>
-      <div>
-        <dt>Tipo de aula</dt>
-        <dd>{{ types[item.registro.tipo] }}</dd>
-      </div>
-    </dl>
-    <h3>Conteúdos registrados</h3>
-    <ul>
-      @for (lesson of item.registro.licoes; track lesson) {
-        <li>{{ lesson }}</li>
-      }
-    </ul>
-    @if (item.registro.notas) {
-      <h3>Observações</h3>
-      <p class="notes">{{ item.registro.notas }}</p>
+    @if (showLessonTabs() && classes.get(item.turmaId)?.ativa) {
+      <app-lesson-tabs [classId]="item.turmaId" [lessonId]="item.id" [date]="item.data" />
     }
+    <section class="overview-grid lesson-overview" aria-label="Visão geral da aula">
+      <article class="overview-card">
+        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">event</span>
+        <h2>Data da aula</h2>
+        <p class="overview-card-value">{{ formatDate(item.data) }}</p>
+      </article>
+      <article class="overview-card">
+        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">groups</span>
+        <h2>Turma</h2>
+        <p class="overview-card-value">{{ classes.get(item.turmaId)?.nome ?? '—' }}</p>
+      </article>
+      <article class="overview-card">
+        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
+          >category</span
+        >
+        <h2>Tipo de aula</h2>
+        <p class="overview-card-value">{{ types[item.registro.tipo] }}</p>
+      </article>
+      <article class="overview-card">
+        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
+          >menu_book</span
+        >
+        <h2>Curso e módulo</h2>
+        <p class="overview-card-value">
+          {{ classes.course(item.registro.cursoId)?.nome ?? '—' }}
+        </p>
+        <p class="overview-card-description">
+          {{
+            classes.module(item.registro.cursoId, item.registro.moduloId)?.nome ??
+              'Módulo não definido'
+          }}
+        </p>
+      </article>
+      <article class="overview-card">
+        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
+          >checklist</span
+        >
+        <h2>Conteúdos registrados</h2>
+        <ul class="lesson-content-tags">
+          @for (lesson of item.registro.licoes; track lesson) {
+            <li class="lesson-content-tag">{{ lesson }}</li>
+          }
+        </ul>
+      </article>
+      @if (item.registro.notas) {
+        <article class="overview-card">
+          <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">notes</span>
+          <h2>Observações</h2>
+          <p class="notes">{{ item.registro.notas }}</p>
+        </article>
+      }
+    </section>
     @if (classes.get(item.turmaId)?.ativa) {
-      <a
-        appAction="edit"
-        class="app-button primary"
-        [routerLink]="['/turmas', item.turmaId, 'aulas', item.id, 'editar']"
-        [queryParams]="{ retorno: returnUrl() }"
-        >Editar registro</a
-      >
+      <div class="app-actions">
+        <a
+          appAction="edit"
+          class="app-button primary"
+          [routerLink]="['/turmas', item.turmaId, 'aulas', item.id, 'editar']"
+          [queryParams]="{ retorno: returnUrl() }"
+          >Editar registro</a
+        >
+      </div>
     }
   }
   @case ('frequencia') {
@@ -151,8 +186,8 @@
       <a
         appAction="edit"
         class="app-button primary"
-        [routerLink]="['/turmas', item.turmaId, 'avaliacoes']"
-        [queryParams]="{ data: item.data, retorno: returnUrl() }"
+        [routerLink]="['/turmas', item.turmaId, 'registros', item.registro.lessonId, 'avaliacoes']"
+        [queryParams]="{ retorno: returnUrl() }"
         >Abrir avaliação</a
       >
     }

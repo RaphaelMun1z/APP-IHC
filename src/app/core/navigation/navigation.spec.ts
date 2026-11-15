@@ -9,7 +9,7 @@ import { StorageService } from '../data/storage.service';
 import { safeReturn } from '../auth/auth.guards';
 import { ClassesStore } from '../../features/classes/classes.store';
 
-describe('Navegação contextual e permissões', () => {
+describe('Navegação contextual e acesso do professor', () => {
   beforeEach(() => {
     sessionStorage.clear();
     localStorage.clear();
@@ -21,21 +21,19 @@ describe('Navegação contextual e permissões', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/6a/alunos?origem=inicio');
     expect(TestBed.inject(Router).url).toContain('/login?retorno=');
-    expect(safeReturn('/turmas/6a/alunos?origem=inicio', false)).toBe(
-      '/turmas/6a/alunos?origem=inicio',
-    );
+    expect(safeReturn('/turmas/6a/alunos?origem=inicio')).toBe('/turmas/6a/alunos?origem=inicio');
   });
-  it('nega turma alheia e gerenciamento ao professor por URL direta', async () => {
+  it('permite ao professor acessar todas as turmas e gerenciar por URL direta', async () => {
     TestBed.inject(AuthService).login('professor', 'ipb123', false);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/7a/aulas');
-    expect(TestBed.inject(Router).url).toBe('/turmas?indisponivel=1');
+    expect(TestBed.inject(Router).url).toBe('/turmas/7a/aulas');
     await harness.navigateByUrl('/turmas/6a/gerenciar');
-    expect(TestBed.inject(Router).url).toBe('/inicio');
-    expect(safeReturn('/turmas/6a/gerenciar', false)).toBe('/inicio');
+    expect(TestBed.inject(Router).url).toBe('/turmas/6a/gerenciar');
+    expect(safeReturn('/turmas/6a/gerenciar')).toBe('/turmas/6a/gerenciar');
   });
-  it('coordenação gerencia turma, enquanto arquivamento preserva consulta', async () => {
-    TestBed.inject(AuthService).login('coordenacao', 'ipb123', false);
+  it('professor arquiva turma sem perder a consulta aos registros', async () => {
+    TestBed.inject(AuthService).login('professor', 'ipb123', false);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/turmas/7a/gerenciar');
     expect(TestBed.inject(Router).url).toBe('/turmas/7a/gerenciar');
