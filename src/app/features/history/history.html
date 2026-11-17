@@ -15,20 +15,19 @@
         placeholder="Buscar nas lições e observações"
         [ngModel]="form.controls.conteudo.value"
         (ngModelChange)="form.controls.conteudo.setValue($event)"
-      /><button type="submit" title="Buscar" aria-label="Buscar">
-        <span class="material-symbols-outlined" aria-hidden="true">search</span>
-      </button>
+      />
     </form>
 
     <form class="filter-bar historico-filters" [formGroup]="form" (ngSubmit)="search()">
-      <label
-        >Tipo de registro<select formControlName="tipo">
-          <option value="">Todos os registros</option>
-          <option value="aula">Aula</option>
-          <option value="frequencia">Frequência</option>
-          <option value="avaliacao">Avaliação</option>
-        </select></label
-      >
+      <div class="field filter-option-field">
+        <span>Tipo de registro</span>
+        <app-filter-options
+          label="Tipo de registro"
+          [options]="recordTypeOptions"
+          [selected]="form.controls.tipo.value"
+          (selectedChange)="form.controls.tipo.setValue($event)"
+        />
+      </div>
       <label
         >Turma<select formControlName="turmaId">
           <option value="">Todas as turmas</option>
@@ -37,18 +36,7 @@
           }
         </select></label
       >
-      <label
-        >Professor<select
-          formControlName="professorId"
-          title="Autor em aulas e avaliações; professor responsável atual em frequência"
-        >
-          <option value="">Todos os professores</option>
-          @for (teacher of classes.teachers; track teacher.id) {
-            <option [value]="teacher.id">{{ teacher.nome }}</option>
-          }
-        </select></label
-      >
-      <label>Data inicial<input type="date" formControlName="inicio" /></label
+<label>Data inicial<input type="date" formControlName="inicio" /></label
       ><label>Data final<input type="date" formControlName="fim" /></label>
     </form>
   </app-filter-panel>

@@ -219,7 +219,6 @@ test('turmas usam tabela com filtros e ações de edição e exclusão', async (
     'Selecionar',
     'Turma',
     'Curso',
-    'Professor',
     'Horário',
     'Alunos',
     'Situação',
@@ -257,6 +256,8 @@ test('turmas fixadas ficam disponíveis na tela inicial e podem ser desafixadas'
 }) => {
   await login(page);
   await page.goto('/turmas');
+  await expect(page.getByRole('button', { name: 'Fixar 6º ano A' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Abrir 6º ano A' }).click();
   const pin = page.getByRole('button', { name: 'Fixar 6º ano A' });
   await pin.click();
   await expect(pin).toHaveAttribute('aria-pressed', 'true');
@@ -274,7 +275,7 @@ test('turmas fixadas ficam disponíveis na tela inicial e podem ser desafixadas'
   await pinnedClass.click();
   await expect(page).toHaveURL(/\/turmas\/6a\/visao-geral$/);
 
-  await page.goto('/turmas');
+  await page.goto('/turmas/6a/visao-geral');
   await page.getByRole('button', { name: 'Desafixar 6º ano A' }).click();
   await expect(page.getByRole('button', { name: 'Fixar 6º ano A', exact: true })).toBeVisible();
   await page.goto('/inicio');
@@ -378,3 +379,4 @@ test('rascunhos de frequência sobrevivem à troca de página', async ({ page })
   await page.reload();
   await expect(first).toHaveText(changed ?? '');
 });
+

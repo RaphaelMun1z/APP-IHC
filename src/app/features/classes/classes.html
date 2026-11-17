@@ -19,15 +19,7 @@
       >Nova turma</a
     >
     <div class="filter-bar filters">
-      <label class="field"
-        >Professor<select [ngModel]="teacher()" (ngModelChange)="setTeacher($event)">
-          <option value="">Todos os professores</option>
-          @for (person of store.teachers; track person.id) {
-            <option [value]="person.id">{{ person.nome }}</option>
-          }
-        </select></label
-      >
-      <label class="field"
+<label class="field"
         >Curso<select [ngModel]="courseId()" (ngModelChange)="setCourse($event)">
           <option value="">Todos os cursos</option>
           @for (course of store.courses; track course.id) {
@@ -35,13 +27,15 @@
           }
         </select></label
       >
-      <label class="field"
-        >Situação<select [ngModel]="status()" (ngModelChange)="setStatus($event)">
-          <option value="ativas">Ativas</option>
-          <option value="arquivadas">Arquivadas</option>
-          <option value="todas">Todas</option>
-        </select></label
-      >
+      <div class="field filter-option-field">
+        <span>Situação</span>
+        <app-filter-options
+          label="Situação"
+          [options]="statusOptions"
+          [selected]="status()"
+          (selectedChange)="setStatus($event)"
+        />
+      </div>
     </div>
   </app-filter-panel>
   <section class="surface data-panel" aria-label="Listagem de turmas">
@@ -77,14 +71,13 @@
     <app-data-table class="turmas-table-scroll" label="Turmas disponíveis">
       <table class="turmas-table">
         <caption class="sr-only">
-          Turmas, cursos, professores, horários e situação
+          Turmas, cursos, horários e situação
         </caption>
         <thead>
           <tr>
             <th scope="col"><span class="sr-only">Selecionar</span></th>
             <th scope="col">Turma</th>
             <th scope="col">Curso</th>
-            <th scope="col">Professor</th>
             <th scope="col">Horário</th>
             <th scope="col">Alunos</th>
             <th scope="col">Situação</th>
@@ -103,10 +96,14 @@
                 />
               </td>
               <th scope="row">
-                {{ group.nome }}
+                <a
+                  class="turma-name-link"
+                  [routerLink]="['/turmas', group.id]"
+                  [queryParams]="{ retorno: currentUrl() }"
+                  >{{ group.nome }}</a
+                >
               </th>
               <td>{{ store.course(group.cursoId)?.nome }}</td>
-              <td>{{ teacherName(group.professorId) }}</td>
               <td>{{ store.schedule(group) }}</td>
               <td>{{ group.alunoIds.length }}</td>
               <td>
@@ -116,22 +113,6 @@
               </td>
               <td class="actions-cell">
                 <div class="row-actions">
-                  <button
-                    appAction="push_pin"
-                    class="icon-button pin-action"
-                    [class.is-pinned]="store.isPinned(group.id)"
-                    type="button"
-                    [attr.aria-pressed]="store.isPinned(group.id)"
-                    [title]="
-                      store.isPinned(group.id)
-                        ? 'Desafixar da tela inicial'
-                        : 'Fixar na tela inicial'
-                    "
-                    [attr.aria-label]="
-                      (store.isPinned(group.id) ? 'Desafixar ' : 'Fixar ') + group.nome
-                    "
-                    (click)="togglePin(group.id)"
-                  ></button>
                   <a
                     appAction="open_in_new"
                     class="icon-button"
@@ -161,7 +142,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="app-empty">Nenhuma turma encontrada.</td>
+              <td colspan="7" class="app-empty">Nenhuma turma encontrada.</td>
             </tr>
           }
         </tbody>

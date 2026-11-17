@@ -9,10 +9,15 @@ import { ClassesStore } from './classes.store';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
 import { Pagination, TablePage } from '../../shared/ui/pagination';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
+import { Tooltip } from '../../shared/ui/tooltip';
+import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options';
 
 @Component({
   selector: 'app-classes',
   imports: [
+    Tooltip,
+    FilterOptions,
     Action,
     DataTable,
     FilterPanel,
@@ -28,11 +33,16 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
 })
 export class Classes {
   readonly store = inject(ClassesStore);
+  private readonly confirm = inject(ConfirmDialogService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly query = signal(this.route.snapshot.queryParamMap.get('busca') ?? '');
-  readonly teacher = signal(this.route.snapshot.queryParamMap.get('professor') ?? '');
   readonly courseId = signal(this.route.snapshot.queryParamMap.get('curso') ?? '');
+  readonly statusOptions: readonly FilterOption[] = [
+    { value: 'ativas', label: 'Ativas' },
+    { value: 'arquivadas', label: 'Arquivadas' },
+    { value: 'todas', label: 'Todas' },
+  ];
   readonly status = signal<'ativas' | 'arquivadas' | 'todas'>(
     ['ativas', 'arquivadas', 'todas'].includes(
       this.route.snapshot.queryParamMap.get('situacao') ?? '',
@@ -47,24 +57,17 @@ export class Classes {
   );
   setQuery(value: string): void {
     this.query.set(value);
-    this.persist();
-  }
-  setTeacher(value: string): void {
-    this.teacher.set(value);
-    this.persist();
   }
   setCourse(value: string): void {
     this.courseId.set(value);
-    this.persist();
   }
-  setStatus(value: 'ativas' | 'arquivadas' | 'todas'): void {
+  setStatus(value: string): void {
+    if (value !== 'ativas' && value !== 'arquivadas' && value !== 'todas') return;
     this.status.set(value);
-    this.persist();
   }
   private queryParams() {
     return {
       busca: this.query() || null,
-      professor: this.teacher() || null,
       curso: this.courseId() || null,
       situacao: this.status() !== 'ativas' ? this.status() : null,
     };
@@ -86,7 +89,6 @@ export class Classes {
           group.nome
             .toLocaleLowerCase('pt-BR')
             .includes(this.query().trim().toLocaleLowerCase('pt-BR')) &&
-          (!this.teacher() || group.professorId === this.teacher()) &&
           (!this.courseId() || group.cursoId === this.courseId()) &&
           (this.status() === 'todas' || group.ativa === (this.status() === 'ativas')),
       ),
@@ -95,15 +97,6 @@ export class Classes {
   readonly visible = computed(() => this.paging.slice(this.filtered()));
   readonly chips = computed(() => [
     ...(this.query().trim() ? [{ key: 'query', label: 'Busca', value: this.query().trim() }] : []),
-    ...(this.teacher()
-      ? [
-          {
-            key: 'teacher',
-            label: 'Professor',
-            value: this.teacherName(this.teacher()),
-          },
-        ]
-      : []),
     ...(this.courseId()
       ? [
           {
@@ -125,20 +118,15 @@ export class Classes {
   ]);
   removeFilter(key: string): void {
     if (key === 'query') this.query.set('');
-    if (key === 'teacher') this.teacher.set('');
     if (key === 'course') this.courseId.set('');
     if (key === 'status') this.status.set('ativas');
     this.persist();
   }
   clearFilters(): void {
     this.query.set('');
-    this.teacher.set('');
     this.courseId.set('');
     this.status.set('ativas');
     this.persist();
-  }
-  teacherName(id: string): string {
-    return this.store.teachers.find((person) => person.id === id)?.nome ?? '—';
   }
   readonly selected = signal<readonly string[]>([]);
   readonly allSelected = computed(
@@ -172,13 +160,19 @@ export class Classes {
     }
   }
   async remove(ids: readonly string[]): Promise<void> {
-    if (
-      !ids.length ||
-      !window.confirm(
-        `Excluir ${ids.length === 1 ? 'a turma selecionada' : `as ${ids.length} turmas selecionadas`}? Os registros pedagógicos associados também serão removidos.`,
-      )
-    )
-      return;
+    if (!ids.length) return;
+    const classNames = ids.map((id) => this.store.get(id)?.nome ?? id);
+    const confirmed = await this.confirm.confirm(
+      'Também serão removidos os registros de aulas, frequências e avaliações vinculados a estas turmas:',
+      {
+        title: ids.length === 1 ? 'Excluir esta turma?' : `Excluir ${ids.length} turmas?`,
+        confirmLabel: 'Excluir',
+        confirmIcon: 'delete',
+        items: classNames,
+        itemNoun: 'turmas',
+      },
+    );
+    if (!confirmed) return;
     try {
       await this.store.delete(ids);
       this.selected.set([]);

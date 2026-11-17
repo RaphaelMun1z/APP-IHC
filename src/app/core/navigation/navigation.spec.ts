@@ -42,7 +42,7 @@ describe('Navegação contextual e acesso do professor', () => {
     await classes.save({ ...classes.require('7a'), ativa: false });
     await harness.navigateByUrl('/turmas/7a/aulas');
     expect(harness.routeNativeElement?.textContent).not.toContain('Registrar aula');
-    expect(harness.routeNativeElement?.querySelector('a[title="Abrir registro"]')).not.toBeNull();
+    expect(harness.routeNativeElement?.querySelector('a[data-tooltip="Abrir registro"]')).not.toBeNull();
   });
   it('confirma descarte antes de trocar abas e mantém o rascunho ao cancelar', async () => {
     await TestBed.inject(AuthService).login('professor', 'ipb123', false);

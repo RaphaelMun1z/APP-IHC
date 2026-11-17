@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Tooltip } from './tooltip';
 export interface FilterChip {
   readonly key: string;
   readonly label: string;
@@ -8,12 +9,13 @@ let filterPanelId = 0;
 
 @Component({
   selector: 'app-filter-panel',
+  imports: [Tooltip],
   template: `<section class="filter-shell" aria-label="Filtros da listagem">
     <div class="filter-toolbar">
       @if (searchable()) {
-        <div class="filter-search-box">
-          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <div class="filter-search-box" (input)="applyFilters.emit()">
           <div class="filter-search-slot"><ng-content select="[filter-search]" /></div>
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
         </div>
       }
       @if (context()) {
@@ -33,19 +35,24 @@ let filterPanelId = 0;
         <button
           class="filter-toggle"
           type="button"
+          [attr.aria-label]="activeCount() ? 'Filtros, ' + activeCount() + ' ativos' : 'Filtros'"
+          [title]="activeCount() ? 'Filtros (' + activeCount() + ' ativos)' : 'Filtros'"
           [attr.aria-expanded]="expanded()"
           [attr.aria-controls]="contentId"
           (click)="expanded.set(!expanded())"
         >
-          <span class="material-symbols-outlined" aria-hidden="true">filter_list</span
-          ><span class="filter-button-label">Filtros</span
-          ><span class="filter-count" [hidden]="!activeCount()">{{ activeCount() }}</span>
+          <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
         </button>
       }
       @if (activeCount() || expanded()) {
-        <button class="filter-clear" type="button" (click)="clearFilters.emit()">
+        <button
+          class="filter-clear"
+          type="button"
+          aria-label="Limpar filtros"
+          title="Limpar filtros"
+          (click)="clearAndClose()"
+        >
           <span class="material-symbols-outlined" aria-hidden="true">filter_alt_off</span>
-          Limpar
         </button>
       }
       <div class="filter-toolbar-actions"><ng-content select="[filter-actions]" /></div>
@@ -61,7 +68,7 @@ let filterPanelId = 0;
                 type="button"
                 class="filter-chip-remove"
                 [attr.aria-label]="'Remover filtro ' + chip.label + ': ' + chip.value"
-                [attr.title]="'Remover filtro ' + chip.label + ': ' + chip.value"
+                [title]="'Remover filtro ' + chip.label + ': ' + chip.value"
                 (click)="removeFilter.emit(chip.key)"
               >
                 <span class="material-symbols-outlined" aria-hidden="true">close</span>
@@ -71,13 +78,14 @@ let filterPanelId = 0;
         </div>
       </div>
     }
-    <div [id]="contentId" class="filter-content" [hidden]="!expanded()">
+    <div
+      [id]="contentId"
+      class="filter-content"
+      [hidden]="!expanded()"
+      (change)="applyFilters.emit()"
+      (click)="applyChoice($event)"
+    >
       <ng-content />
-      <div class="filter-panel-actions">
-        <button class="filter-apply" type="button" (click)="applyFilters.emit()">
-          <span class="material-symbols-outlined" aria-hidden="true">check</span>Aplicar
-        </button>
-      </div>
     </div>
   </section>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -93,4 +101,14 @@ export class FilterPanel {
   readonly clearFilters = output<void>();
   readonly applyFilters = output<void>();
   readonly expanded = signal(false);
+
+  applyChoice(event: MouseEvent): void {
+    if (event.target instanceof Element && event.target.closest('.filter-option'))
+      this.applyFilters.emit();
+  }
+
+  clearAndClose(): void {
+    this.clearFilters.emit();
+    this.expanded.set(false);
+  }
 }

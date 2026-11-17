@@ -1,26 +1,29 @@
-import { Directive, input } from '@angular/core';
+﻿import { Directive, inject, input } from '@angular/core';
 import type { CanDeactivateFn } from '@angular/router';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
 
 export interface UnsavedChanges {
   hasUnsavedChanges(): boolean;
 }
-export function confirmDiscard(component: UnsavedChanges): boolean {
-  return (
-    !component.hasUnsavedChanges() ||
-    window.confirm('Há alterações não salvas. Deseja descartá-las?')
-  );
+export function confirmDiscard(
+  component: UnsavedChanges,
+  dialog: ConfirmDialogService,
+): Promise<boolean> {
+  return component.hasUnsavedChanges()
+    ? dialog.confirm('Há alterações não salvas. Deseja descartá-las?', {
+        title: 'Descartar alterações',
+        confirmLabel: 'Descartar',
+        confirmIcon: 'undo',
+      })
+    : Promise.resolve(true);
 }
 export const unsavedChangesGuard: CanDeactivateFn<UnsavedChanges> = (component) =>
-  confirmDiscard(component);
+  confirmDiscard(component, inject(ConfirmDialogService));
 
 @Directive({
   selector: '[appUnsavedChanges]',
-  host: { '(window:beforeunload)': 'beforeUnload($event)' },
 })
 export class UnsavedChangesDirective {
-  // Bound by the component so browser refresh and Angular navigation share the same state.
+  // The application guard provides a styled confirmation for in-app navigation.
   readonly hasChanges = input(false, { alias: 'appUnsavedChanges' });
-  beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.hasChanges()) event.preventDefault();
-  }
 }

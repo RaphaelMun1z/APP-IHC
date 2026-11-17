@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Tooltip } from './tooltip';
 
 export const PAGE_SIZES = [10, 15, 25, 50] as const;
 export const DEFAULT_PAGE_SIZE = 10;
@@ -21,7 +22,7 @@ export class TablePage {
 }
 @Component({
   selector: 'app-pagination',
-  imports: [FormsModule],
+  imports: [FormsModule, Tooltip],
   template: `<footer class="pagination">
     <div class="pagination-info">
       <label

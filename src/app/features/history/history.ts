@@ -12,9 +12,11 @@ import { Feedback } from '../../shared/ui/feedback';
 
 import { formatDate } from '../../shared/utils/dates';
 import { errorMessage } from '../../shared/utils/errors';
+import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options';
 @Component({
   selector: 'app-history',
   imports: [
+    FilterOptions,
     Pagination,
     ListHeader,
     DataTable,
@@ -33,6 +35,12 @@ export class History {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly currentUrl = signal(navigationUrl(this.router));
+  readonly recordTypeOptions: readonly FilterOption[] = [
+    { value: '', label: 'Todos' },
+    { value: 'aula', label: 'Aula' },
+    { value: 'frequencia', label: 'Frequência' },
+    { value: 'avaliacao', label: 'Avaliação' },
+  ];
   private readonly params = inject(ActivatedRoute).snapshot.queryParamMap;
   readonly form = inject(FormBuilder).nonNullable.group({
     turmaId: this.params.get('turma') ?? '',
@@ -40,18 +48,11 @@ export class History {
     inicio: this.params.get('inicio') ?? '',
     fim: this.params.get('fim') ?? '',
     conteudo: this.params.get('conteudo') ?? '',
-    professorId: this.params.get('professor') ?? '',
   });
   readonly applied = signal(this.form.getRawValue());
   readonly filtered = computed(() => {
     try {
-      return filterHistory(this.store.records(), this.applied()).filter(
-        (record) =>
-          !this.applied().professorId ||
-          (record.tipo === 'frequencia'
-            ? this.classes.get(record.turmaId)?.professorId
-            : record.registro.professorId) === this.applied().professorId,
-      );
+      return filterHistory(this.store.records(), this.applied());
     } catch {
       return [];
     }
@@ -95,7 +96,6 @@ export class History {
       inicio: '',
       fim: '',
       conteudo: '',
-      professorId: '',
     });
     this.search();
   }
@@ -108,7 +108,6 @@ export class History {
         inicio: v.inicio || null,
         fim: v.fim || null,
         conteudo: v.conteudo || null,
-        professor: v.professorId || null,
         limite: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
         pagina: this.page() > 1 ? this.page() : null,
       },
@@ -130,7 +129,6 @@ export class History {
     const labels: Record<string, string> = {
       turmaId: 'Turma',
       tipo: 'Tipo',
-      professorId: 'Professor',
       inicio: 'Desde',
       fim: 'Até',
       conteudo: 'Busca',
@@ -143,9 +141,7 @@ export class History {
         value:
           key === 'turmaId'
             ? (this.classes.get(value)?.nome ?? value)
-            : key === 'professorId'
-              ? (this.classes.teachers.find((t) => t.id === value)?.nome ?? value)
-              : key === 'tipo'
+            : key === 'tipo'
                 ? ({ aula: 'Aula', frequencia: 'Frequência', avaliacao: 'Avaliação' }[value] ??
                   value)
                 : key === 'inicio' || key === 'fim'

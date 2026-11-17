@@ -4,7 +4,7 @@
 .history-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-tag);
   background: #f1f5f9;
   color: #475569;
   white-space: nowrap;

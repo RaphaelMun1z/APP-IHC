@@ -18,10 +18,13 @@ import { isDate, localDate } from '../../shared/utils/dates';
 import { UnsavedChangesDirective, confirmDiscard } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { LessonsStore } from '../lessons/lessons.store';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
+import { Tooltip } from '../../shared/ui/tooltip';
 
 @Component({
   selector: 'app-attendance',
   imports: [
+    Tooltip,
     Pagination,
     ListHeader,
     PersonAvatar,
@@ -37,6 +40,7 @@ import { LessonsStore } from '../lessons/lessons.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Attendance implements UnsavedChanges {
+  private readonly confirm = inject(ConfirmDialogService);
   private readonly navigationState = inject(ClassNavigationState);
   readonly classes = inject(ClassesStore);
   private readonly store = inject(AttendanceStore);
@@ -122,8 +126,8 @@ export class Attendance implements UnsavedChanges {
   hasUnsavedChanges(): boolean {
     return this.dirty();
   }
-  search(): void {
-    if (!confirmDiscard(this)) {
+  async search(): Promise<void> {
+    if (!(await confirmDiscard(this, this.confirm))) {
       this.form.setValue(this.applied());
       return;
     }

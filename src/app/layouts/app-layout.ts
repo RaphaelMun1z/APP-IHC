@@ -10,10 +10,12 @@ import { DataState } from '../core/api/data-state';
 import { BootstrapService } from '../core/api/bootstrap.service';
 import { RequestState } from '../core/api/request-state';
 import { API_CONFIG } from '../core/api/api.config';
+import { ConfirmDialog } from '../shared/ui/confirm-dialog';
+import { Tooltip } from '../shared/ui/tooltip';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Feedback, Modal, PageHeader],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Feedback, Modal, PageHeader, ConfirmDialog, Tooltip],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,9 +7,11 @@ import {
   viewChild,
 } from '@angular/core';
 import type { ElementRef } from '@angular/core';
+import { Tooltip } from './tooltip';
 let nextModalId = 0;
 @Component({
   selector: 'app-modal',
+  imports: [Tooltip],
   templateUrl: './modal.html',
   styleUrl: './modal.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

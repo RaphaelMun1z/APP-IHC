@@ -9,6 +9,7 @@ import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
 import { weekdays } from '../../shared/utils/dates';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
 @Component({
   selector: 'app-class-editor',
   imports: [Action, ReactiveFormsModule, RouterLink, Feedback, UnsavedChangesDirective],
@@ -18,6 +19,7 @@ import { weekdays } from '../../shared/utils/dates';
 })
 export class ClassEditor implements UnsavedChanges {
   readonly classes = inject(ClassesStore);
+  private readonly confirm = inject(ConfirmDialogService);
   private readonly router = inject(Router);
   private readonly classId = contextParam(inject(ActivatedRoute).snapshot, 'turma');
   readonly back = returnTo(
@@ -125,9 +127,12 @@ export class ClassEditor implements UnsavedChanges {
       if (
         this.existing?.ativa &&
         !this.form.controls.ativa.value &&
-        !window.confirm('Arquivar esta turma? Os registros serão preservados.')
-      )
-        return;
+        !(await this.confirm.confirm('Os registros serão preservados e ficarão disponíveis para consulta.', {
+          title: 'Arquivar esta turma?',
+          confirmLabel: 'Arquivar',
+          confirmIcon: 'archive',
+        }))
+      ) return;
       const saved = await this.classes.save({
         ...this.form.getRawValue(),
         id: this.existing?.id ?? '',

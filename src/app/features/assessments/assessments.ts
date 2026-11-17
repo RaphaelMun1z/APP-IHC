@@ -26,10 +26,13 @@ import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage } from '../../shared/utils/errors';
 import { formatDate } from '../../shared/utils/dates';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
+import { Tooltip } from '../../shared/ui/tooltip';
 
 @Component({
   selector: 'app-assessments',
   imports: [
+    Tooltip,
     Pagination,
     ListHeader,
     PersonAvatar,
@@ -46,6 +49,7 @@ import { formatDate } from '../../shared/utils/dates';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Assessments implements UnsavedChanges {
+  private readonly confirm = inject(ConfirmDialogService);
   private readonly navigationState = inject(ClassNavigationState);
   readonly classes = inject(ClassesStore);
   readonly store = inject(AssessmentsStore);
@@ -134,8 +138,8 @@ export class Assessments implements UnsavedChanges {
   hasUnsavedChanges(): boolean {
     return this.dirty();
   }
-  load(): void {
-    if (!confirmDiscard(this)) {
+  async load(): Promise<void> {
+    if (!(await confirmDiscard(this, this.confirm))) {
       this.form.setValue(this.applied());
       return;
     }

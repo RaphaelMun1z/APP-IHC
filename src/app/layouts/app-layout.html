@@ -10,7 +10,7 @@
         routerLinkActive="active"
         ariaCurrentWhenActive="page"
         [attr.aria-label]="item.title"
-        [attr.title]="item.title"
+        [title]="item.title"
         ><span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span
         ><span class="nav-label">{{ item.title }}</span></a
       >
@@ -23,7 +23,7 @@
       (click)="profileOpen.set(true)"
       aria-label="Meu perfil"
       aria-describedby="sidebar-user-name sidebar-user-role"
-      [attr.title]="auth.user()?.nome"
+      [title]="auth.user()?.nome ?? ''"
     >
       <span class="turmas-avatar" aria-hidden="true">{{ initials() }}</span>
       <span class="account-info"
@@ -85,3 +85,4 @@
     >Ver minhas turmas</a
   >
 </app-modal>
+<app-confirm-dialog />

@@ -33,10 +33,15 @@ import { AttendanceStore } from '../attendance/attendance.store';
 import { DataTable } from '../../shared/ui/data-table';
 import { Modal } from '../../shared/ui/modal';
 import { Pagination, TablePage } from '../../shared/ui/pagination';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
+import { Tooltip } from '../../shared/ui/tooltip';
+import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options';
 
 @Component({
   selector: 'app-class-details',
   imports: [
+    Tooltip,
+    FilterOptions,
     Action,
     Badge,
     DataTable,
@@ -51,10 +56,44 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
     ReactiveFormsModule,
   ],
   styleUrl: './class-details.scss',
-  template: ` <main class="app-page surface content-scroll context-panel">
+  template: ` <main
+      class="app-page context-panel"
+      [class.surface]="section !== 'alunos' && section !== 'aulas'"
+      [class.content-scroll]="section !== 'alunos' && section !== 'aulas'"
+    >
       @if (group(); as group) {
         @switch (section) {
           @case ('alunos') {
+            <app-filter-panel
+              [searchable]="true"
+              [refinable]="true"
+              [chips]="studentFilterChips()"
+              [activeCount]="studentFilterChips().length"
+              (removeFilter)="removeStudentFilter($event)"
+              (clearFilters)="clearStudentFilters()"
+            >
+              <label filter-search class="filter-search-label">
+                <span class="sr-only">Buscar aluno pelo nome</span>
+                <input
+                  type="search"
+                  placeholder="Buscar aluno"
+                  [ngModel]="studentQuery()"
+                  (ngModelChange)="setStudentQuery($event)"
+                />
+              </label>
+              <div class="filter-bar student-filters">
+                <div class="field filter-option-field">
+                  <span>Faltas</span>
+                  <app-filter-options
+                    label="Faltas"
+                    [options]="studentAbsenceOptions"
+                    [selected]="studentAbsenceFilter()"
+                    (selectedChange)="setStudentAbsenceFilter($event)"
+                  />
+                </div>
+              </div>
+            </app-filter-panel>
+            <section class="surface data-panel student-data-panel" aria-label="Tabela de alunos">
             <app-list-header
               title="Alunos matriculados"
               [count]="students().length"
@@ -122,7 +161,9 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="4" class="app-empty">Nenhum aluno matriculado.</td>
+                      <td colspan="4" class="app-empty">
+                        {{ studentQuery().trim() || studentAbsenceFilter() !== 'all' ? 'Nenhum aluno encontrado com esses filtros.' : 'Nenhum aluno matriculado.' }}
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -135,6 +176,7 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
               (pageChange)="studentPaging.page.set($event)"
               (sizeChange)="studentPaging.resize($event)"
             />
+            </section>
           }
           @case ('aulas') {
             <app-filter-panel
@@ -155,27 +197,26 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
                   [ngModel]="lessonFilterForm.controls.conteudo.value"
                   (ngModelChange)="lessonFilterForm.controls.conteudo.setValue($event)"
                 />
-                <button type="submit" title="Buscar" aria-label="Buscar">
-                  <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-                </button>
               </form>
               <form
                 class="filter-bar aulas-filters"
                 [formGroup]="lessonFilterForm"
                 (ngSubmit)="applyLessonFilters()"
               >
-                <label
-                  >Tipo de aula<select formControlName="tipo">
-                    <option value="">Todos os tipos</option>
-                    @for (type of lessonTypeOptions; track type[0]) {
-                      <option [value]="type[0]">{{ type[1] }}</option>
-                    }
-                  </select></label
-                >
+                <div class="field filter-option-field">
+                  <span>Tipo de aula</span>
+                  <app-filter-options
+                    label="Tipo de aula"
+                    [options]="lessonFilterOptions"
+                    [selected]="lessonFilterForm.controls.tipo.value"
+                    (selectedChange)="lessonFilterForm.controls.tipo.setValue($event)"
+                  />
+                </div>
                 <label>Data inicial<input type="date" formControlName="inicio" /></label
                 ><label>Data final<input type="date" formControlName="fim" /></label>
               </form>
             </app-filter-panel>
+            <section class="surface data-panel lessons-data-panel" aria-label="Tabela de aulas">
             <app-list-header
               title="Aulas registradas"
               [count]="filteredLessons().length"
@@ -198,7 +239,15 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
                 <tbody>
                   @for (item of visibleLessons(); track item.id) {
                     <tr>
-                      <td>{{ formatDate(item.data) }}</td>
+                      <td>
+                        <a
+                          class="lesson-date-link"
+                          [routerLink]="['/turmas', group.id, 'registros', item.id]"
+                          [queryParams]="{ retorno: currentUrl }"
+                          [attr.aria-label]="'Abrir aula de ' + formatDate(item.data)"
+                          >{{ formatDate(item.data) }}</a
+                        >
+                      </td>
                       <td>
                         @if (item.tipo === 'aula') {
                           <span
@@ -277,6 +326,7 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
               (pageChange)="lessonPaging.page.set($event)"
               (sizeChange)="lessonPaging.resize($event)"
             />
+            </section>
           }
           @default {
             <section class="overview-grid" aria-label="Informações da turma">
@@ -296,31 +346,35 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
                   >menu_book</span
                 >
                 <h2>Curso e módulo</h2>
-                <p class="overview-card-value">{{ classes.course(group.cursoId)?.nome ?? '—' }}</p>
-                <p class="overview-card-description">
-                  {{ classes.module(group.cursoId, group.moduloId)?.nome ?? 'Módulo não definido' }}
-                </p>
+                <div class="overview-info-tags" aria-label="Curso e módulo">
+                  <span>Curso · {{ classes.course(group.cursoId)?.nome ?? '—' }}</span>
+                  <span
+                    >Módulo ·
+                    {{ classes.module(group.cursoId, group.moduloId)?.nome ?? 'Não definido' }}</span
+                  >
+                </div>
               </article>
               <article class="overview-card">
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
                   >schedule</span
                 >
                 <h2>Horários</h2>
-                <div class="overview-day-tags" aria-label="Dias da semana">
+                <div class="overview-day-tags" aria-label="Dias e horários">
                   @for (day of group.dias; track day) {
                     <span>{{ dayLabel(day) }}</span>
                   }
+                  <span>Início · {{ group.inicio }}</span>
+                  <span>Fim · {{ group.fim }}</span>
                 </div>
-                <p class="overview-card-description overview-time">
-                  {{ group.inicio }}–{{ group.fim }}
-                </p>
               </article>
               <article class="overview-card">
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
                   >groups</span
                 >
                 <h2>Alunos</h2>
-                <p class="overview-card-value">{{ group.alunoIds.length }} matriculados</p>
+                <p class="overview-card-value">
+                  <span class="overview-stat-tag">{{ group.alunoIds.length }} matriculados</span>
+                </p>
               </article>
               <article class="overview-card">
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">{{
@@ -424,7 +478,17 @@ import { Pagination, TablePage } from '../../shared/ui/pagination';
 })
 export class ClassDetails {
   readonly classes = inject(ClassesStore);
+  private readonly confirm = inject(ConfirmDialogService);
   readonly lessonTypes = lessonTypes;
+  readonly lessonFilterOptions: readonly FilterOption[] = [
+    { value: '', label: 'Todos' },
+    ...Object.entries(lessonTypes).map(([value, label]) => ({ value, label })),
+  ];
+  readonly studentAbsenceOptions: readonly FilterOption[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'with', label: 'Com faltas' },
+    { value: 'without', label: 'Sem faltas' },
+  ];
   private readonly attendance = inject(AttendanceStore);
   private readonly history = inject(HistoryStore);
   private readonly route = inject(ActivatedRoute);
@@ -436,7 +500,6 @@ export class ClassDetails {
     ...this.initialLessonFilters(),
   });
   readonly appliedLessonFilters = signal(this.lessonFilterForm.getRawValue());
-  readonly lessonTypeOptions = Object.entries(lessonTypes);
   private readonly parentParams = toSignal(this.route.parent!.paramMap, {
     initialValue: this.route.parent!.snapshot.paramMap,
   });
@@ -445,12 +508,58 @@ export class ClassDetails {
       this.parentParams().get('turma') ?? contextParam(this.route.snapshot, 'turma') ?? '',
     ),
   );
+  readonly studentQuery = signal('');
+  readonly studentAbsenceFilter = signal('all');
+  readonly studentFilterChips = computed(() => {
+    const query = this.studentQuery().trim();
+    return [
+      ...(query ? [{ key: 'student', label: 'Aluno', value: query }] : []),
+      ...(this.studentAbsenceFilter() !== 'all'
+        ? [{
+            key: 'absences',
+            label: 'Faltas',
+            value: this.studentAbsenceFilter() === 'with' ? 'Com faltas' : 'Sem faltas',
+          }]
+        : []),
+    ];
+  });
   readonly students = computed(() => {
     const group = this.group();
-    return group ? this.classes.roster(group.id) : [];
+    const query = this.studentQuery().trim().toLocaleLowerCase('pt-BR');
+    const absenceFilter = this.studentAbsenceFilter();
+    return group
+      ? this.classes
+          .roster(group.id)
+          .filter((student) => {
+            const matchesName = student.nome.toLocaleLowerCase('pt-BR').includes(query);
+            const hasAbsences = this.absences(group.id, student.id) > 0;
+            return (
+              matchesName &&
+              (absenceFilter === 'all' ||
+                (absenceFilter === 'with' && hasAbsences) ||
+                (absenceFilter === 'without' && !hasAbsences))
+            );
+          })
+      : [];
   });
   readonly studentPaging = new TablePage(() => this.students().length);
   readonly visibleStudents = computed(() => this.studentPaging.slice(this.students()));
+  setStudentQuery(value: string): void {
+    this.studentQuery.set(value);
+    this.studentPaging.page.set(1);
+  }
+  setStudentAbsenceFilter(value: string): void {
+    this.studentAbsenceFilter.set(value);
+    this.studentPaging.page.set(1);
+  }
+  clearStudentFilters(): void {
+    this.setStudentQuery('');
+    this.setStudentAbsenceFilter('all');
+  }
+  removeStudentFilter(key: string): void {
+    if (key === 'student') this.setStudentQuery('');
+    else if (key === 'absences') this.setStudentAbsenceFilter('all');
+  }
   readonly section = this.route.snapshot.data['section'] as string;
   readonly lessons = computed(() =>
     this.history
@@ -611,12 +720,13 @@ export class ClassDetails {
       !group ||
       !group.ativa ||
       !student ||
-      group.alunoIds.length <= 1 ||
-      !window.confirm(
-        `Excluir a matrícula de ${student.nome} desta turma? Os registros históricos serão preservados.`,
-      )
+      group.alunoIds.length <= 1
     )
       return;
+    if (!(await this.confirm.confirm(
+      `Os registros históricos de ${student.nome} serão preservados.`,
+      { title: `Excluir a matrícula de ${student.nome}?`, confirmLabel: 'Excluir', confirmIcon: 'person_remove' },
+    ))) return;
     try {
       await this.classes.removeStudent(classId, studentId);
       this.message.set('');
@@ -628,15 +738,18 @@ export class ClassDetails {
   }
   async toggleStatus(): Promise<void> {
     const group = this.group();
-    if (
-      !group ||
-      !window.confirm(
-        group.ativa
-          ? 'Arquivar esta turma? Os registros serão preservados e ficarão disponíveis somente para consulta.'
-          : 'Reativar esta turma?',
-      )
-    )
-      return;
+    if (!group) return;
+    const confirmed = await this.confirm.confirm(
+      group.ativa
+        ? 'Os registros serão preservados e ficarão disponíveis somente para consulta.'
+        : 'A turma ficará disponível novamente para uso.',
+      {
+        title: group.ativa ? 'Arquivar esta turma?' : 'Reativar esta turma?',
+        confirmLabel: group.ativa ? 'Arquivar' : 'Reativar',
+        confirmIcon: group.ativa ? 'archive' : 'unarchive',
+      },
+    );
+    if (!confirmed) return;
     try {
       await this.classes.save({ ...group, ativa: !group.ativa });
     } catch (error) {

@@ -36,6 +36,7 @@ app-page-header {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+  margin-bottom: 0.375rem;
   align-items: center;
   font-size: 0.75rem;
   color: #94a3b8;
@@ -74,22 +75,19 @@ app-page-header {
 }
 .page-title-row .class-edit-action {
   flex: none;
-  gap: 0.375rem;
+  width: 2.75rem;
+  height: 2.75rem;
   margin-left: auto;
   margin-right: 1.25rem;
-  min-height: 2.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #fde68a;
-  border-radius: 999px;
-  background: #fffbeb;
-  color: #b45309;
-  font-size: 0.8125rem;
-  white-space: nowrap;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: #fff;
+  color: #475569;
 }
 .page-title-row .class-edit-action:hover {
-  border-color: #fcd34d;
-  background: #fef3c7;
-  color: #92400e;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #1e293b;
 }
 .page-context {
   color: #cbd5e1;
@@ -127,14 +125,9 @@ app-page-header {
   background: #fff;
   color: var(--color-text);
   border: 1px solid #cbd5e1;
-  border-radius: var(--radius-panel);
+  border-radius: var(--radius-panel) 0 0 0;
   min-height: 0;
   min-width: 0;
-}
-.class-workspace .surface {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
 }
 .content-scroll {
   flex: 1;
@@ -158,7 +151,7 @@ app-page-header {
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-button);
 }
 .filter-bar {
   display: flex;
@@ -185,7 +178,7 @@ app-filter-panel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.625rem;
   width: 100%;
 }
 .filter-toggle .material-symbols-outlined {
@@ -195,12 +188,14 @@ app-filter-panel {
   padding-top: 0.5rem;
 }
 .app-page .historico-filters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  width: max-content;
   align-items: end;
 }
-.app-page .historico-filters button {
-  width: 100%;
+.app-page .historico-filters > button {
+  width: auto;
 }
 .historico-footer nav {
   flex: none;
@@ -216,7 +211,7 @@ app-filter-panel {
 }
 @media (max-width: 48rem) {
   .app-page .historico-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: nowrap;
   }
   .historico-footer nav {
     width: 100%;
@@ -247,7 +242,7 @@ app-filter-panel {
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid #cbd5e1;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-button);
   background: #fff;
   color: #17211b;
   font-size: 0.875rem;
@@ -300,10 +295,27 @@ app-filter-panel {
   height: 2.75rem;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-button);
   background: transparent;
   color: #475569;
   cursor: pointer;
+}
+.app-tooltip-popup {
+  position: fixed;
+  z-index: 30000;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-button);
+  background: #172033;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 .icon-button:hover {
   background: #eff6ff;
@@ -350,6 +362,12 @@ app-filter-panel {
 }
 .table-scroll tbody tr:hover {
   background: #f8fafc;
+}
+.table-scroll tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.table-scroll tbody tr:nth-child(even):hover {
+  background: #f1f5f9;
 }
 .table-scroll small {
   display: block;
@@ -399,7 +417,7 @@ app-filter-panel {
   min-height: 2.75rem;
   padding: 0.5rem 0.875rem;
   border: 1px solid #cbd5e1;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-button);
   background: #fff;
   color: #334155;
   font-size: 0.8125rem;
@@ -501,7 +519,7 @@ app-filter-panel {
   height: 100%;
   padding: 1rem;
   border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-panel) 0 0 0;
   background: #fff;
   overflow-wrap: anywhere;
 }
@@ -516,10 +534,11 @@ app-filter-panel {
   font-size: 1.75rem;
 }
 .overview-card h2 {
-  margin: 0;
+  width: 100%;
+  margin: 0 0 0.375rem;
   color: #334155;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1.4;
 }
 .overview-card .overview-card-value {
@@ -529,7 +548,7 @@ app-filter-panel {
   margin: 0.125rem 0 0;
   color: #17211b;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.5;
 }
 .overview-card .overview-card-description {
@@ -544,21 +563,26 @@ app-filter-panel {
   gap: 0.375rem;
   margin-top: 0.125rem;
 }
-.overview-day-tags span {
+.overview-day-tags span,
+.overview-info-tags span,
+.overview-stat-tag {
   display: inline-flex;
   align-items: center;
   min-height: 1.75rem;
   padding: 0.25rem 0.5rem;
   border: 1px solid #e2e8f0;
-  border-radius: 999px;
+  border-radius: var(--radius-tag);
   background: #f8fafc;
   color: #475569;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.25;
 }
-.overview-card .overview-time {
-  margin-top: 0.125rem;
+.overview-info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.125rem 0 0;
 }
 .overview-card .person-name {
   align-items: center;
@@ -566,19 +590,30 @@ app-filter-panel {
 .overview-card .person-name app-person-avatar {
   margin: 0;
 }
-.overview-text-action {
-  margin-top: 0.125rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.overview-text-action,
+.overview-quick-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-button);
+  background: #fff;
   color: #475569;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 400;
+}
+.overview-text-action {
+  margin-top: 0.125rem;
   cursor: pointer;
 }
-.overview-text-action:hover {
+.overview-text-action:hover,
+.overview-quick-links a:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
   color: #1d4ed8;
-  text-decoration: underline;
 }
 .overview-quick-links {
   display: flex;
@@ -588,24 +623,10 @@ app-filter-panel {
   margin-top: 0.125rem;
 }
 .overview-quick-links a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.375rem;
-  min-height: 2.25rem;
-  padding: 0.375rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  color: #475569;
-  font-size: 0.75rem;
-  font-weight: 500;
+  text-decoration: none;
 }
-.overview-quick-links a:hover {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-.overview-quick-links .material-symbols-outlined {
+.overview-quick-links .material-symbols-outlined,
+.overview-text-action .material-symbols-outlined {
   font-size: 1rem;
 }
 @media (max-width: 64rem) {
