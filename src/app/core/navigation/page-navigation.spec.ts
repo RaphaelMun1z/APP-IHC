@@ -25,7 +25,7 @@ describe('Hierarquia de páginas', () => {
     expect(navigation.page().crumbs.map((item) => item.label)).toEqual([
       'Início',
       'Turmas',
-      '6º ano A',
+      'Ciência da Computação · 3º período A',
       'Aulas',
       'Registrar aula',
     ]);
@@ -40,13 +40,13 @@ describe('Hierarquia de páginas', () => {
         .page()
         .crumbs.map((item) => item.label)
         .slice(0, 4),
-    ).toEqual(['Início', 'Turmas', '6º ano A', 'Aulas']);
+    ).toEqual(['Início', 'Turmas', 'Ciência da Computação · 3º período A', 'Aulas']);
     expect(navigation.page().title).toContain('09/11/2026');
     await harness.navigateByUrl('/turmas/6b/aulas/demo-aula-6b/editar');
     expect(navigation.page().crumbs.map((item) => item.label)).toEqual([
       'Início',
       'Turmas',
-      '6º ano B',
+      'Ciência da Computação · 5º período B',
       'Aulas',
       'Editar aula',
     ]);

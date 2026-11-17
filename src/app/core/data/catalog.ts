@@ -1,4 +1,5 @@
 import type { Student, Criterion, Person, Course, SchoolClass } from '../models/domain';
+
 export const students: readonly Student[] = [
   'Ana Clara Santos',
   'Bruno Oliveira',
@@ -16,115 +17,119 @@ export const students: readonly Student[] = [
   'Pedro Henrique Alves',
   'Vitória Nascimento',
 ].map((nome, i) => ({ id: `aluno-${String(i + 1).padStart(2, '0')}`, nome }));
+
 export const criteria: readonly Criterion[] = [
-  ['conhecimento-conteudo', 'Conhecimento do conteúdo'],
-  ['criatividade', 'Criatividade'],
-  ['objetividade', 'Objetividade'],
-  ['concisao', 'Concisão'],
-  ['participacao', 'Participação'],
-  ['escuta-ativa-foco', 'Escuta ativa e foco'],
-  ['reatividade', 'Reatividade'],
-  ['espirito-equipe', 'Espírito de equipe'],
-  ['proatividade', 'Proatividade'],
-  ['capacidade-argumentacao', 'Capacidade de argumentação'],
+  ['dominio-conteudo', 'Domínio do conteúdo'],
+  ['raciocinio-analitico', 'Raciocínio analítico'],
+  ['aplicacao-pratica', 'Aplicação prática'],
+  ['pensamento-critico', 'Pensamento crítico'],
+  ['argumentacao', 'Argumentação'],
+  ['comunicacao', 'Comunicação'],
+  ['colaboracao', 'Colaboração'],
+  ['autonomia', 'Autonomia'],
+  ['organizacao', 'Organização'],
+  ['entrega-prazo', 'Entrega no prazo'],
 ].map(([id, nome]) => ({ id, nome }));
+
 export const teachers: readonly Person[] = [
   { id: 'professor-01', nome: 'Mariana Oliveira' },
   { id: 'professor-02', nome: 'Rafael Santos' },
 ];
+
 export const courses: readonly Course[] = [
   {
     id: 'formacao',
-    nome: 'Formação integral',
+    nome: 'Ciência da Computação',
     modulos: [
       {
         id: 'identidade',
-        nome: 'Módulo 1 · Identidade e valores',
+        nome: '3º período · Engenharia de Software',
         licoes: [
-          'Quem sou eu',
-          'Minhas habilidades',
-          'Valores no dia a dia',
-          'Escolhas e consequências',
+          'Requisitos funcionais e não funcionais',
+          'Modelagem UML e casos de uso',
+          'Arquitetura de aplicações',
+          'Testes e qualidade de software',
         ],
       },
       {
         id: 'convivencia',
-        nome: 'Módulo 2 · Convivência',
+        nome: '5º período · Banco de Dados',
         licoes: [
-          'Respeito às diferenças',
-          'Escuta e diálogo',
-          'Cooperação',
-          'Resolução de conflitos',
+          'Modelagem relacional',
+          'Normalização de dados',
+          'Consultas SQL e junções',
+          'Transações e concorrência',
         ],
       },
     ],
   },
   {
     id: 'projeto',
-    nome: 'Projeto de vida',
+    nome: 'Administração',
     modulos: [
       {
         id: 'caminhos',
-        nome: 'Módulo 1 · Meus caminhos',
+        nome: '2º período · Fundamentos de Gestão',
         licoes: [
-          'Sonhos e objetivos',
-          'Reconhecendo oportunidades',
-          'Planejamento pessoal',
-          'Primeiros passos',
+          'Funções e níveis organizacionais',
+          'Planejamento e definição de metas',
+          'Estruturas organizacionais',
+          'Liderança e tomada de decisão',
         ],
       },
       {
         id: 'comunidade',
-        nome: 'Módulo 2 · Comunidade',
+        nome: '4º período · Gestão Financeira',
         licoes: [
-          'Meu lugar no mundo',
-          'Cuidado com o outro',
-          'Ações em comunidade',
-          'Projeto coletivo',
+          'Leitura de demonstrativos financeiros',
+          'Custos fixos e variáveis',
+          'Fluxo de caixa e orçamento',
+          'Indicadores de desempenho',
         ],
       },
     ],
   },
 ];
+
 export const defaultClasses: readonly SchoolClass[] = [
   {
     id: '6a',
-    nome: '6º ano A',
+    nome: 'Ciência da Computação · 3º período A',
     cursoId: 'formacao',
     moduloId: 'identidade',
     professorId: 'professor-01',
     dias: [1, 3],
     inicio: '08:00',
-    fim: '08:50',
+    fim: '09:40',
   },
   {
     id: '6b',
-    nome: '6º ano B',
+    nome: 'Ciência da Computação · 5º período B',
     cursoId: 'formacao',
     moduloId: 'convivencia',
     professorId: 'professor-01',
     dias: [2, 4],
-    inicio: '09:00',
-    fim: '09:50',
+    inicio: '10:00',
+    fim: '11:40',
   },
   {
     id: '7a',
-    nome: '7º ano A',
+    nome: 'Administração · 2º período A',
     cursoId: 'projeto',
     moduloId: 'caminhos',
     professorId: 'professor-02',
     dias: [1, 3],
-    inicio: '10:00',
-    fim: '10:50',
+    inicio: '19:00',
+    fim: '20:40',
   },
   {
     id: '7b',
-    nome: '7º ano B',
+    nome: 'Administração · 4º período B',
     cursoId: 'projeto',
     moduloId: 'comunidade',
     professorId: 'professor-02',
     dias: [2, 4],
-    inicio: '11:00',
-    fim: '11:50',
+    inicio: '20:50',
+    fim: '22:30',
   },
-].map((t) => ({ ...t, ativa: true, alunoIds: students.map((a) => a.id) }));
+].map((turma) => ({ ...turma, ativa: true, alunoIds: students.map((aluno) => aluno.id) }));

@@ -1,11 +1,11 @@
 export const storageKeys = {
-  students: 'ipb-alunos-v1',
-  classes: 'ipb-turmas-v1',
-  pinnedClasses: 'ipb-turmas-fixadas-v1',
-  lessons: 'ipb-aulas-v1',
-  assessments: 'ipb-avaliacoes-v1',
-  lessonAssessments: 'ipb-avaliacoes-aulas-v1',
-  attendance: 'ipb-presencas-v1',
+  students: 'ipb-alunos-v2',
+  classes: 'ipb-turmas-v2',
+  pinnedClasses: 'ipb-turmas-fixadas-v2',
+  lessons: 'ipb-aulas-v2',
+  assessments: 'ipb-avaliacoes-v2',
+  lessonAssessments: 'ipb-avaliacoes-aulas-v2',
+  attendance: 'ipb-presencas-v2',
   session: 'ipb-sessao-v1',
   username: 'ipb-login-username',
 } as const;

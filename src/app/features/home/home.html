@@ -5,21 +5,24 @@
         <h2 id="pinned-classes-title">Turmas fixadas</h2>
         <div class="pinned-class-grid">
           @for (group of classes.pinned(); track group.id) {
-            <a class="pinned-class-link" [routerLink]="['/turmas', group.id]">
-              <span class="pinned-class-icon material-symbols-outlined" aria-hidden="true"
-                >push_pin</span
-              >
-              <span>
+            <div class="pinned-class-card">
+              <a [routerLink]="['/turmas', group.id]" [attr.aria-label]="'Abrir turma ' + group.nome">
+                <span class="quick-icon material-symbols-outlined" aria-hidden="true">groups</span>
                 <strong>{{ group.nome }}</strong>
-                <small
-                  >{{ classes.course(group.cursoId)?.nome }} · {{ classes.schedule(group) }}</small
-                >
-                <small>{{ group.ativa ? 'Ativa' : 'Arquivada' }}</small>
-              </span>
-              <span class="quick-arrow material-symbols-outlined" aria-hidden="true"
-                >chevron_right</span
+                <span class="quick-arrow material-symbols-outlined" aria-hidden="true">
+                  chevron_right
+                </span>
+              </a>
+              <button
+                class="pinned-unpin-button"
+                type="button"
+                [attr.aria-label]="'Desfixar turma ' + group.nome"
+                [title]="'Desfixar turma ' + group.nome"
+                (click)="unpin(group.id)"
               >
-            </a>
+                <span class="material-symbols-outlined" aria-hidden="true">keep_off</span>
+              </button>
+            </div>
           }
         </div>
       </section>
@@ -30,7 +33,12 @@
         <a class="app-button" routerLink="/turmas">Escolher turmas</a>
       </section>
     }
-    <div class="inicio-quick-links">
+    @if (message()) {
+      <app-feedback [message]="message()" [error]="message().startsWith('Não foi possível')" />
+    }
+    <section class="home-navigation" aria-labelledby="quick-links-title">
+      <h2 id="quick-links-title">Navegação rápida</h2>
+      <div class="inicio-quick-links">
       @for (link of links; track link.path) {
         <a [routerLink]="link.path"
           ><span class="quick-icon material-symbols-outlined" aria-hidden="true">{{
@@ -44,6 +52,7 @@
           ></a
         >
       }
-    </div>
+      </div>
+    </section>
   </section>
 </main>
