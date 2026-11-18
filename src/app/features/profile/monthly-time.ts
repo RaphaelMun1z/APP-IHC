@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CatalogApi } from '../../core/api/catalog.api';
@@ -60,6 +60,21 @@ import { ClassesStore } from '../classes/classes.store';
               </div>
             </form>
           }
+          @if (!isProfessor && !loading() && !loadFailed()) {
+            <label class="field"
+              >Professor
+              <select
+                #teacherFilter
+                [value]="teacherId()"
+                (change)="teacherId.set(teacherFilter.value)"
+              >
+                <option value="">Todos os professores</option>
+                @for (id of availableTeachers(); track id) {
+                  <option [value]="id">{{ teacher(id) }}</option>
+                }
+              </select>
+            </label>
+          }
           <app-feedback [message]="message()" [error]="failed()" />
           @if (loadFailed()) {
             <button appAction="refresh" type="button" (click)="load()" [disabled]="loading()">
@@ -70,10 +85,12 @@ import { ClassesStore } from '../classes/classes.store';
         <section class="form-wizard-panel">
           <h2>Pontos mensais registrados</h2>
           @if (loading()) {
-            <p>Carregando pontos mensais…</p>
+            <div class="list-skeleton" role="status">
+              <span class="sr-only">Carregando pontos mensais…</span>
+            </div>
           } @else if (!loadFailed()) {
             <ul>
-              @for (row of records(); track row.id) {
+              @for (row of filteredRecords(); track row.id) {
                 <li>
                   @if (!isProfessor) {
                     {{ teacher(row.professorId) }} ·
@@ -99,9 +116,12 @@ import { ClassesStore } from '../classes/classes.store';
       display: grid;
       gap: 1.5rem;
       align-content: start;
+      grid-template-columns: minmax(0, 1fr);
+      overflow-wrap: anywhere;
     }
     section {
-      max-width: 46rem;
+      width: min(100%, 46rem);
+      margin-inline: auto;
     }
     li + li {
       margin-block-start: 0.5rem;
@@ -114,6 +134,15 @@ export class MonthlyTime {
   private readonly classes = inject(ClassesStore);
   readonly requests = inject(RequestState);
   readonly isProfessor = inject(AuthService).user()?.perfil === 'professor';
+  readonly teacherId = signal('');
+  readonly availableTeachers = computed(() =>
+    [...new Set(this.records().map((row) => row.professorId))].sort((a, b) =>
+      this.teacher(a).localeCompare(this.teacher(b), 'pt-BR'),
+    ),
+  );
+  readonly filteredRecords = computed(() =>
+    this.records().filter((row) => !this.teacherId() || row.professorId === this.teacherId()),
+  );
   readonly records = signal<readonly MonthlyTimeRecord[]>([]);
   readonly loading = signal(false);
   readonly loadFailed = signal(false);

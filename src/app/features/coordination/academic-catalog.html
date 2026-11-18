@@ -1,0 +1,234 @@
+<main class="app-page">
+  <nav class="context-tabs-scroll" aria-label="Coordenação pedagógica">
+    <div class="context-tabs">
+      @for (tab of tabs; track tab.path) {
+        <a
+          [routerLink]="tab.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+          >{{ tab.label }}</a
+        >
+      }
+    </div>
+  </nav>
+  <div class="surface content-scroll academic-content">
+    @switch (view) {
+      @case ('cadastros') {
+        <section class="form-wizard-panel">
+          <form
+            class="form-wizard-field-stack"
+            #cadastro="ngForm"
+            (ngSubmit)="register(cadastro)"
+            (input)="catalogMessage.set('')"
+            (change)="catalogMessage.set('')"
+          >
+            <label class="field"
+              >Tipo de cadastro
+              <select name="tipo" [(ngModel)]="kind">
+                <option value="curso">Curso</option>
+                <option value="modulo">Módulo</option>
+                <option value="licao">Lição</option>
+                <option value="professor">Professor</option>
+                <option value="coordenador">Coordenação pedagógica</option>
+              </select>
+            </label>
+            @if (kind === 'modulo' || kind === 'licao') {
+              <label class="field"
+                >Curso
+                <select
+                  name="cursoId"
+                  [(ngModel)]="courseId"
+                  (ngModelChange)="moduleId = ''"
+                  required
+                >
+                  <option value="">Selecione</option>
+                  @for (course of catalog().cursos; track course.id) {
+                    <option [value]="course.id">{{ course.nome }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (kind === 'licao') {
+              <label class="field"
+                >Módulo
+                <select name="moduloId" [(ngModel)]="moduleId" required>
+                  <option value="">Selecione</option>
+                  @for (module of classes.course(courseId)?.modulos ?? []; track module.id) {
+                    <option [value]="module.id">{{ module.nome }}</option>
+                  }
+                </select>
+              </label>
+            }
+            <label class="field"
+              >{{ kind === 'licao' ? 'Título' : 'Nome' }}
+              <input name="nome" [(ngModel)]="name" required maxlength="150" />
+            </label>
+            @if (kind === 'modulo' || kind === 'licao') {
+              <label class="field"
+                >Número
+                <input name="numero" type="number" min="1" step="1" [(ngModel)]="number" required />
+              </label>
+            }
+            @if (kind === 'curso') {
+              <label class="field"
+                >Área<input name="area" [(ngModel)]="area" required maxlength="150"
+              /></label>
+              <label class="field"
+                >Carga horária total
+                <input
+                  name="cargaHoraria"
+                  type="number"
+                  min="1"
+                  step="1"
+                  [(ngModel)]="hours"
+                  required
+                />
+              </label>
+            }
+            @if (kind === 'professor' || kind === 'coordenador') {
+              <label class="field"
+                >CPF<input name="cpf" [(ngModel)]="cpf" required maxlength="14"
+              /></label>
+              <label class="field"
+                >E-mail<input
+                  name="email"
+                  type="email"
+                  [(ngModel)]="email"
+                  email
+                  required
+                  maxlength="150"
+              /></label>
+            }
+            @if (kind === 'professor') {
+              <label class="field"
+                >Telefone<input
+                  name="telefone"
+                  type="tel"
+                  [(ngModel)]="phone"
+                  required
+                  maxlength="150"
+              /></label>
+            }
+            <div>
+              <button
+                appAction="save"
+                class="primary"
+                type="submit"
+                [disabled]="cadastro.invalid || requests.saving()"
+              >
+                Cadastrar
+              </button>
+            </div>
+            <app-feedback [message]="catalogMessage()" [error]="catalogError()" />
+          </form>
+        </section>
+      }
+      @case ('vinculos') {
+        <section class="form-wizard-panel">
+          <label class="field"
+            >Turma
+            <select [value]="classId()" (change)="changeClass($event)">
+              <option value="">Selecione</option>
+              @for (group of classes.accessible(); track group.id) {
+                <option [value]="group.id">{{ group.nome }}</option>
+              }
+            </select>
+          </label>
+          @if (group()) {
+            <fieldset class="form-wizard-choice">
+              <legend>Professores vinculados</legend>
+              <div class="form-wizard-option-list">
+                @for (teacher of catalog().professores; track teacher.id) {
+                  <label class="form-wizard-option">
+                    <input
+                      type="checkbox"
+                      [checked]="selected().includes(teacher.id)"
+                      (change)="toggle(teacher.id)"
+                    />
+                    <span>{{ teacher.nome }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+            <button
+              appAction="save"
+              class="primary"
+              type="button"
+              (click)="saveTeachers()"
+              [disabled]="!assignmentDirty() || !selected().length || requests.saving()"
+            >
+              Salvar vínculos
+            </button>
+          }
+          <app-feedback [message]="assignmentMessage()" [error]="assignmentError()" />
+          <a appAction="add" class="app-button" routerLink="/turma-form">Nova turma</a>
+        </section>
+      }
+      @default {
+        <label class="field"
+          >Buscar no catálogo<input
+            type="search"
+            placeholder="Curso, módulo, lição ou pessoa"
+            [ngModel]="query()"
+            (ngModelChange)="query.set($event)"
+        /></label>
+        <section>
+          <app-list-header
+            title="Cursos, módulos e lições"
+            [count]="courses().length"
+            singular="curso"
+            plural="cursos"
+          />
+          @for (course of courses(); track course.id) {
+            <details>
+              <summary>{{ course.nome }}</summary>
+              <p>
+                {{ course.area || 'Área não informada' }} ·
+                {{
+                  course.cargaHorariaTotal === undefined
+                    ? 'Carga horária não informada'
+                    : course.cargaHorariaTotal + ' h'
+                }}
+              </p>
+              @for (module of course.modulos; track module.id) {
+                <h3>{{ module.numero ? module.numero + '. ' : '' }}{{ module.nome }}</h3>
+                <ol>
+                  @for (lesson of lessons(module); track $index) {
+                    <li [value]="lesson.numero">{{ lesson.titulo }}</li>
+                  } @empty {
+                    <li>Nenhuma lição cadastrada.</li>
+                  }
+                </ol>
+              } @empty {
+                <p>Nenhum módulo cadastrado.</p>
+              }
+            </details>
+          } @empty {
+            <p class="app-empty">Nenhum curso encontrado.</p>
+          }
+        </section>
+        <section>
+          <app-list-header
+            title="Equipe pedagógica"
+            [count]="people().length"
+            singular="pessoa"
+            plural="pessoas"
+          />
+          @for (person of people(); track person.role + person.id) {
+            <details>
+              <summary>{{ person.nome }} · {{ person.role }}</summary>
+              <p>E-mail: {{ person.email || 'Não informado' }}</p>
+              <p>CPF: {{ person.cpf || 'Não informado' }}</p>
+              @if (person.role === 'Professor') {
+                <p>Telefone: {{ person.telefone || 'Não informado' }}</p>
+              }
+            </details>
+          } @empty {
+            <p class="app-empty">Nenhuma pessoa encontrada.</p>
+          }
+        </section>
+      }
+    }
+  </div>
+</main>

@@ -91,7 +91,8 @@ export class Classes {
             .includes(this.query().trim().toLocaleLowerCase('pt-BR')) &&
           (!this.courseId() || group.cursoId === this.courseId()) &&
           (this.status() === 'todas' || group.ativa === (this.status() === 'ativas')),
-      ),
+      )
+      .sort((a, b) => Number(this.store.isPinned(b.id)) - Number(this.store.isPinned(a.id))),
   );
   readonly paging = new TablePage(() => this.filtered().length);
   readonly visible = computed(() => this.paging.slice(this.filtered()));

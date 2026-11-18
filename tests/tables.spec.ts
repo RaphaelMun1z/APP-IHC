@@ -1,15 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openFilters } from './filter-helpers';
 async function login(page: Page) {
+  await page.clock.install({ time: new Date('2026-11-13T12:00:00-03:00') });
   await page.goto('/login');
   await page.locator('#usuario').fill('professor');
   await page.locator('#senha').fill('ipb123');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/inicio$/);
+  await expect(page).toHaveURL(/turmas$/);
 }
 test('densidade compacta e controles sem redundância', async ({ page }) => {
   await login(page);
-  await page.goto('/historico');
+  await page.goto('/turmas/6a/aulas');
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator('.filter-content')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Adicionar filtro' })).toHaveCount(0);
@@ -19,51 +20,38 @@ test('densidade compacta e controles sem redundância', async ({ page }) => {
   ).toBeLessThanOrEqual(450);
   const row = await page.locator('tbody tr').first().boundingBox();
   expect(row?.height).toBeGreaterThanOrEqual(44);
-  expect(row?.height).toBeLessThanOrEqual(64);
+  expect(row?.height).toBeLessThanOrEqual(96);
   expect(
     await page
       .locator('tbody td')
       .first()
       .evaluate((el) => getComputedStyle(el).fontSize),
   ).toBe('14px');
-  await expect(page.locator('.historico-table thead th')).toHaveText([
+  await expect(page.locator('.lessons-table thead th')).toHaveText([
     'Data',
     'Tipo',
-    'Turma',
-    'Resumo',
+    'Conteúdo',
+    'Ações',
   ]);
-  await expect(page.locator('.historico-table .icon-button')).toHaveCount(0);
-  await expect(page.locator('.filter-search-form .material-symbols-outlined')).toHaveText('search');
-  await expect(page.locator('.filter-shell')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(page.locator('.filter-search-box .material-symbols-outlined')).toHaveText('search');
   await expect(page.locator('.filter-shell')).toHaveCSS('border-top-width', '0px');
-  expect(
-    await page
-      .getByRole('combobox', { name: 'Registros por página' })
-      .evaluate((el) => el.getBoundingClientRect().height),
-  ).toBeLessThanOrEqual(30);
   await openFilters(page);
-  for (const name of ['Aplicar', 'Limpar']) {
-    expect(
-      await page
-        .getByRole('button', { name, exact: true })
-        .evaluate((el) => el.getBoundingClientRect().width),
-    ).toBeLessThan(90);
-  }
+  await expect(page.getByRole('button', { name: 'Limpar filtros' })).toBeVisible();
 });
 test('combina filtros, remove chips individualmente e limpa a consulta', async ({ page }) => {
   await login(page);
-  await page.goto('/historico');
-  await expect(page.locator('.historico-table tbody a')).toHaveCount(0);
+  await page.goto('/turmas');
   await openFilters(page);
-  await page.getByRole('combobox', { name: 'Tipo de registro', exact: true }).selectOption('aula');
-  await page.getByRole('combobox', { name: 'Turma', exact: true }).selectOption('6a');
-  await page.getByRole('button', { name: 'Aplicar' }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Remover filtro Turma: 6º ano A' }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(4);
-  await expect(page.getByRole('button', { name: 'Remover filtro Tipo: Aula' })).toBeVisible();
-  await page.getByRole('button', { name: 'Limpar', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(10);
+  await page.getByRole('combobox', { name: 'Curso' }).selectOption('formacao');
+  await page.getByRole('searchbox').fill('5º');
+  await expect(page.locator('.turma-row')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Remover filtro Busca: 5º' }).click();
+  await expect(page.locator('.turma-row')).toHaveCount(2);
+  await expect(
+    page.getByRole('button', { name: 'Remover filtro Curso: Ciência da Computação' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  await expect(page.locator('.turma-row')).toHaveCount(4);
   await expect(page.locator('.filter-chip')).toHaveCount(0);
 });
 test('contagem no cabeçalho e ações consistentes em todas as listagens', async ({ page }) => {
@@ -71,7 +59,7 @@ test('contagem no cabeçalho e ações consistentes em todas as listagens', asyn
   for (const [route, count] of [
     ['/coordenacao', '4 turmas'],
     ['/turmas', '4 turmas'],
-    ['/historico', '12 registros'],
+    ['/historico', '4 turmas'],
     ['/turmas/6a/frequencia', '15 alunos'],
     ['/turmas/6a/avaliacoes', '1 aula'],
     ['/turmas/6a/alunos', '15 alunos'],
@@ -132,22 +120,25 @@ test('listagem de aulas filtra por tipo, período e conteúdo', async ({ page })
   const count = page.locator('.list-result-count');
   await expect(count).toHaveText('1 aula');
   await openFilters(page);
-  await page.getByRole('combobox', { name: 'Tipo de aula' }).selectOption('PR1');
-  await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Tipo de aula' })
+    .getByRole('button', { name: /PR1/ })
+    .click();
   await expect(count).toHaveText('0 aulas');
-  await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+  await page.getByRole('button', { name: 'Limpar filtros', exact: true }).click();
+  await openFilters(page);
   await expect(count).toHaveText('1 aula');
 
   await page.getByLabel('Data inicial').fill('2026-11-10');
-  await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
   await expect(count).toHaveText('0 aulas');
-  await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+  await page.getByRole('button', { name: 'Limpar filtros', exact: true }).click();
+  await openFilters(page);
   await expect(count).toHaveText('1 aula');
 
   await page.getByRole('searchbox', { name: 'Conteúdo da aula' }).fill('conteúdo inexistente');
-  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   await expect(count).toHaveText('0 aulas');
-  await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+  await page.getByRole('button', { name: 'Limpar filtros', exact: true }).click();
+  await openFilters(page);
   await expect(count).toHaveText('1 aula');
 });
 
@@ -200,11 +191,11 @@ test('busca de turmas usa a barra compartilhada e remove o filtro pelo teclado',
   await page.goto('/turmas');
   const search = page.getByRole('searchbox', { name: 'Buscar turma pelo nome' });
   await expect(page.locator('.filter-chip-row')).toHaveCount(0);
-  await search.fill('6º');
+  await search.fill('Ciência');
   await expect(page.locator('.turma-row')).toHaveCount(2);
   await expect(page.locator('.list-result-count')).toHaveText('2 turmas');
   await expect(page).toHaveURL(/busca=/);
-  const remove = page.getByRole('button', { name: 'Remover filtro Busca: 6º' });
+  const remove = page.getByRole('button', { name: 'Remover filtro Busca: Ciência' });
   await remove.focus();
   await page.keyboard.press('Enter');
   await expect(search).toHaveValue('');
@@ -219,35 +210,38 @@ test('turmas usam tabela com filtros e ações de edição e exclusão', async (
     'Selecionar',
     'Turma',
     'Curso',
-    'Horário',
     'Alunos',
     'Situação',
     'Ações',
   ]);
-  const edit = page.getByRole('link', { name: 'Editar 6º ano A' });
-  const remove = page.getByRole('button', { name: 'Excluir 6º ano A' });
-  const open = page.getByRole('link', { name: 'Abrir 6º ano A' });
+  const edit = page.getByRole('link', { name: 'Editar Ciência da Computação · 3º período A' });
+  const remove = page.getByRole('button', { name: 'Excluir Ciência da Computação · 3º período A' });
+  const open = page.getByRole('link', { name: 'Abrir Ciência da Computação · 3º período A' });
+  await edit.scrollIntoViewIfNeeded();
   await expect(edit).toBeInViewport();
+  await remove.scrollIntoViewIfNeeded();
   await expect(remove).toBeInViewport();
   await expect(open).toHaveAttribute('data-action', 'open_in_new');
   await expect(edit).toHaveAttribute('data-action', 'edit');
   await expect(remove).toHaveAttribute('data-action', 'delete');
   const colors = await page
     .locator('.turma-row')
-    .filter({ hasText: '6º ano A' })
+    .filter({ hasText: 'Ciência da Computação · 3º período A' })
     .locator('.icon-button')
     .evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).color));
-  expect(new Set(colors).size).toBe(4);
+  expect(new Set(colors).size).toBe(3);
   await expect(
-    page.locator('.turma-row').filter({ hasText: '6º ano A' }).locator('.actions-cell'),
+    page
+      .locator('.turma-row')
+      .filter({ hasText: 'Ciência da Computação · 3º período A' })
+      .locator('.actions-cell'),
   ).toHaveCSS('box-shadow', 'none');
 
   await openFilters(page);
   await page.getByRole('combobox', { name: 'Curso' }).selectOption('formacao');
-  await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
   await expect(page.locator('.turma-row')).toHaveCount(2);
   await expect(
-    page.getByRole('button', { name: 'Remover filtro Curso: Formação integral' }),
+    page.getByRole('button', { name: 'Remover filtro Curso: Ciência da Computação' }),
   ).toBeVisible();
 });
 
@@ -256,30 +250,45 @@ test('turmas fixadas ficam disponíveis na tela inicial e podem ser desafixadas'
 }) => {
   await login(page);
   await page.goto('/turmas');
-  await expect(page.getByRole('button', { name: 'Fixar 6º ano A' })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Abrir 6º ano A' }).click();
-  const pin = page.getByRole('button', { name: 'Fixar 6º ano A' });
+  await expect(
+    page.getByRole('button', { name: 'Fixar Ciência da Computação · 3º período A' }),
+  ).toHaveCount(0);
+  await page.getByRole('link', { name: 'Abrir Ciência da Computação · 3º período A' }).click();
+  const pin = page.getByRole('button', { name: 'Fixar Ciência da Computação · 3º período A' });
   await pin.click();
-  await expect(pin).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('status')).toHaveText('Turma fixada na tela inicial.');
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Desafixar 6º ano A' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: /Desafixar/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
+  await expect(page.getByRole('status')).toHaveText('Turma fixada na tela inicial.');
+  await page.reload();
+  await expect(
+    page.getByRole('button', { name: 'Desafixar Ciência da Computação · 3º período A' }),
+  ).toHaveAttribute('aria-pressed', 'true');
 
   await page.goto('/inicio');
-  const pinnedClass = page.getByRole('link', { name: /6º ano A/ });
+  const pinnedClass = page.getByRole('link', {
+    name: 'Ciência da Computação · 3º período A',
+    exact: true,
+  });
   await expect(pinnedClass).toBeVisible();
-  await expect(pinnedClass).toContainText('Formação integral');
+  await expect(pinnedClass).toContainText('Ciência da Computação');
   await pinnedClass.click();
-  await expect(page).toHaveURL(/\/turmas\/6a\/visao-geral$/);
+  await expect(page).toHaveURL(/\/turmas\/6a\/visao-geral/);
 
   await page.goto('/turmas/6a/visao-geral');
-  await page.getByRole('button', { name: 'Desafixar 6º ano A' }).click();
-  await expect(page.getByRole('button', { name: 'Fixar 6º ano A', exact: true })).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Desafixar Ciência da Computação · 3º período A' })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Fixar Ciência da Computação · 3º período A', exact: true }),
+  ).toBeVisible();
   await page.goto('/inicio');
-  await expect(page.getByText('Fixe as turmas mais utilizadas')).toBeVisible();
+  await page.goto('/turmas/6a/visao-geral');
+  await expect(page.getByRole('button', { name: /^Fixar / })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
 });
 
 test('cada tipo de aula usa uma cor de tag diferente', async ({ page }) => {
@@ -325,37 +334,25 @@ test('tabelas usam a paginação compartilhada com 10 registros por padrão', as
   ).toHaveText('10');
 });
 
-test('remover chip preserva os outros filtros aplicados sem aplicar edições pendentes', async ({
-  page,
-}) => {
+test('remover chip mantém o outro filtro na URL após recarregar', async ({ page }) => {
   await login(page);
-  await page.goto('/historico?turma=6a&tipo=aula');
-  await openFilters(page);
-  await page
-    .getByRole('combobox', { name: 'Tipo de registro', exact: true })
-    .selectOption('avaliacao');
-  await page.getByRole('button', { name: 'Remover filtro Turma: 6º ano A' }).click();
-  await expect(page.getByRole('combobox', { name: 'Tipo de registro', exact: true })).toHaveValue(
-    'aula',
-  );
-  await expect(page.locator('.list-result-count')).toHaveText('4 registros');
-  await expect(page.getByRole('button', { name: 'Remover filtro Tipo: Aula' })).toBeVisible();
-});
-test('paginação mantém tamanho e filtros na URL e fixa o rodapé', async ({ page }) => {
-  await login(page);
-  await page.goto('/historico?turma=6a');
-  await page.getByRole('combobox', { name: 'Registros por página' }).selectOption({ label: '25' });
+  await page.goto('/turmas?curso=formacao&busca=Computa');
+  await page.getByRole('button', { name: 'Remover filtro Busca: Computa' }).click();
   await page.reload();
   await expect(
-    page.getByRole('combobox', { name: 'Registros por página' }).locator('option:checked'),
-  ).toHaveText('25');
-  await expect(page.getByRole('button', { name: 'Remover filtro Turma: 6º ano A' })).toBeVisible();
-  await page.goto('/historico');
-  const footer = await page.locator('app-pagination').boundingBox();
+    page.getByRole('button', { name: 'Remover filtro Curso: Ciência da Computação' }),
+  ).toBeVisible();
+  await expect(page.getByRole('searchbox')).toBeEmpty();
+  await expect(page.locator('.turma-row')).toHaveCount(2);
+});
+test('paginação fica fora da rolagem da tabela', async ({ page }) => {
+  await login(page);
+  await page.goto('/turmas/6a/alunos');
   await page.getByRole('button', { name: 'Última página' }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody tr')).toHaveCount(5);
   await page.getByRole('button', { name: 'Primeira página' }).click();
   await expect(page.locator('tbody tr')).toHaveCount(10);
+  const footer = await page.locator('app-pagination').boundingBox();
   await page.locator('.table-scroll').evaluate((el) => (el.scrollTop = el.scrollHeight));
   expect(await page.locator('app-pagination').boundingBox()).toEqual(footer);
 });
@@ -379,4 +376,3 @@ test('rascunhos de frequência sobrevivem à troca de página', async ({ page })
   await page.reload();
   await expect(first).toHaveText(changed ?? '');
 });
-

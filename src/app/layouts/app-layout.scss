@@ -181,3 +181,64 @@
     gap: 0.75rem;
   }
 }
+
+@media (max-width: 36rem) {
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+  .turmas-topbar {
+    position: static;
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    height: auto;
+    padding: 0.25rem 0.5rem;
+    border: 0;
+    border-bottom: 1px solid #334155;
+  }
+  .turmas-brand img {
+    width: 2rem;
+    height: auto;
+  }
+  .turmas-nav,
+  .sidebar-account {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+  }
+  .sidebar-account {
+    border: 0;
+    padding: 0;
+  }
+  .turmas-nav a,
+  .account-profile,
+  .logout-button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  #page-content {
+    width: 100%;
+    height: auto;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0.5rem 0 0 0.5rem;
+  }
+  .storage-errors {
+    inset-inline: 0.5rem;
+    width: auto;
+  }
+}
+
+@media (max-height: 40rem) {
+  #page-content {
+    overflow-y: auto;
+  }
+  .page-view:has(.lesson-workspace) {
+    flex: 1 0 min(28rem, 88dvh);
+  }
+}

@@ -59,7 +59,7 @@
         </article>
       }
     </section>
-    @if (classes.get(item.turmaId)?.ativa) {
+    @if (classes.get(item.turmaId)?.ativa && classes.canTeach(item.turmaId)) {
       <div class="app-actions">
         <a
           appAction="edit"

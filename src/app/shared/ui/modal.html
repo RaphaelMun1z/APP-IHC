@@ -1,5 +1,7 @@
 <dialog
   #dialog
+  [attr.role]="confirmation() ? 'alertdialog' : null"
+  [attr.closedby]="confirmation() ? 'any' : 'closerequest'"
   [class.compact]="compact()"
   [attr.aria-labelledby]="titleId"
   (close)="closed.emit()"

@@ -40,11 +40,11 @@ export function safeReturn(raw: string | null): string {
   const [path] = target.split('?');
   const normalized = path.replace(/\.html$/, '');
   const contextual = new RegExp(
-    '^turmas/[^/]+(?:/(?:visao-geral|alunos|alunos/novo|alunos/[^/]+/editar|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar|gerenciar))?$',
+    '^turmas/[^/]+(?:/(?:visao-geral|alunos|alunos/novo|alunos/[^/]+/editar|aulas|frequencia|avaliacoes(?:/[^/]+)?|registros/[^/]+(?:/(?:frequencia|avaliacoes))?|aulas/nova|aulas/[^/]+/editar|gerenciar))?$',
   ).test(normalized);
   if (
     !contextual &&
-    !/^historico\/[^/]+$/.test(normalized) &&
+    !/^(?:historico|avaliacao)\/[^/]+$/.test(normalized) &&
     ![
       'inicio',
       'turmas',
@@ -54,6 +54,8 @@ export function safeReturn(raw: string | null): string {
       'historico',
       'turma-form',
       'coordenacao',
+      'coordenacao/cadastros',
+      'coordenacao/vinculos',
       'pontos-mensais',
       'perfil',
     ].includes(normalized)

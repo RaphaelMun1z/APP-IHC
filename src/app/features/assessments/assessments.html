@@ -65,8 +65,8 @@
                   <a
                     appAction="fact_check"
                     class="icon-button"
-                    title="Avaliar alunos"
-                    [attr.aria-label]="'Avaliar alunos da aula de ' + formatDate(lesson.data)"
+                    [title]="canEdit() ? 'Avaliar alunos' : 'Consultar avaliação'"
+                    [attr.aria-label]="(canEdit() ? 'Avaliar alunos da aula de ' : 'Consultar avaliação da aula de ') + formatDate(lesson.data)"
                     [routerLink]="['/turmas', lesson.turmaId, 'registros', lesson.id, 'avaliacoes']"
                     [queryParams]="{ retorno: currentUrl }"
                   ></a>

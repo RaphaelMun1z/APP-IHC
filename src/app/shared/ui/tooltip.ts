@@ -47,9 +47,10 @@ export class Tooltip implements OnDestroy {
       margin + popupRect.width / 2,
       Math.min(window.innerWidth - margin - popupRect.width / 2, rect.left + rect.width / 2),
     );
-    const top = rect.top > popupRect.height + 12 ? rect.top - popupRect.height - 8 : rect.bottom + 8;
+    const top =
+      rect.top > popupRect.height + 12 ? rect.top - popupRect.height - 8 : rect.bottom + 8;
     this.popup.style.left = `${left}px`;
-    this.popup.style.top = `${Math.max(margin, top)}px`;
+    this.popup.style.top = `${Math.max(margin, Math.min(top, window.innerHeight - popupRect.height - margin))}px`;
     this.popup.classList.toggle('below', rect.top <= popupRect.height + 12);
   }
 

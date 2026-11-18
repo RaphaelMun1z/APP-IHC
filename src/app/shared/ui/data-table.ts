@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'app-data-table',
   host: { class: 'table-scroll', role: 'region', tabindex: '0', '[attr.aria-label]': 'label()' },
   template: '<ng-content />',
-  styles: ':host { display: block; }',
+  styles: ':host { display: block; position: relative; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataTable {

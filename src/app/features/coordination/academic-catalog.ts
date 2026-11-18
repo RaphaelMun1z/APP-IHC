@@ -1,11 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { CatalogApi } from '../../core/api/catalog.api';
 import type { CatalogRegistration } from '../../core/api/contracts';
 import { DataState } from '../../core/api/data-state';
 import { RequestState } from '../../core/api/request-state';
 import { teachingAssignments } from '../../core/data/academic-records';
+import { ListHeader } from '../../shared/ui/list-header';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
+import type { CourseModule } from '../../core/models/domain';
 import { Action } from '../../shared/ui/action';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
@@ -13,213 +23,78 @@ import { ClassesStore } from '../classes/classes.store';
 
 @Component({
   selector: 'app-academic-catalog',
-  imports: [Action, Feedback, FormsModule, RouterLink],
-  template: `
-    <main class="app-page">
-      <div class="surface content-scroll academic-content">
-        <section class="form-wizard-panel">
-          <h2>Cadastros pedagógicos</h2>
-          <form class="form-wizard-field-stack" #cadastro="ngForm" (ngSubmit)="register()">
-            <label class="field"
-              >Tipo de cadastro
-              <select name="tipo" [(ngModel)]="kind">
-                <option value="curso">Curso</option>
-                <option value="modulo">Módulo</option>
-                <option value="licao">Lição</option>
-                <option value="professor">Professor</option>
-                <option value="coordenador">Coordenação pedagógica</option>
-              </select>
-            </label>
-            @if (kind === 'modulo' || kind === 'licao') {
-              <label class="field"
-                >Curso
-                <select
-                  name="cursoId"
-                  [(ngModel)]="courseId"
-                  (ngModelChange)="moduleId = ''"
-                  required
-                >
-                  <option value="">Selecione</option>
-                  @for (course of catalog().cursos; track course.id) {
-                    <option [value]="course.id">{{ course.nome }}</option>
-                  }
-                </select>
-              </label>
-            }
-            @if (kind === 'licao') {
-              <label class="field"
-                >Módulo
-                <select name="moduloId" [(ngModel)]="moduleId" required>
-                  <option value="">Selecione</option>
-                  @for (module of classes.course(courseId)?.modulos ?? []; track module.id) {
-                    <option [value]="module.id">{{ module.nome }}</option>
-                  }
-                </select>
-              </label>
-            }
-            <label class="field"
-              >{{ kind === 'licao' ? 'Título' : 'Nome' }}
-              <input name="nome" [(ngModel)]="name" required maxlength="150" />
-            </label>
-            @if (kind === 'modulo' || kind === 'licao') {
-              <label class="field"
-                >Número
-                <input name="numero" type="number" min="1" step="1" [(ngModel)]="number" required />
-              </label>
-            }
-            @if (kind === 'curso') {
-              <label class="field"
-                >Área<input name="area" [(ngModel)]="area" required maxlength="150"
-              /></label>
-              <label class="field"
-                >Carga horária total
-                <input
-                  name="cargaHoraria"
-                  type="number"
-                  min="1"
-                  step="1"
-                  [(ngModel)]="hours"
-                  required
-                />
-              </label>
-            }
-            @if (kind === 'professor' || kind === 'coordenador') {
-              <label class="field"
-                >CPF<input name="cpf" [(ngModel)]="cpf" required maxlength="14"
-              /></label>
-              <label class="field"
-                >E-mail<input
-                  name="email"
-                  type="email"
-                  [(ngModel)]="email"
-                  email
-                  required
-                  maxlength="150"
-              /></label>
-            }
-            @if (kind === 'professor') {
-              <label class="field"
-                >Telefone<input
-                  name="telefone"
-                  type="tel"
-                  [(ngModel)]="phone"
-                  required
-                  maxlength="150"
-              /></label>
-            }
-            <div>
-              <button
-                appAction="save"
-                class="primary"
-                type="submit"
-                [disabled]="cadastro.invalid || requests.saving()"
-              >
-                Cadastrar
-              </button>
-            </div>
-            <app-feedback [message]="catalogMessage()" [error]="catalogError()" />
-          </form>
-        </section>
-        <section class="form-wizard-panel">
-          <h2>Professores por turma</h2>
-          <label class="field"
-            >Turma
-            <select [ngModel]="classId()" (ngModelChange)="selectClass($event)">
-              <option value="">Selecione</option>
-              @for (group of classes.accessible(); track group.id) {
-                <option [value]="group.id">{{ group.nome }}</option>
-              }
-            </select>
-          </label>
-          @if (group()) {
-            <fieldset class="form-wizard-choice">
-              <legend>Professores vinculados</legend>
-              <div class="form-wizard-option-list">
-                @for (teacher of catalog().professores; track teacher.id) {
-                  <label class="form-wizard-option">
-                    <input
-                      type="checkbox"
-                      [checked]="selected().includes(teacher.id)"
-                      (change)="toggle(teacher.id)"
-                    />
-                    <span>{{ teacher.nome }}</span>
-                  </label>
-                }
-              </div>
-            </fieldset>
-            <button
-              appAction="save"
-              class="primary"
-              type="button"
-              (click)="saveTeachers()"
-              [disabled]="!selected().length || requests.saving()"
-            >
-              Salvar vínculos
-            </button>
-          }
-          <app-feedback [message]="assignmentMessage()" [error]="assignmentError()" />
-          <a appAction="add" class="app-button" routerLink="/turma-form">Nova turma</a>
-        </section>
-        <section class="form-wizard-panel">
-          <h2>Cursos, módulos e lições</h2>
-          @for (course of catalog().cursos; track course.id) {
-            <details>
-              <summary>
-                {{ course.nome }} · {{ course.area }} · {{ course.cargaHorariaTotal }} h
-              </summary>
-              @for (module of course.modulos; track module.id) {
-                <h3>{{ module.numero }}. {{ module.nome }}</h3>
-                <ul>
-                  @for (lesson of module.curriculo ?? []; track lesson.id) {
-                    <li>{{ lesson.numero }}. {{ lesson.titulo }}</li>
-                  }
-                </ul>
-              }
-            </details>
-          }
-        </section>
-        <section class="form-wizard-panel">
-          <h2>Equipe pedagógica</h2>
-          <details>
-            <summary>Coordenação</summary>
-            <ul>
-              @for (coordinator of catalog().coordenadores ?? []; track coordinator.id) {
-                <li>{{ coordinator.nome }} · {{ coordinator.email }}</li>
-              }
-            </ul>
-          </details>
-          <details>
-            <summary>Professores</summary>
-            <ul>
-              @for (teacher of catalog().professores; track teacher.id) {
-                <li>{{ teacher.nome }}{{ teacher.email ? ' · ' + teacher.email : '' }}</li>
-              }
-            </ul>
-          </details>
-        </section>
-      </div>
-    </main>
-  `,
-  styles: `
-    .academic-content {
-      padding: var(--content-pad, 1.5rem);
-      display: grid;
-      gap: 1.5rem;
-      align-content: start;
-    }
-    section {
-      max-width: 46rem;
-    }
-    section > :is(button, a, details) {
-      margin-block-start: 0.75rem;
-    }
-    summary {
-      cursor: pointer;
-    }
-  `,
+  imports: [Action, Feedback, FormsModule, RouterLink, RouterLinkActive, ListHeader],
+  templateUrl: './academic-catalog.html',
+  styleUrl: './academic-catalog.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AcademicCatalog {
+  readonly tabs = [
+    { path: '/coordenacao', label: 'Catálogo' },
+    { path: '/coordenacao/cadastros', label: 'Cadastros' },
+    { path: '/coordenacao/vinculos', label: 'Vínculos' },
+  ];
+  readonly view = inject(ActivatedRoute).snapshot.data['view'] as string;
+  private readonly form = viewChild(NgForm);
+  private readonly dialog = inject(ConfirmDialogService);
+  readonly query = signal('');
+  private matches(value: string): boolean {
+    return value
+      .toLocaleLowerCase('pt-BR')
+      .includes(this.query().trim().toLocaleLowerCase('pt-BR'));
+  }
+  lessons(module: CourseModule) {
+    const curriculum = module.curriculo ?? [];
+    const legacy = module.licoes.flatMap((titulo, index) =>
+      curriculum.some((lesson) => lesson.titulo === titulo) ? [] : [{ titulo, numero: index + 1 }],
+    );
+    return [...curriculum, ...legacy].sort((a, b) => a.numero - b.numero);
+  }
+  readonly courses = computed(() =>
+    this.catalog().cursos.filter(
+      (course) =>
+        this.matches(course.nome) ||
+        course.modulos.some(
+          (module) =>
+            this.matches(module.nome) ||
+            this.lessons(module).some((lesson) => this.matches(lesson.titulo)),
+        ),
+    ),
+  );
+  readonly people = computed(() =>
+    [
+      ...this.catalog().professores.map((person) => ({ ...person, role: 'Professor' })),
+      ...(this.catalog().coordenadores ?? []).map((person) => ({
+        ...person,
+        role: 'Coordenação',
+        telefone: '',
+      })),
+    ].filter((person) => this.matches(person.nome) || this.matches(person.email ?? '')),
+  );
+  readonly assignmentDirty = computed(() => {
+    const group = this.group();
+    if (!group) return false;
+    const ids = teachingAssignments(group).map((row) => row.professorId);
+    return ids.length !== this.selected().length || ids.some((id) => !this.selected().includes(id));
+  });
+  hasUnsavedChanges(): boolean {
+    return !!this.form()?.dirty || this.assignmentDirty();
+  }
+  async changeClass(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const id = select.value;
+    if (this.assignmentDirty()) {
+      select.value = this.classId();
+      if (
+        !(await this.dialog.confirm('Descartar as alterações nos vínculos?', {
+          confirmLabel: 'Descartar',
+        }))
+      )
+        return;
+    }
+    select.value = id;
+    this.selectClass(id);
+  }
   private readonly state = inject(DataState);
   private readonly api = inject(CatalogApi);
   readonly requests = inject(RequestState);
@@ -243,8 +118,9 @@ export class AcademicCatalog {
   number: number | null = null;
   hours: number | null = null;
 
-  async register(): Promise<void> {
-    const nome = this.name;
+  async register(form: NgForm): Promise<void> {
+    if (form.invalid || this.requests.saving()) return;
+    const nome = this.name.trim();
     const cursoId = this.courseId;
     const numero = this.number ?? 0;
     const tipo = this.kind;
@@ -259,12 +135,15 @@ export class AcademicCatalog {
       case 'licao':
         input = { tipo, cursoId, moduloId: this.moduleId, titulo: nome, numero };
         break;
-      default:
+      case 'professor':
         input = { tipo, nome, cpf: this.cpf, email: this.email, telefone: this.phone };
+        break;
+      case 'coordenador':
+        input = { tipo, nome, cpf: this.cpf, email: this.email };
     }
     try {
       this.state.catalog.set(await this.requests.mutate(this.api.register(input)));
-      this.name = this.cpf = this.email = this.phone = '';
+      form.resetForm({ tipo, cursoId, moduloId: this.moduleId });
       this.catalogError.set(false);
       this.catalogMessage.set('Cadastro salvo.');
     } catch (error: unknown) {
@@ -283,6 +162,7 @@ export class AcademicCatalog {
   }
 
   toggle(id: string): void {
+    this.assignmentMessage.set('');
     this.selected.update((ids) => toggleValue(ids, id));
   }
 

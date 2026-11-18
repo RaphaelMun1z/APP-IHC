@@ -18,7 +18,12 @@ import { Tooltip } from './tooltip';
           ><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></a
         >
       }
-      <h1>{{ navigation.page().title }}</h1>
+      <h1 [attr.aria-label]="navigation.page().title">
+        @if (classPin()) {
+          <span class="full-title">{{ navigation.page().title }}</span>
+          <span class="compact-title">{{ navigation.page().compactTitle }}</span>
+        } @else { {{ navigation.page().title }} }
+      </h1>
       @if (classPin(); as pin) {
         <button
           appAction="push_pin"

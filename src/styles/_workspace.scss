@@ -693,10 +693,6 @@ app-filter-panel {
     position: sticky;
     left: 0;
   }
-  .presencas-footer p,
-  .avaliacao-footer p {
-    display: none;
-  }
 }
 .form-wizard {
   display: flex;
@@ -1051,5 +1047,42 @@ app-filter-panel {
   .form-wizard-content {
     justify-content: flex-start;
     padding: 1.25rem 0.875rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .form-wizard-sidebar ol {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .form-wizard-sidebar li {
+    flex: 1 1 5rem;
+    max-width: none;
+    min-width: 0;
+  }
+  .form-wizard-sidebar button {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .form-wizard-option,
+  .form-wizard-actions {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .form-wizard-actions {
+    flex-wrap: wrap;
+  }
+}
+
+.page-title-row .compact-title {
+  display: none;
+}
+@media (max-width: 36rem), (max-height: 30rem) {
+  .page-title-row .compact-title {
+    display: inline;
+  }
+  .page-title-row .full-title {
+    display: none;
   }
 }

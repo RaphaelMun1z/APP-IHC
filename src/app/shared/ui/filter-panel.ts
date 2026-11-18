@@ -93,7 +93,6 @@ let filterPanelId = 0;
       class="filter-content"
       [hidden]="!expanded()"
       (change)="applyFilters.emit()"
-      (click)="applyChoice($event)"
     >
       <ng-content />
     </div>
@@ -157,11 +156,6 @@ export class FilterPanel {
         gsap.set(element, { clearProps: 'height,opacity,visibility,transform' });
       },
     });
-  }
-
-  applyChoice(event: MouseEvent): void {
-    if (event.target instanceof Element && event.target.closest('.filter-option'))
-      this.applyFilters.emit();
   }
 
   clearAndClose(): void {

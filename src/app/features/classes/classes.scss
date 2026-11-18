@@ -5,6 +5,7 @@
   text-align: left;
 }
 .turma-name-link {
+  display: block;
   color: inherit;
   text-decoration: none;
 }
@@ -39,7 +40,9 @@
   font-size: 0.75rem;
   font-weight: 400;
   white-space: nowrap;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 .class-status.archived {
   background: #475569;
@@ -66,4 +69,13 @@
 }
 .turmas-bulk-actions .icon-button {
   margin-left: auto;
+}
+
+@media (max-width: 48rem) {
+  .turmas-table tbody .actions-cell {
+    position: static;
+  }
+  .turmas-table thead .actions-cell {
+    right: auto;
+  }
 }

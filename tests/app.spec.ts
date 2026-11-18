@@ -3,12 +3,13 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 async function login(page: Page, role = 'professor') {
+  await page.clock.install({ time: new Date('2026-11-13T12:00:00-03:00') });
   await page.goto('/login');
   await openFilters(page);
   await page.getByLabel('Usuário', { exact: true }).fill(role);
   await page.getByLabel('Senha', { exact: true }).fill('ipb123');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/turmas$/);
 }
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (error) => {
@@ -34,7 +35,7 @@ test('login, ajuda, usuário lembrado e encerramento da sessão', async ({ page 
   await expect(page.getByRole('alert')).toHaveText('Usuário ou senha incorretos.');
   await page.getByRole('button', { name: 'Preencher credenciais de teste' }).click();
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/turmas$/);
   await page.getByRole('button', { name: 'Sair do sistema' }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByLabel('Usuário', { exact: true })).toHaveValue('professor');
@@ -61,7 +62,9 @@ test('rotas antigas mantêm parâmetros e o professor acessa todas as áreas', a
   await openFilters(page);
   await expect(page.locator('.turma-row')).toHaveCount(4);
   await expect(page.getByRole('link', { name: 'Nova turma' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Excluir 7º ano B' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Excluir Administração · 4º período B' }),
+  ).toBeVisible();
   await page.goto('/pagina-inexistente');
   await openFilters(page);
   await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeVisible();
@@ -72,12 +75,18 @@ test('protege alterações ao navegar e ao trocar filtros', async ({ page }) => 
   await page.goto('/registro-aula');
   await openFilters(page);
   await page.getByLabel('Data da aula').fill('2026-11-07');
-  page.once('dialog', (dialog) => dialog.dismiss());
-  await page.getByRole('link', { name: 'Auditoria', exact: true }).click();
+  await page.getByRole('link', { name: 'Ponto mensal', exact: true }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'Cancelar', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/registro-aula$/);
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('link', { name: 'Auditoria', exact: true }).click();
-  await expect(page).toHaveURL(/\/historico$/);
+  await page.getByRole('link', { name: 'Ponto mensal', exact: true }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: /^(Descartar|Arquivar|Reativar|Excluir|Confirmar)$/ })
+    .click();
+  await expect(page).toHaveURL(/\/pontos-mensais$/);
 });
 
 test('frequência permite editar chamadas passadas explicitamente e avaliação mantém os três estados', async ({
@@ -142,27 +151,19 @@ test('frequência permite editar chamadas passadas explicitamente e avaliação 
   await page.goto('/avaliacao');
   await openFilters(page);
   await page.getByRole('combobox', { name: 'Turma', exact: true }).selectOption('6b');
-  await page.getByRole('button', { name: 'Aplicar', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Turma', exact: true })).toHaveValue('6b');
 });
 
-test('histórico filtra, pagina e valida o intervalo de datas', async ({ page }) => {
-  await login(page, 'professor');
-  await page.goto('/historico');
+test('aulas da turma validam o intervalo e permitem limpar a consulta', async ({ page }) => {
+  await login(page);
+  await page.goto('/turmas/6a/aulas');
   await openFilters(page);
-  await expect(page.locator('tbody tr')).toHaveCount(10);
-  await page.getByRole('button', { name: 'Próxima', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
   await page.getByLabel('Data inicial').fill('2026-11-14');
   await page.getByLabel('Data final').fill('2026-11-01');
-  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('data final');
-  await page.getByRole('button', { name: 'Limpar' }).click();
-  await page.getByLabel('Tipo de registro').selectOption('avaliacao');
-  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  await expect(page.locator('.list-result-count')).toHaveText('1 aula');
 });
-
 test('sair da conta respeita alterações não salvas e uma falha mantém a sessão', async ({
   page,
 }) => {
@@ -170,8 +171,11 @@ test('sair da conta respeita alterações não salvas e uma falha mantém a sess
   await page.goto('/registro-aula');
   await openFilters(page);
   await page.getByLabel('Data da aula').fill('2026-11-07');
-  page.once('dialog', (dialog) => dialog.dismiss());
   await page.getByRole('button', { name: 'Sair do sistema' }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'Cancelar', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/registro-aula$/);
   expect(await page.evaluate(() => sessionStorage.getItem('ipb-sessao-v1'))).not.toBeNull();
   await page.evaluate(() => {
@@ -179,8 +183,11 @@ test('sair da conta respeita alterações não salvas e uma falha mantém a sess
       throw new Error('Armazenamento bloqueado');
     };
   });
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Sair do sistema' }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: /^(Descartar|Arquivar|Reativar|Excluir|Confirmar)$/ })
+    .click();
   await expect(page).toHaveURL(/\/registro-aula$/);
   await expect(page.getByRole('alert')).toContainText('Não foi possível encerrar a sessão');
 });
@@ -189,10 +196,12 @@ test('falha de gravação mostra erro e preserva os registros anteriores', async
   await login(page);
   await page.goto('/registro-aula');
   await openFilters(page);
-  const previous = await page.evaluate(() => localStorage.getItem('ipb-aulas-v1'));
+  const previous = await page.evaluate(() => localStorage.getItem('ipb-aulas-v2'));
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
-  await page.getByLabel('Quem sou eu', { exact: false }).press('Space');
-  await expect(page.getByLabel('Quem sou eu', { exact: false })).toBeChecked();
+  await page.getByLabel('Requisitos funcionais e não funcionais', { exact: false }).press('Space');
+  await expect(
+    page.getByLabel('Requisitos funcionais e não funcionais', { exact: false }),
+  ).toBeChecked();
   await page.getByRole('button', { name: 'Próxima etapa' }).click();
   await page.evaluate(() => {
     Storage.prototype.setItem = () => {
@@ -203,19 +212,19 @@ test('falha de gravação mostra erro e preserva os registros anteriores', async
   await expect(
     page.getByRole('alert').filter({ hasText: 'Não foi possível salvar' }).first(),
   ).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem('ipb-aulas-v1'))).toBe(previous);
+  expect(await page.evaluate(() => localStorage.getItem('ipb-aulas-v2'))).toBe(previous);
   await expect(page).toHaveURL(/\/registro-aula$/);
 });
 
 test('dados locais corrompidos são preservados e apresentam erro visível', async ({ page }) => {
   await page.goto('/login');
   await openFilters(page);
-  await page.evaluate(() => localStorage.setItem('ipb-turmas-v1', '{corrompido'));
+  await page.evaluate(() => localStorage.setItem('ipb-turmas-v2', '{corrompido'));
   await page.getByRole('button', { name: 'Preencher credenciais de teste' }).click();
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/turmas$/);
   await page.goto('/turmas');
   await openFilters(page);
   await expect(page.getByRole('alert')).toContainText('dados originais foram preservados');
-  expect(await page.evaluate(() => localStorage.getItem('ipb-turmas-v1'))).toBe('{corrompido');
+  expect(await page.evaluate(() => localStorage.getItem('ipb-turmas-v2'))).toBe('{corrompido');
 });

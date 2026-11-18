@@ -120,3 +120,5 @@
     gap: 0.25rem;
   }
 }
+
+.profile-card { min-height: 0; overflow: auto; overflow-wrap: anywhere; }

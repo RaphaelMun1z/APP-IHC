@@ -5,6 +5,7 @@ import { filter, map } from 'rxjs';
 import { ClassesStore } from '../../features/classes/classes.store';
 import { HistoryStore } from '../../features/history/history.store';
 import { navigationUrl } from './context';
+import { AuthService } from '../auth/auth.service';
 import { safeReturn } from '../auth/auth.guards';
 import { formatDate } from '../../shared/utils/dates';
 
@@ -17,10 +18,12 @@ interface PageInformation {
   readonly crumbs: readonly BreadcrumbItem[];
   readonly parent: string;
   readonly context?: string;
+  readonly compactTitle?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class PageNavigation {
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly classes = inject(ClassesStore);
   private readonly history = inject(HistoryStore);
@@ -61,6 +64,7 @@ export class PageNavigation {
     let title = 'Minhas turmas';
     let parent = '/turmas';
     let context: string | undefined;
+    let compactTitle: string | undefined;
     const add = (label: string, url: string) => crumbs.push({ label, url });
     const recordLabel = record
       ? `${record.titulo} · ${formatDate(record.data)}`
@@ -119,14 +123,20 @@ export class PageNavigation {
                 ? 'Registrar aula'
                 : 'Editar aula'
               : (labels[section] ?? 'Página não encontrada');
+      compactTitle = section === 'registros' && lessonSection ? labels[lessonSection] : subpage;
       title = `${group?.nome ?? 'Turma indisponível'} · ${subpage}`;
     } else if (root === 'turmas') {
-      title = 'Minhas turmas';
+      title = this.auth.user()?.perfil === 'coordenacao' ? 'Turmas' : 'Minhas turmas';
       add('Turmas', '/turmas');
     } else if (root === 'coordenacao' || root === 'pontos-mensais') {
       title = root === 'coordenacao' ? 'Coordenação pedagógica' : 'Ponto mensal';
       crumbs.push(classes);
       add(title, '/' + root);
+      if (root === 'coordenacao' && segments[1]) {
+        parent = '/coordenacao';
+        title = segments[1] === 'cadastros' ? 'Cadastros pedagógicos' : 'Professores por turma';
+        add(title, this.url());
+      }
     } else if (root === 'perfil') {
       title = 'Meu perfil';
       crumbs.push(classes);
@@ -165,7 +175,7 @@ export class PageNavigation {
       title = 'Página não encontrada';
       add(title, this.url());
     }
-    return { title, crumbs, parent, context };
+    return { title, crumbs, parent, context, compactTitle };
   });
   readonly back = computed<UrlTree>(() => {
     const raw = this.router.parseUrl(this.url()).queryParamMap.get('retorno');

@@ -97,3 +97,9 @@
     max-width: 9rem;
   }
 }
+
+@media (max-width: 36rem) {
+  .presencas-table .student-column {
+    position: static;
+  }
+}

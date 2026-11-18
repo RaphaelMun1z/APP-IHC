@@ -31,7 +31,7 @@ function isCatalog(value: unknown): value is CatalogRecords {
         Array.isArray(course.modulos) &&
         course.modulos.every(
           (module) =>
-            person(module) && Array.isArray(module.licoes) && Array.isArray(module.curriculo),
+            person(module) && Array.isArray(module.licoes) && (module.curriculo === undefined || Array.isArray(module.curriculo)),
         ),
     )
   );

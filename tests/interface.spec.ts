@@ -1,12 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 
 async function login(page: Page, role = 'professor') {
+  await page.clock.install({ time: new Date('2026-11-13T12:00:00-03:00') });
   await page.goto('/login');
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
   await page.getByLabel('Usuário', { exact: true }).fill(role);
   await page.getByLabel('Senha', { exact: true }).fill('ipb123');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/turmas$/);
 }
 async function viewportDoesNotScroll(page: Page) {
   expect(
@@ -26,20 +27,29 @@ test('páginas usam um título, breadcrumb hierárquico e retorno circular com �
 }) => {
   await login(page);
   const checks: [string, string[]][] = [
-    ['/inicio', ['Início']],
-    ['/turmas', ['Início', 'Turmas']],
-    ['/historico', ['Início', 'Auditoria']],
-    ['/turma-form', ['Início', 'Turmas', 'Nova turma']],
-    ['/turmas/6a/visao-geral?retorno=%2Fcoordenacao', ['Início', 'Turmas', '6º ano A']],
-    ['/turmas/6a/aulas/nova', ['Início', 'Turmas', '6º ano A', 'Aulas', 'Registrar aula']],
+    ['/inicio', ['Turmas']],
+    ['/turmas', ['Turmas']],
+    ['/historico', ['Turmas']],
+    ['/turma-form', ['Turmas', 'Nova turma']],
+    [
+      '/turmas/6a/visao-geral?retorno=%2Fcoordenacao',
+      ['Turmas', 'Ciência da Computação · 3º período A'],
+    ],
+    [
+      '/turmas/6a/aulas/nova',
+      ['Turmas', 'Ciência da Computação · 3º período A', 'Aulas', 'Registrar aula'],
+    ],
     [
       '/turmas/6a/aulas/demo-aula-6a/editar',
-      ['Início', 'Turmas', '6º ano A', 'Aulas', 'Editar aula'],
+      ['Turmas', 'Ciência da Computação · 3º período A', 'Aulas', 'Editar aula'],
     ],
-    ['/registro-aula.html?turma=6a', ['Início', 'Turmas', '6º ano A', 'Aulas', 'Registrar aula']],
-    ['/turmas/6a/frequencia', ['Início', 'Turmas', '6º ano A', 'Frequência']],
-    ['/turmas/6a/avaliacoes', ['Início', 'Turmas', '6º ano A', 'Avaliações']],
-    ['/pagina-inexistente', ['Início', 'Página não encontrada']],
+    [
+      '/registro-aula.html?turma=6a',
+      ['Turmas', 'Ciência da Computação · 3º período A', 'Aulas', 'Registrar aula'],
+    ],
+    ['/turmas/6a/frequencia', ['Turmas', 'Ciência da Computação · 3º período A', 'Frequência']],
+    ['/turmas/6a/avaliacoes', ['Turmas', 'Ciência da Computação · 3º período A', 'Avaliações']],
+    ['/pagina-inexistente', ['Página não encontrada']],
   ];
   for (const [route, labels] of checks) {
     await page.goto(route);
@@ -56,7 +66,7 @@ test('páginas usam um título, breadcrumb hierárquico e retorno circular com �
     }
     if (labels.length > 1) {
       const back = page.getByRole('link', { name: 'Voltar', exact: true });
-      await expect(back).toHaveAttribute('title', 'Voltar');
+      await expect(back).toHaveAttribute('data-tooltip', 'Voltar');
       await expect(back.locator('.material-symbols-outlined')).toHaveText('arrow_back');
       expect(
         await back.evaluate((el) => {
@@ -160,7 +170,9 @@ test('ações de ícone são acessíveis e todas as ações estão disponíveis 
   for (const route of ['/turmas', '/historico', '/turmas/6a/aulas']) {
     await page.goto(route);
     for (const control of await page.locator('.icon-button').all()) {
-      await expect(control).toHaveAttribute('title', /.+/);
+      expect(
+        (await control.getAttribute('title')) || (await control.getAttribute('data-tooltip')),
+      ).toBeTruthy();
       await expect(control).toHaveAttribute('aria-label', /.+/);
       await expect(control.locator('.material-symbols-outlined')).toHaveCount(1);
     }
@@ -170,12 +182,12 @@ test('ações de ícone são acessíveis e todas as ações estão disponíveis 
   await page.goto('/turmas');
   await expect(page.locator('.icon-button.danger')).toHaveCount(4);
   await expect(page.getByRole('link', { name: /^Editar / })).toHaveCount(4);
-  await expect(page.getByRole('button', { name: 'Meu perfil' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Meu perfil' })).toHaveAccessibleDescription(
+  await expect(page.getByRole('link', { name: 'Meu perfil' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Meu perfil' })).toHaveAccessibleDescription(
     'Mariana Oliveira Professor',
   );
-  await page.getByRole('button', { name: 'Meu perfil' }).click();
-  await expect(page.getByRole('dialog')).toContainText('Mariana Oliveira');
+  await page.getByRole('link', { name: 'Meu perfil' }).click();
+  await expect(page.locator('main')).toContainText('Mariana Oliveira');
 });
 
 test('listas extensas e detalhes de avaliação usam somente a área interna de rolagem', async ({
@@ -195,8 +207,8 @@ test('listas extensas e detalhes de avaliação usam somente a área interna de 
       ativa: true,
       alunoIds: ['aluno-01'],
     }));
-    const original = JSON.parse(localStorage.getItem('ipb-turmas-v1') ?? '[]');
-    localStorage.setItem('ipb-turmas-v1', JSON.stringify([...original, ...groups]));
+    const original = JSON.parse(localStorage.getItem('ipb-turmas-v2') ?? '[]');
+    localStorage.setItem('ipb-turmas-v2', JSON.stringify([...original, ...groups]));
   });
   await page.goto('/turmas');
   await page.getByRole('combobox', { name: 'Registros por página' }).selectOption({ label: '50' });
@@ -208,7 +220,7 @@ test('listas extensas e detalhes de avaliação usam somente a área interna de 
   await expect(last).toBeInViewport();
   await viewportDoesNotScroll(page);
   // Restore the catalogue fixture, leaving the seeded pedagogical records intact.
-  await page.evaluate(() => localStorage.removeItem('ipb-turmas-v1'));
+  await page.evaluate(() => localStorage.removeItem('ipb-turmas-v2'));
   await page.goto('/historico/avaliacao-6a-2026-11-09');
   await expect(page.locator('.details-table')).toBeVisible();
   expect(

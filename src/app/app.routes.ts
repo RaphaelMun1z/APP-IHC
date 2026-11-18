@@ -180,12 +180,14 @@ export const routes: Routes = [
           import('./features/assessments/assessments').then((module) => module.Assessments),
       },
       { path: 'historico', pathMatch: 'full', redirectTo: 'turmas' },
-      {
-        path: 'coordenacao',
+      ...['', 'cadastros', 'vinculos'].map((view) => ({
+        path: view ? 'coordenacao/' + view : 'coordenacao',
+        data: { view },
+        canDeactivate: [unsavedChangesGuard],
         title: 'Coordenação pedagógica | IPB',
         canActivate: [coordinationGuard],
         loadComponent: () => import('./features/coordination/academic-catalog').then((m) => m.AcademicCatalog),
-      },
+      })),
       {
         path: 'turma-form',
         canDeactivate: [unsavedChangesGuard],

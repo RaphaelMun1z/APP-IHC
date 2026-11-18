@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function openStudents(page: Page, role = 'professor') {
+  await page.clock.install({ time: new Date('2026-11-13T12:00:00-03:00') });
   await page.goto('/login');
   await page.getByLabel('Usuário', { exact: true }).fill(role);
   await page.getByLabel('Senha', { exact: true }).fill('ipb123');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/turmas$/);
   await page.goto('/turmas/6a/alunos');
 }
 
@@ -15,11 +16,16 @@ for (const role of ['professor']) {
     const pageSize = page.getByRole('combobox', { name: 'Registros por página' });
     await expect(pageSize.locator('option:checked')).toHaveText('10');
     await pageSize.selectOption({ label: '25' });
-    const title = page.getByRole('heading', { name: '6º ano A · Alunos', exact: true });
+    const title = page.getByRole('heading', {
+      name: 'Ciência da Computação · 3º período A · Alunos',
+      exact: true,
+    });
     const back = page.getByRole('link', { name: 'Voltar', exact: true });
     const editClass = page.getByRole('link', { name: 'Editar turma', exact: true });
     await expect(title).toBeVisible();
-    await expect(page.getByRole('heading', { name: '6º ano A', exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: 'Ciência da Computação · 3º período A', exact: true }),
+    ).toHaveCount(0);
     await expect(editClass).toBeVisible();
     await expect(page.getByRole('link', { name: 'Gerenciar matrículas' })).toHaveCount(0);
     await expect(
@@ -47,8 +53,8 @@ for (const role of ['professor']) {
           (classToolbar!.x + classToolbar!.width - (registerBox!.x + registerBox!.width)),
       ),
     ).toBeLessThan(2);
-    await expect(editClass).toHaveCSS('border-radius', '999px');
-    await expect(editClass).toHaveCSS('background-color', 'rgb(255, 251, 235)');
+    await expect(editClass).toHaveCSS('border-radius', '50%');
+    await expect(editClass).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(editClass).toHaveAttribute('href', /\/turmas\/6a\/gerenciar\?retorno=/);
 
     const register = page.getByRole('link', { name: 'Cadastrar aluno', exact: true });
@@ -69,15 +75,17 @@ for (const role of ['professor']) {
     const name = page.getByLabel('Nome do aluno');
     await expect(page.getByRole('navigation', { name: 'Etapas do formulário' })).toBeVisible();
     await name.fill('Cadastro cancelado');
-    page.once('dialog', (confirmation) => confirmation.accept());
     await page.getByRole('link', { name: 'Cancelar' }).click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /^(Descartar|Arquivar|Reativar|Excluir|Confirmar)$/ })
+      .click();
     await expect(page).toHaveURL(/\/turmas\/6a\/alunos(?:\?.*)?$/);
     await expect(page.locator('.list-result-count')).toHaveText('15 alunos');
     await register.click();
     await expect(name).toHaveValue('');
     await name.fill('   ');
-    await page.getByRole('button', { name: 'Salvar aluno', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('Informe um nome');
+    await expect(page.getByRole('button', { name: 'Salvar aluno', exact: true })).toBeDisabled();
     await name.fill('Beatriz Souza');
     await page.getByRole('button', { name: 'Salvar aluno', exact: true }).click();
     await expect(page.locator('.list-result-count')).toHaveText('16 alunos');
@@ -129,14 +137,20 @@ for (const role of ['professor']) {
     const renamedRow = page.getByRole('row', { name: /Ana Clara Santos Silva/ });
     await expect(renamedRow).toBeVisible();
 
-    page.once('dialog', (confirmation) => confirmation.dismiss());
     await renamedRow
       .getByRole('button', { name: 'Excluir matrícula de Ana Clara Santos Silva' })
       .click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Cancelar', exact: true })
+      .click();
     await expect(page.locator('.list-result-count')).toHaveText('15 alunos');
-    page.once('dialog', (confirmation) => confirmation.accept());
     await renamedRow
       .getByRole('button', { name: 'Excluir matrícula de Ana Clara Santos Silva' })
+      .click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /^(Descartar|Arquivar|Reativar|Excluir|Confirmar)$/ })
       .click();
     await expect(page.locator('.list-result-count')).toHaveText('14 alunos');
     await expect(renamedRow).toHaveCount(0);
@@ -183,9 +197,13 @@ test('última matrícula fica protegida e turma arquivada permite apenas consult
 }) => {
   await openStudents(page, 'professor');
   await page.evaluate(() => {
-    const groups = JSON.parse(localStorage.getItem('ipb-turmas-v1') ?? '[]');
-    groups.find((group: { id: string }) => group.id === '6a').alunoIds = ['aluno-01'];
-    localStorage.setItem('ipb-turmas-v1', JSON.stringify(groups));
+    const groups = JSON.parse(localStorage.getItem('ipb-turmas-v2') ?? '[]');
+    const group = groups.find((group: { id: string }) => group.id === '6a');
+    group.alunoIds = ['aluno-01'];
+    group.matriculas = group.matriculas.filter(
+      (row: { alunoId: string }) => row.alunoId === 'aluno-01',
+    );
+    localStorage.setItem('ipb-turmas-v2', JSON.stringify(groups));
   });
   await page.reload();
   await expect(
@@ -193,11 +211,11 @@ test('última matrícula fica protegida e turma arquivada permite apenas consult
   ).toBeDisabled();
   await expect(
     page.getByRole('button', { name: 'Excluir matrícula de Ana Clara Santos' }),
-  ).toHaveAttribute('title', 'A turma deve ter pelo menos um aluno');
+  ).toHaveAttribute('data-tooltip', 'A turma deve ter pelo menos um aluno');
   await page.evaluate(() => {
-    const groups = JSON.parse(localStorage.getItem('ipb-turmas-v1') ?? '[]');
+    const groups = JSON.parse(localStorage.getItem('ipb-turmas-v2') ?? '[]');
     groups.find((group: { id: string }) => group.id === '6a').ativa = false;
-    localStorage.setItem('ipb-turmas-v1', JSON.stringify(groups));
+    localStorage.setItem('ipb-turmas-v2', JSON.stringify(groups));
   });
   await page.reload();
   await expect(page.getByRole('link', { name: 'Cadastrar aluno', exact: true })).toHaveCount(0);

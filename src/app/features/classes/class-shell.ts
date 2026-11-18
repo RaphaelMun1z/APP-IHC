@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { classListReturn } from '../../core/navigation/context';
+import { classListReturn, navigationUrl } from '../../core/navigation/context';
 import { ClassesStore } from './classes.store';
 import { ClassNavigationState } from '../../core/navigation/class-navigation-state';
 import { Action } from '../../shared/ui/action';
@@ -62,7 +62,7 @@ export class ClassShell {
   updateSection(): void {
     const segments =
       this.router
-        .parseUrl(this.router.url)
+        .parseUrl(navigationUrl(this.router))
         .root.children['primary']?.segments.map((segment) => segment.path) ?? [];
     const section = segments[2] ?? '';
     this.section.set(
