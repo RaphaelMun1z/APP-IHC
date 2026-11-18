@@ -30,15 +30,17 @@ export const loginEntryGuard: CanActivateFn = async () => {
     return false;
   } // AuthService exposes the failure to the existing layout.
 };
+export const coordinationGuard: CanActivateFn = (route) =>
+  inject(AuthService).user()?.perfil === 'coordenacao' ||
+  inject(Router).createUrlTree(['/turmas'], { queryParams: route.queryParams });
 
 export function safeReturn(raw: string | null): string {
-  if (!raw || raw.startsWith('//') || raw.includes('://') || raw.includes('\\')) return '/inicio';
-  let target = raw.replace(/^\.\//, '').replace(/^\//, '');
-  target = target.replace(/^coordenacao(?:\.html)?(?=\?|$)/, 'turmas');
+  if (!raw || raw.startsWith('//') || raw.includes('://') || raw.includes('\\')) return '/turmas';
+  const target = raw.replace(/^\.\//, '').replace(/^\//, '');
   const [path] = target.split('?');
   const normalized = path.replace(/\.html$/, '');
   const contextual = new RegExp(
-    '^turmas/[^/]+(?:/(?:visao-geral|alunos|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar|gerenciar))?$',
+    '^turmas/[^/]+(?:/(?:visao-geral|alunos|alunos/novo|alunos/[^/]+/editar|aulas|frequencia|avaliacoes|registros/[^/]+|aulas/nova|aulas/[^/]+/editar|gerenciar))?$',
   ).test(normalized);
   if (
     !contextual &&
@@ -51,8 +53,11 @@ export function safeReturn(raw: string | null): string {
       'avaliacao',
       'historico',
       'turma-form',
+      'coordenacao',
+      'pontos-mensais',
+      'perfil',
     ].includes(normalized)
   )
-    return '/inicio';
+    return '/turmas';
   return `/${target.replace(/\.html(?=\?|$)/, '')}`;
 }

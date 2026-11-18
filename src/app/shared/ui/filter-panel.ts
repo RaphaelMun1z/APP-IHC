@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewChild,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import type { ElementRef } from '@angular/core';
 import { Tooltip } from './tooltip';
-export interface FilterChip {
+import { gsap } from 'gsap';
+interface FilterChip {
   readonly key: string;
   readonly label: string;
   readonly value: string;
@@ -24,7 +33,7 @@ let filterPanelId = 0;
           type="button"
           [attr.aria-expanded]="expanded()"
           [attr.aria-controls]="contentId"
-          (click)="expanded.set(!expanded())"
+          (click)="toggleFilters()"
         >
           <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
           {{ context() }}
@@ -39,7 +48,7 @@ let filterPanelId = 0;
           [title]="activeCount() ? 'Filtros (' + activeCount() + ' ativos)' : 'Filtros'"
           [attr.aria-expanded]="expanded()"
           [attr.aria-controls]="contentId"
-          (click)="expanded.set(!expanded())"
+          (click)="toggleFilters()"
         >
           <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
         </button>
@@ -79,6 +88,7 @@ let filterPanelId = 0;
       </div>
     }
     <div
+      #filterContent
       [id]="contentId"
       class="filter-content"
       [hidden]="!expanded()"
@@ -91,6 +101,9 @@ let filterPanelId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterPanel {
+  @ViewChild('filterContent') private filterContent?: ElementRef<HTMLDivElement>;
+  private filterTween?: gsap.core.Tween;
+  private expandedTarget = false;
   readonly contentId = `filter-panel-${++filterPanelId}`;
   readonly activeCount = input(0);
   readonly chips = input<readonly FilterChip[]>([]);
@@ -102,6 +115,50 @@ export class FilterPanel {
   readonly applyFilters = output<void>();
   readonly expanded = signal(false);
 
+  toggleFilters(): void {
+    this.setExpanded(!this.expandedTarget);
+  }
+
+  private setExpanded(open: boolean): void {
+    this.expandedTarget = open;
+    this.filterTween?.kill();
+    const element = this.filterContent?.nativeElement;
+    if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.expanded.set(open);
+      return;
+    }
+
+    if (open) {
+      this.expanded.set(true);
+      element.hidden = false;
+      this.filterTween = gsap.fromTo(
+        element,
+        { height: 0, autoAlpha: 0, y: -6 },
+        {
+          height: 'auto',
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.24,
+          ease: 'power2.out',
+          onComplete: () => gsap.set(element, { clearProps: 'height,opacity,visibility,transform' }),
+        },
+      );
+      return;
+    }
+
+    this.filterTween = gsap.to(element, {
+      height: 0,
+      autoAlpha: 0,
+      y: -6,
+      duration: 0.18,
+      ease: 'power2.in',
+      onComplete: () => {
+        this.expanded.set(false);
+        gsap.set(element, { clearProps: 'height,opacity,visibility,transform' });
+      },
+    });
+  }
+
   applyChoice(event: MouseEvent): void {
     if (event.target instanceof Element && event.target.closest('.filter-option'))
       this.applyFilters.emit();
@@ -109,6 +166,6 @@ export class FilterPanel {
 
   clearAndClose(): void {
     this.clearFilters.emit();
-    this.expanded.set(false);
+    if (this.expandedTarget) this.setExpanded(false);
   }
 }

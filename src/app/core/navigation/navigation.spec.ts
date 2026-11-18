@@ -9,6 +9,7 @@ import { initializeDemoData } from '../data/demo-data';
 import { StorageService } from '../data/storage.service';
 import { safeReturn } from '../auth/auth.guards';
 import { ClassesStore } from '../../features/classes/classes.store';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
 
 describe('Navegação contextual e acesso do professor', () => {
   beforeEach(async () => {
@@ -51,11 +52,11 @@ describe('Navegação contextual e acesso do professor', () => {
     const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('input[type=date]')!;
     input.value = '2026-11-07';
     input.dispatchEvent(new Event('input'));
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const confirm = vi.spyOn(TestBed.inject(ConfirmDialogService), 'confirm').mockResolvedValue(false);
     await harness.navigateByUrl('/turmas/6a/alunos');
     expect(TestBed.inject(Router).url).toBe('/turmas/6a/aulas/nova');
     expect(confirm).toHaveBeenCalled();
-    confirm.mockReturnValue(true);
+    confirm.mockResolvedValue(true);
     await harness.navigateByUrl('/turmas/6a/alunos');
     expect(TestBed.inject(Router).url).toBe('/turmas/6a/alunos');
     confirm.mockRestore();

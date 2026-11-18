@@ -1,20 +1,20 @@
-<main class="app-page registro-page" [appUnsavedChanges]="hasUnsavedChanges()">
+<main class="app-page registro-page">
   <section
     class="surface content-scroll registro-panel"
     aria-label="Formulário de registro de aula"
   >
     @if (unavailable) {
       <p class="app-empty">
-        Registro não encontrado ou turma arquivada. Consulte os registros na Auditoria.
+        Registro não encontrado ou turma arquivada. Consulte os registros pela página da turma.
       </p>
-    } @else if (!classes.active().length) {
+    } @else if (!availableClasses().length) {
       <p class="app-empty">
         Nenhuma turma ativa disponível. Cadastre ou reative uma turma na página Turmas.
       </p>
     } @else {
       <form class="registro-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
         <header class="form-wizard-header">
-          <a appAction="arrow_back" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
+          <a appAction="close" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
         </header>
         <div class="form-wizard-layout">
           <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
@@ -45,7 +45,7 @@
                 <fieldset class="form-wizard-choice">
                   <legend>Turma</legend>
                   <div class="form-wizard-option-list">
-                    @for (group of classes.active(); track group.id) {
+                    @for (group of availableClasses(); track group.id) {
                       @if (!fixedClass || group.id === contextClass) {
                         <label class="form-wizard-option"
                           ><input
@@ -148,7 +148,13 @@
             <app-feedback [message]="message()" [error]="isError()" />
             <nav class="form-wizard-actions" aria-label="Navegação das etapas">
               @if (step() < steps.length - 1) {
-                <button class="primary" type="button" data-step-next (click)="next()">
+                <button
+                  class="primary"
+                  type="button"
+                  data-step-next
+                  [disabled]="!canAdvance()"
+                  (click)="next()"
+                >
                   Próxima etapa<span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_forward</span
                   >
@@ -179,7 +185,7 @@
                     data: form.controls.data.value,
                   }"
                   >Registrar frequência</a
-                ><a class="app-button" routerLink="/historico">Consultar registros</a>
+                ><a class="app-button" routerLink="/turmas">Consultar turmas</a>
               </div>
             }
           </div>

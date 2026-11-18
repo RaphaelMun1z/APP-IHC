@@ -49,7 +49,8 @@ export function initializeDemoData(storage: StorageService): void {
       {
         [previousClassDate(group.dias[0])]: {
           alunos: students.map((student, studentIndex) => ({
-            ...student,
+            id: student.id,
+            nome: student.nome,
             avaliacoes: Object.fromEntries(
               criteria.map((criterion, criterionIndex) => {
                 const mark = (studentIndex + criterionIndex + groupIndex) % 4;

@@ -1,11 +1,11 @@
-<main class="app-page management-page" [appUnsavedChanges]="hasUnsavedChanges()">
+<main class="app-page management-page">
   <section class="surface content-scroll management-panel" aria-label="Dados da turma">
     @if (unavailable) {
       <p class="app-empty">Turma não encontrada. Confira a lista de turmas e tente novamente.</p>
     } @else {
       <form class="management-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
         <header class="form-wizard-header">
-          <a appAction="arrow_back" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
+          <a appAction="close" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
         </header>
         <div class="form-wizard-layout">
           <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
@@ -40,20 +40,22 @@
                     placeholder="Ex.: Ciência da Computação · 3º período A"
                     required
                 /></label>
-                <fieldset class="form-wizard-choice">
-                  <legend>Professor responsável</legend>
-                  <div class="form-wizard-option-list">
-                    @for (teacher of classes.teachers; track teacher.id) {
-                      <label class="form-wizard-option"
-                        ><input
-                          type="radio"
-                          formControlName="professorId"
-                          [value]="teacher.id"
-                        /><span>{{ teacher.nome }}</span></label
-                      >
-                    }
-                  </div>
-                </fieldset>
+                <label class="field">Faixa etária
+                  <input formControlName="faixaEtaria" maxlength="100" required />
+                </label>
+                <label class="field">Modalidade
+                  <input formControlName="modalidade" maxlength="100" required />
+                </label>
+                @if (pickProfessor) {
+                  <label class="field">Professor inicial
+                    <select formControlName="professorId" required>
+                      <option value="">Selecione</option>
+                      @for (teacher of classes.teachers; track teacher.id) {
+                        <option [value]="teacher.id">{{ teacher.nome }}</option>
+                      }
+                    </select>
+                  </label>
+                }
                 <fieldset class="form-wizard-choice">
                   <legend>Curso</legend>
                   <div class="form-wizard-option-list">
@@ -157,13 +159,15 @@
             <app-feedback [message]="message()" [error]="true" />
             <nav class="form-wizard-actions" aria-label="Navegação das etapas">
               @if (step() < steps.length - 1) {
-                <button class="primary" type="button" (click)="next()">
+                <button class="primary" type="button" [disabled]="!canAdvance()" (click)="next()">
                   Próxima etapa<span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_forward</span
                   >
                 </button>
               } @else {
-                <button appAction="save" class="primary" type="submit">Salvar turma</button>
+                <button appAction="save" class="primary" type="submit"
+                  [disabled]="form.invalid || !students().length || !days().length"
+                >Salvar turma</button>
               }
               @if (step() > 0) {
                 <button

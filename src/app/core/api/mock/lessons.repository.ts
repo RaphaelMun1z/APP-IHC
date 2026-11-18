@@ -7,6 +7,8 @@ import type { Lesson, LessonInput } from '../../models/domain';
 import { lessonTypes } from '../../models/domain';
 import { requirePastDate } from '../../../shared/utils/dates';
 import { MockClassesRepository } from './classes.repository';
+import { teaches } from '../../data/academic-records';
+import { ApiFailure } from '../contracts';
 
 @Injectable({ providedIn: 'root' })
 export class MockLessonsRepository {
@@ -22,7 +24,7 @@ export class MockLessonsRepository {
     this.all().filter((lesson) => this.classes.get(lesson.turmaId)),
   );
   save(input: LessonInput): Lesson {
-    this.classes.require(input.turmaId, true);
+    const group = this.classes.require(input.turmaId, true);
     const module = this.classes.module(input.cursoId, input.moduloId);
     if (
       !module ||
@@ -43,12 +45,20 @@ export class MockLessonsRepository {
       )
     )
       throw new Error(
-        'Já existe uma aula nesta data para a turma. Abra o registro na Auditoria para editá-lo.',
+        'Já existe uma aula nesta data para a turma. Abra o registro na aba Aulas para editá-lo.',
       );
     const user = this.auth.user();
-    if (!user) throw new Error('Entre na sua conta para salvar.');
+    if (!user || !teaches(group, user))
+      throw new ApiFailure(403, {
+        code: 'FORBIDDEN',
+        message: 'Somente professores vinculados à turma podem registrar aulas.',
+      });
     const saved: Lesson = {
       ...input,
+      licaoIds: [...new Set(input.licoes)].flatMap(
+        (title) =>
+          module.curriculo?.filter(({ titulo }) => titulo === title).map(({ id }) => id) ?? [],
+      ),
       notas: input.notas.trim(),
       id: previous?.id ?? crypto.randomUUID(),
       professorId: previous?.professorId ?? user.id,

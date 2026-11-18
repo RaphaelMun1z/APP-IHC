@@ -1,4 +1,4 @@
-<main class="app-page avaliacao-page" [appUnsavedChanges]="dirty()">
+<main class="app-page avaliacao-page">
   @if (!selectedLesson()) {
     <app-filter-panel
       (applyFilters)="load()"
@@ -186,7 +186,7 @@
                       [class.ok]="student.avaliacoes[criterion.id] === 'ok'"
                       [class.no]="student.avaliacoes[criterion.id] === 'nao-ok'"
                       [class.pending]="!student.avaliacoes[criterion.id]"
-                      [disabled]="!group()?.ativa"
+                      [disabled]="!canEdit()"
                       [attr.aria-label]="
                         student.nome +
                         ', ' +
@@ -222,7 +222,7 @@
         (pageChange)="paging.page.set($event)"
         (sizeChange)="paging.resize($event)"
       />
-      @if (group()?.ativa && dirty()) {
+      @if (canEdit() && dirty()) {
         <footer class="avaliacao-footer">
           <button appAction="save" type="button" (click)="save()">Salvar alterações</button>
         </footer>

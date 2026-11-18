@@ -4,8 +4,9 @@ import { AuthService } from '../../core/auth/auth.service';
 import { DataState } from '../../core/api/data-state';
 import { RequestState } from '../../core/api/request-state';
 import type { SchoolClass, Student } from '../../core/models/domain';
-import { weekdays } from '../../shared/utils/dates';
 import { ClassesApi } from './classes.api';
+import type { StudentRequest } from '../../core/api/contracts';
+import { teaches } from '../../core/data/academic-records';
 
 @Injectable({ providedIn: 'root' })
 export class ClassesStore {
@@ -33,6 +34,9 @@ export class ClassesStore {
   get(id: string) {
     return this.accessible().find((group) => group.id === id);
   }
+  canTeach(id: string): boolean {
+    return teaches(this.get(id), this.auth.user());
+  }
   require(id: string, active = false): SchoolClass {
     const group = this.get(id);
     if (!group) throw new Error('Turma não encontrada.');
@@ -48,9 +52,6 @@ export class ClassesStore {
   module(courseId: string, moduleId: string) {
     return this.course(courseId)?.modulos.find((module) => module.id === moduleId);
   }
-  schedule(group: SchoolClass): string {
-    return `${group.dias.map((day) => weekdays[day]).join(' e ')} · ${group.inicio}–${group.fim}`;
-  }
   isPinned(id: string): boolean {
     return this.state.pins().includes(id);
   }
@@ -65,9 +66,9 @@ export class ClassesStore {
       group,
     ]);
   }
-  async addStudent(classId: string, name: string): Promise<Student> {
+  async addStudent(classId: string, input: string | StudentRequest): Promise<Student> {
     const result = await this.requests.mutate(
-      this.api.addStudent(classId, { nome: name }).pipe(
+      this.api.addStudent(classId, typeof input === 'string' ? { nome: input } : input).pipe(
         tap(({ aluno, turma }) => {
           this.state.students.update((students) => [...students, aluno]);
           this.state.classes.update((groups) =>
@@ -79,8 +80,11 @@ export class ClassesStore {
     return result.aluno;
   }
   async renameStudent(classId: string, studentId: string, name: string): Promise<void> {
+    await this.updateStudent(classId, studentId, { nome: name });
+  }
+  async updateStudent(classId: string, studentId: string, input: StudentRequest): Promise<void> {
     await this.requests.mutate(
-      this.api.renameStudent(classId, studentId, { nome: name }).pipe(
+      this.api.renameStudent(classId, studentId, input).pipe(
         tap((student) => {
           this.state.students.update((students) =>
             students.map((item) => (item.id === student.id ? student : item)),
@@ -88,6 +92,9 @@ export class ClassesStore {
         }),
       ),
     );
+  }
+  assignTeachers(id: string, professorIds: readonly string[]) {
+    return this.requests.mutate(this.api.assignTeachers(id, professorIds).pipe(tap((group) => this.upsert(group))));
   }
   async removeStudent(classId: string, studentId: string): Promise<void> {
     await this.requests.mutate(

@@ -1,27 +1,27 @@
 purpose:
-  stands_in_for: API REST ainda não desenvolvida do IPB APP 1.
+  stands_in_for: API REST ainda não desenvolvida do IPB.
   unblocks: Verificação do HttpClient/FetchBackend real em modo api, sem backend nem publicação externa.
 assumptions:
   - id: frontend-fetches-contract-snapshots
     status: supported
     claim: O frontend em modo api autentica e carrega os sete snapshots usando HTTP real contra os exemplos documentados.
     reason: A suíte usa o AuthService e BootstrapService reais, e o log da simulação registrou POST de sessão e os sete GETs com status 200.
-    verification: Em 2026-11-15, http-transport.spec.ts passou; dados esperados apareceram em DataState, pending voltou a zero e não houve dados locais persistidos. A evidência cobre o transporte Node/FetchBackend e os exemplos da especificação.
+    verification: Em 2026-11-15, http-transport.spec.ts passou; dados esperados apareceram em DataState, pending voltou a zero e não houve dados locais persistidos. Em 2026-11-17, após a limpeza técnica, a suíte passou novamente e o log confirmou o POST de sessão e os sete GETs com status 200. A evidência cobre o transporte Node/FetchBackend e os exemplos da especificação.
     source: src/app/core/api/http-transport.spec.ts; docs/openapi.yaml; npm run mock:transport; npm run test:transport
-    updated_at: '2026-11-15'
+    updated_at: '2026-11-17'
   - id: transport-failures-release-loading
     status: supported
     claim: HTTP 503 e atraso maior que o timeout não publicam dados parciais nem deixam loading ativo nos cenários testados.
     reason: Os membros unavailable e slow exercitaram a pilha HTTP real, sem HttpTestingController nem interceptor mock ativo.
-    verification: Em 2026-11-15, os três testes de transporte passaram. Para 503, ready permaneceu false com mensagem de erro. Para atraso de 100 ms com limite de 20 ms, o frontend retornou TIMEOUT e pending zero. Falhas injetadas são respondidas pela simulação antes do handler e não aparecem como request do mock.
+    verification: Em 2026-11-15, os três testes de transporte passaram. Para 503, ready permaneceu false com mensagem de erro. Para atraso de 100 ms com limite de 20 ms, o frontend retornou TIMEOUT e pending zero. Os mesmos cenários passaram novamente em 2026-11-17. Falhas injetadas são respondidas pela simulação antes do handler e não aparecem como request do mock.
     source: postman/simulations/ipb-http.sim.yaml; src/app/core/api/http-transport.spec.ts
-    updated_at: '2026-11-15'
+    updated_at: '2026-11-17'
   - id: backend-auth-and-concurrency
     status: unknown
     claim: O futuro backend implementará cookies, CORS/CSRF, autorização, expiração e transações compatíveis com a proposta.
     reason: Backend inexistente; o replay gerado da especificação não valida credenciais nem mantém estado de CRUD. Não houve pesquisa de mock de proprietário porque esta API pertence ao próprio projeto e ainda não existe.
     verification: Pendente de implementação e validação no backend. Esta simulação não prova cookies em navegador, CORS, CSRF ou concorrência. CRUD e regras pedagógicas são verificados separadamente contra o interceptor stateful do Angular.
-    source: docs/API_CONTRACTS.md; src/app/core/api/mock; src/app/core/api/api.spec.ts; src/app/core/api/contract-conformance.spec.ts
+    source: docs/openapi.yaml; src/app/core/api/mock; src/app/core/api/api.spec.ts; src/app/core/api/contract-conformance.spec.ts
     updated_at: '2026-11-15'
 fingerprints:
   - id: api-integration-local

@@ -1,5 +1,7 @@
 export const storageKeys = {
   students: 'ipb-alunos-v2',
+  catalog: 'ipb-catalogo-v1',
+  monthlyTime: 'ipb-ponto-mensal-v1',
   classes: 'ipb-turmas-v2',
   pinnedClasses: 'ipb-turmas-fixadas-v2',
   lessons: 'ipb-aulas-v2',

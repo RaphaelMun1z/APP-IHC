@@ -14,8 +14,10 @@ import type {
 import { requirePastDate } from '../../../shared/utils/dates';
 import { MockClassesRepository } from './classes.repository';
 import { MockLessonsRepository } from './lessons.repository';
+import { ApiFailure } from '../contracts';
+import { teaches } from '../../data/academic-records';
 
-export interface UnlinkedAssessment {
+interface UnlinkedAssessment {
   readonly classId: string;
   readonly date: string;
   readonly assessment: LegacyAssessment;
@@ -100,7 +102,8 @@ export class MockAssessmentsRepository {
     if (!lesson) return [];
     const previous = this.records()[lessonId]?.alunos ?? [];
     return this.classes.roster(lesson.turmaId).map((student) => ({
-      ...student,
+      id: student.id,
+      nome: student.nome,
       avaliacoes: Object.fromEntries(
         criteria.map((criterion) => [
           criterion.id,
@@ -116,7 +119,8 @@ export class MockAssessmentsRepository {
     const group = this.classes.require(lesson.turmaId, true);
     requirePastDate(lesson.data);
     const user = this.auth.user();
-    if (!user) throw new Error('Entre na sua conta para salvar.');
+    if (!user || !teaches(group, user))
+      throw new ApiFailure(403, { code: 'FORBIDDEN', message: 'Somente professores vinculados à turma podem salvar avaliações.' });
     if (
       values.length !== group.alunoIds.length ||
       new Set(values.map((student) => student.id)).size !== values.length ||
@@ -146,7 +150,7 @@ export class MockAssessmentsRepository {
           ...this.all(),
           [lessonId]: {
             lessonId,
-            alunos: [...oldStudents, ...values],
+            alunos: [...oldStudents, ...values.map(({ id, nome, avaliacoes }) => ({ id, nome, avaliacoes }))],
             atualizadoEm: new Date().toISOString(),
             professorId: user.id,
           },

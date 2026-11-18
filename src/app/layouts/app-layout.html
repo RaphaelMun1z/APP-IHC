@@ -1,10 +1,10 @@
 <a class="skip-link" href="#page-content">Pular para o conteúdo</a>
 <aside class="turmas-topbar" aria-label="Navegação principal">
-  <a class="turmas-brand" routerLink="/inicio" aria-label="Início"
+  <a class="turmas-brand" routerLink="/turmas" aria-label="Turmas"
     ><img src="assets/ipb_logo.png" alt="IPB"
   /></a>
   <nav class="turmas-nav" aria-label="Menu principal">
-    @for (item of navigation; track item.path) {
+    @for (item of navigation(); track item.path) {
       <a
         [routerLink]="item.path"
         routerLinkActive="active"
@@ -17,10 +17,9 @@
     }
   </nav>
   <section class="sidebar-account" aria-label="Conta do usuário">
-    <button
+    <a
       class="account-profile"
-      type="button"
-      (click)="profileOpen.set(true)"
+      routerLink="/perfil"
       aria-label="Meu perfil"
       aria-describedby="sidebar-user-name sidebar-user-role"
       [title]="auth.user()?.nome ?? ''"
@@ -28,9 +27,9 @@
       <span class="turmas-avatar" aria-hidden="true">{{ initials() }}</span>
       <span class="account-info"
         ><strong id="sidebar-user-name">{{ auth.user()?.nome }}</strong
-        ><small id="sidebar-user-role">Professor</small></span
+        ><small id="sidebar-user-role">{{ isCoordinator() ? 'Coordenação' : 'Professor' }}</small></span
       >
-    </button>
+    </a>
     <button
       class="logout-button"
       type="button"
@@ -47,7 +46,7 @@
   <app-page-header />
   <div class="page-view">
     @if (data.ready()) {
-      <router-outlet />
+      <router-outlet (activate)="animatePage()" />
     } @else {
       <main class="app-page surface content-scroll">
         <app-feedback [message]="data.error() || auth.error()" [error]="true" />
@@ -75,14 +74,4 @@
     <app-feedback [message]="message()" [error]="true" />
   </div>
 }
-<app-modal title="Meu perfil" [open]="profileOpen()" (closed)="profileOpen.set(false)">
-  <h3>{{ auth.user()?.nome }}</h3>
-  <p>Perfil: Professor</p>
-  @if (mockMode) {
-    <p>Conta demonstrativa. Os registros ficam neste navegador.</p>
-  }
-  <a class="app-button primary" routerLink="/turmas" (click)="profileOpen.set(false)"
-    >Ver minhas turmas</a
-  >
-</app-modal>
 <app-confirm-dialog />

@@ -15,7 +15,7 @@ import { AttendanceStore, attendanceColumns, nextAttendance } from './attendance
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage } from '../../shared/utils/errors';
 import { isDate, localDate } from '../../shared/utils/dates';
-import { UnsavedChangesDirective, confirmDiscard } from '../../core/navigation/unsaved-changes';
+import { confirmDiscard } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { LessonsStore } from '../lessons/lessons.store';
 import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
@@ -33,7 +33,6 @@ import { Tooltip } from '../../shared/ui/tooltip';
     Action,
     ReactiveFormsModule,
     Feedback,
-    UnsavedChangesDirective,
   ],
   templateUrl: './attendance.html',
   styleUrl: './attendance.scss',

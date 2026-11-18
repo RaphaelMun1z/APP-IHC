@@ -1,7 +1,7 @@
 ﻿import type { AttendanceMark } from '../../core/models/domain';
 import { localDate } from '../../shared/utils/dates';
 
-export interface AttendanceColumn {
+interface AttendanceColumn {
   readonly date: string;
   readonly day: string;
   readonly number: string;

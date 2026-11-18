@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { FormsModule } from '@angular/forms';
 import { Tooltip } from './tooltip';
 
-export const PAGE_SIZES = [10, 15, 25, 50] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZES = [10, 15, 25, 50] as const;
+const DEFAULT_PAGE_SIZE = 10;
 
 export class TablePage {
   readonly page = signal(1);

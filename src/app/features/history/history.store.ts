@@ -17,7 +17,7 @@ export type HistoryRecord = RecordBase &
     | { readonly tipo: 'frequencia'; readonly registro: AttendanceDay }
     | { readonly tipo: 'avaliacao'; readonly registro: Assessment }
   );
-export interface HistoryFilters {
+interface HistoryFilters {
   readonly turmaId: string;
   readonly tipo: string;
   readonly inicio: string;

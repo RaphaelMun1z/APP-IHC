@@ -12,7 +12,7 @@ export interface BreadcrumbItem {
   readonly label: string;
   readonly url: string;
 }
-export interface PageInformation {
+interface PageInformation {
   readonly title: string;
   readonly crumbs: readonly BreadcrumbItem[];
   readonly parent: string;
@@ -34,11 +34,9 @@ export class PageNavigation {
   readonly page = computed<PageInformation>(() => {
     const tree = this.router.parseUrl(this.url());
     const segments = tree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
-    const root = segments[0] ?? 'inicio';
+    const root = segments[0] ?? 'turmas';
     const query = tree.queryParamMap;
-    const home: BreadcrumbItem = { label: 'Início', url: '/inicio' };
     const classes: BreadcrumbItem = { label: 'Turmas', url: '/turmas' };
-    const audit: BreadcrumbItem = { label: 'Auditoria', url: '/historico' };
     const record = this.history
       .records()
       .find(
@@ -59,9 +57,9 @@ export class PageNavigation {
       url: classUrl + '/visao-geral',
     };
     const contextual = root === 'turmas' && !!segments[1];
-    const crumbs: BreadcrumbItem[] = contextual ? [home, classes, groupCrumb] : [home];
-    let title = 'Início';
-    let parent = '/inicio';
+    const crumbs: BreadcrumbItem[] = contextual ? [classes, groupCrumb] : [];
+    let title = 'Minhas turmas';
+    let parent = '/turmas';
     let context: string | undefined;
     const add = (label: string, url: string) => crumbs.push({ label, url });
     const recordLabel = record
@@ -79,7 +77,11 @@ export class PageNavigation {
         avaliacoes: 'Avaliações',
         gerenciar: 'Gerenciar turma',
       };
-      if (section === 'registros') {
+      if (section === 'alunos' && segments[3]) {
+        parent = classUrl + '/alunos';
+        add('Alunos', parent);
+        add(segments[3] === 'novo' ? 'Cadastrar aluno' : 'Editar cadastro', this.url());
+      } else if (section === 'registros') {
         if (record?.tipo === 'aula') add('Aulas', classUrl + '/aulas');
         else if (record)
           add(
@@ -106,7 +108,9 @@ export class PageNavigation {
         }
       }
       const subpage =
-        section === 'registros'
+        section === 'alunos' && segments[3]
+          ? segments[3] === 'novo' ? 'Cadastrar aluno' : 'Editar cadastro'
+          : section === 'registros'
           ? `${recordLabel}${lessonSection && labels[lessonSection] ? ` · ${labels[lessonSection]}` : ''}`
           : section === 'visao-geral'
             ? 'Visão geral'
@@ -119,9 +123,18 @@ export class PageNavigation {
     } else if (root === 'turmas') {
       title = 'Minhas turmas';
       add('Turmas', '/turmas');
+    } else if (root === 'coordenacao' || root === 'pontos-mensais') {
+      title = root === 'coordenacao' ? 'Coordenação pedagógica' : 'Ponto mensal';
+      crumbs.push(classes);
+      add(title, '/' + root);
+    } else if (root === 'perfil') {
+      title = 'Meu perfil';
+      crumbs.push(classes);
+      add(title, '/perfil');
+      parent = '/turmas';
     } else if (root === 'historico') {
-      title = 'Auditoria';
-      crumbs.push(audit);
+      title = 'Registro';
+      crumbs.push(classes);
       if (segments[1]) {
         title = recordLabel;
         add(title, this.url());

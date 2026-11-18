@@ -1,15 +1,15 @@
 <main class="app-login">
-  <section class="app-login-story" aria-label="IPB · APP 1">
+  <section class="app-login-story" aria-label="IPB">
     <img src="./assets/login-photo.png" alt="" class="app-login-photo" fetchpriority="high" />
     <div class="app-login-wordmark">
       <img src="./assets/ipb_logo.png" alt="IPB" class="app-login-logo" />
-      <span>APP 1</span>
+      <span>IPB</span>
     </div>
   </section>
   <section class="app-login-form" aria-labelledby="login-title">
     <div class="app-login-content">
       <header class="app-login-heading">
-        <h1 id="login-title">Bem-vindo ao APP 1</h1>
+        <h1 id="login-title">Bem-vindo ao IPB</h1>
         <p>
           {{
             demoAccess
@@ -99,6 +99,9 @@
       @if (demoAccess) {
         <button id="preencher-demo" (click)="fillDemo()" type="button" class="app-login-dev">
           <span class="app-login-dev-badge">DEV</span><span>Preencher credenciais de teste</span>
+        </button>
+        <button (click)="fillDemo(true)" type="button" class="app-login-dev">
+          <span class="app-login-dev-badge">DEV</span><span>Preencher acesso da coordenação</span>
         </button>
       }
     </div>

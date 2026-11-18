@@ -8,6 +8,8 @@ import { AuthService } from '../auth/auth.service';
 import { initializeDemoData } from '../data/demo-data';
 import { StorageService } from '../data/storage.service';
 import { PageNavigation } from './page-navigation';
+import { formatDate, previousClassDate } from '../../shared/utils/dates';
+import { defaultClasses } from '../data/catalog';
 
 describe('Hierarquia de páginas', () => {
   beforeEach(async () => {
@@ -23,13 +25,14 @@ describe('Hierarquia de páginas', () => {
     await harness.navigateByUrl('/turmas/6a/aulas/nova?retorno=%2Fcoordenacao%3Fbusca%3D6');
     const navigation = TestBed.inject(PageNavigation);
     expect(navigation.page().crumbs.map((item) => item.label)).toEqual([
-      'Início',
       'Turmas',
       'Ciência da Computação · 3º período A',
       'Aulas',
       'Registrar aula',
     ]);
-    expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/turmas?busca=6');
+    const router = TestBed.inject(Router);
+    await harness.navigateByUrl(router.serializeUrl(navigation.back()));
+    expect(router.url).toBe('/turmas?busca=6');
   });
   it('detalhes e edição usam o registro e a turma da rota', async () => {
     const harness = await RouterTestingHarness.create();
@@ -39,28 +42,25 @@ describe('Hierarquia de páginas', () => {
       navigation
         .page()
         .crumbs.map((item) => item.label)
-        .slice(0, 4),
-    ).toEqual(['Início', 'Turmas', 'Ciência da Computação · 3º período A', 'Aulas']);
-    expect(navigation.page().title).toContain('09/11/2026');
+        .slice(0, 3),
+    ).toEqual(['Turmas', 'Ciência da Computação · 3º período A', 'Aulas']);
+    expect(navigation.page().title).toContain(formatDate(previousClassDate(defaultClasses[0].dias[0])));
     await harness.navigateByUrl('/turmas/6b/aulas/demo-aula-6b/editar');
     expect(navigation.page().crumbs.map((item) => item.label)).toEqual([
-      'Início',
       'Turmas',
       'Ciência da Computação · 5º período B',
       'Aulas',
       'Editar aula',
     ]);
   });
-  it('mantém a hierarquia da Auditoria global e restringe retornos externos', async () => {
+  it('mantém o acesso a registros antigos e restringe retornos externos', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/historico/demo-aula-6a?retorno=https%3A%2F%2Fexample.com');
     const navigation = TestBed.inject(PageNavigation);
-    expect(
-      navigation
-        .page()
-        .crumbs.map((item) => item.label)
-        .slice(0, 2),
-    ).toEqual(['Início', 'Auditoria']);
-    expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/historico');
+    expect(navigation.page().crumbs.map((item) => item.label)).toEqual([
+      'Turmas',
+      `Registro de aula · ${formatDate(previousClassDate(defaultClasses[0].dias[0]))}`,
+    ]);
+    expect(TestBed.inject(Router).serializeUrl(navigation.back())).toBe('/turmas');
   });
 });

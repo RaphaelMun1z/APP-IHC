@@ -50,4 +50,7 @@ export class ClassesApi {
       `${this.base}/${encodeURIComponent(id)}/alunos/${encodeURIComponent(studentId)}`,
     );
   }
+  assignTeachers(id: string, professorIds: readonly string[]) {
+    return this.http.put<ClassDto>(`${this.base}/${encodeURIComponent(id)}/professores`, { professorIds });
+  }
 }

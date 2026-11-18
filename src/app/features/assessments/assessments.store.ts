@@ -11,8 +11,6 @@ import type {
 import { ClassesStore } from '../classes/classes.store';
 import { LessonsStore } from '../lessons/lessons.store';
 import { AssessmentsApi } from './assessments.api';
-export type { UnlinkedAssessmentDto as UnlinkedAssessment } from '../../core/api/contracts';
-
 export function nextAssessment(mark: AssessmentMark): AssessmentMark {
   return mark === null ? 'ok' : mark === 'ok' ? 'nao-ok' : null;
 }
@@ -57,7 +55,8 @@ export class AssessmentsStore {
     if (!lesson) return [];
     const previous = this.records()[lessonId]?.alunos ?? [];
     return this.classes.roster(lesson.turmaId).map((student) => ({
-      ...student,
+      id: student.id,
+      nome: student.nome,
       avaliacoes: Object.fromEntries(
         this.criteria.map((criterion) => [
           criterion.id,

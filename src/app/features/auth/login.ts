@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { demoCoordinationUsername } from '../../core/auth/demo-access';
 import { safeReturn } from '../../core/auth/auth.guards';
 import { Feedback } from '../../shared/ui/feedback';
 import { Modal } from '../../shared/ui/modal';
@@ -26,8 +27,11 @@ export class Login {
   readonly demoAccess = this.auth.demoAccess;
   readonly message = signal(this.auth.error());
   readonly help = signal<{ title: string; description: string } | null>(null);
-  fillDemo(): void {
-    if (this.demoAccess) this.form.patchValue(this.demoAccess);
+  fillDemo(coordinator = false): void {
+    if (this.demoAccess) this.form.patchValue({
+      ...this.demoAccess,
+      username: coordinator ? demoCoordinationUsername : this.demoAccess.username,
+    });
     this.message.set('');
   }
   rememberChanged(): void {
@@ -38,17 +42,17 @@ export class Login {
       forgot: {
         title: 'Esqueceu a senha?',
         description:
-          'A recuperação de senha ainda não está disponível. Use as credenciais de demonstração do APP 1 para entrar.',
+          'A recuperação de senha ainda não está disponível. Use as credenciais de demonstração do IPB para entrar.',
       },
       google: {
         title: 'Continuar com Google',
         description:
-          'O acesso com Google ainda não está disponível. Entre com seu usuário e senha do APP 1.',
+          'O acesso com Google ainda não está disponível. Entre com seu usuário e senha do IPB.',
       },
       signup: {
         title: 'Criar uma conta',
         description:
-          'O cadastro ainda não está disponível. Use sua conta de demonstração do APP 1.',
+          'O cadastro ainda não está disponível. Use sua conta de demonstração do IPB.',
       },
     };
     this.help.set(messages[kind]);

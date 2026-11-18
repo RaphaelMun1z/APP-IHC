@@ -27,6 +27,8 @@ import { HistoryStore } from '../history/history.store';
 import { ClassesStore } from './classes.store';
 import { contextParam } from '../../core/navigation/context';
 import { formatDate, isDate } from '../../shared/utils/dates';
+import { enrollments, teachingAssignments } from '../../core/data/academic-records';
+import type { SchoolClass } from '../../core/models/domain';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage } from '../../shared/utils/errors';
 import { AttendanceStore } from '../attendance/attendance.store';
@@ -109,6 +111,7 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                   <tr>
                     <th scope="col">Aluno</th>
                     <th scope="col">Status</th>
+                    <th scope="col">Data da matrícula</th>
                     <th scope="col">Faltas</th>
                     <th scope="col" class="actions-cell">Ações</th>
                   </tr>
@@ -122,6 +125,7 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                         >
                       </th>
                       <td><app-badge tone="success">Matriculado</app-badge></td>
+                      <td>{{ enrollmentDate(group, student.id) }}</td>
                       <td>{{ absences(group.id, student.id) }}</td>
                       <td class="actions-cell">
                         <div class="row-actions">
@@ -134,6 +138,12 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                             [attr.aria-label]="'Abrir frequência de ' + student.nome"
                           ></a>
                           @if (group.ativa) {
+                            <a appAction="badge" class="icon-button"
+                              [routerLink]="['/turmas', group.id, 'alunos', student.id, 'editar']"
+                              [queryParams]="{ retorno: currentUrl }"
+                              title="Editar cadastro"
+                              [attr.aria-label]="'Editar cadastro de ' + student.nome"
+                            ></a>
                             <button
                               appAction="edit"
                               class="icon-button"
@@ -161,7 +171,7 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="4" class="app-empty">
+                      <td colspan="5" class="app-empty">
                         {{ studentQuery().trim() || studentAbsenceFilter() !== 'all' ? 'Nenhum aluno encontrado com esses filtros.' : 'Nenhum aluno matriculado.' }}
                       </td>
                     </tr>
@@ -269,6 +279,7 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                             [queryParams]="{ retorno: currentUrl }"
                           ></a>
                           @if (group.ativa) {
+                            @if (classes.canTeach(group.id)) {
                             <a
                               appAction="edit"
                               class="icon-button"
@@ -277,6 +288,7 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                               [routerLink]="['/turmas', group.id, 'aulas', item.id, 'editar']"
                               [queryParams]="{ retorno: currentUrl }"
                             ></a>
+                            }
                             <a
                               appAction="event_available"
                               class="icon-button"
@@ -294,9 +306,9 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                             <a
                               appAction="fact_check"
                               class="icon-button"
-                              title="Avaliar alunos"
+                              [title]="classes.canTeach(group.id) ? 'Avaliar alunos' : 'Consultar avaliação'"
                               [attr.aria-label]="
-                                'Avaliar alunos da aula de ' + formatDate(item.data)
+                                (classes.canTeach(group.id) ? 'Avaliar alunos da aula de ' : 'Consultar avaliação da aula de ') + formatDate(item.data)
                               "
                               [routerLink]="[
                                 '/turmas',
@@ -334,12 +346,12 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
                   >person</span
                 >
-                <h2>Professor responsável</h2>
-                <p class="overview-card-value person-name">
-                  <app-person-avatar [name]="teacher() ?? 'Professor'" />{{
-                    teacher() ?? 'Não definido'
-                  }}
-                </p>
+                <h2>Professores vinculados</h2>
+                @for (teacher of teachers(); track teacher.id) {
+                  <p class="overview-card-value person-name">
+                    <app-person-avatar [name]="teacher.nome" />{{ teacher.nome }}
+                  </p>
+                } @empty { <p>Não definido</p> }
               </article>
               <article class="overview-card">
                 <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
@@ -352,6 +364,8 @@ import { FilterOptions, type FilterOption } from '../../shared/ui/filter-options
                     >Módulo ·
                     {{ classes.module(group.cursoId, group.moduloId)?.nome ?? 'Não definido' }}</span
                   >
+                  <span>Faixa etária · {{ group.faixaEtaria || 'Não informada' }}</span>
+                  <span>Modalidade · {{ group.modalidade || 'Não informada' }}</span>
                 </div>
               </article>
               <article class="overview-card">
@@ -602,9 +616,15 @@ export class ClassDetails {
         : []),
     ];
   });
-  readonly teacher = computed(
-    () => this.classes.teachers.find((item) => item.id === this.group()?.professorId)?.nome,
-  );
+  readonly teachers = computed(() => {
+    const group = this.group();
+    const ids = group ? teachingAssignments(group).map(({ professorId }) => professorId) : [];
+    return this.classes.teachers.filter((teacher) => ids.includes(teacher.id));
+  });
+  enrollmentDate(group: SchoolClass, id: string): string {
+    const date = enrollments(group).find(({ alunoId }) => alunoId === id)?.dataMatricula;
+    return date ? formatDate(date) : 'Não informada';
+  }
   absences(classId: string, studentId: string): number {
     return Object.values(this.attendance.records()[classId] ?? {}).filter(
       (day) => day[studentId] === 'falta',

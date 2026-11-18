@@ -112,14 +112,6 @@ th {
   font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
-.page-results-divider {
-  width: calc(100% - 4rem);
-  height: 0;
-  flex: 0 0 auto;
-  margin: 0 auto;
-  border: 0;
-  border-top: 1px solid rgb(226 232 240 / 18%);
-}
 .app-button {
   display: inline-flex;
   align-items: center;

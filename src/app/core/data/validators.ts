@@ -8,6 +8,7 @@ import type {
   Student,
 } from '../models/domain';
 import { isDate } from '../../shared/utils/dates';
+import { studentFields } from '../models/domain';
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -20,7 +21,7 @@ export function isSession(value: unknown): value is Session {
     record(value) &&
     typeof value['id'] === 'string' &&
     typeof value['nome'] === 'string' &&
-    value['perfil'] === 'professor'
+    (value['perfil'] === 'professor' || value['perfil'] === 'coordenacao')
   );
 }
 export function isStudents(value: unknown): value is Student[] {
@@ -33,7 +34,10 @@ export function isStudents(value: unknown): value is Student[] {
         !!student['id'].trim() &&
         typeof student['nome'] === 'string' &&
         !!student['nome'].trim() &&
-        student['nome'].length <= 100,
+        student['nome'].length <= 100 &&
+        [...Object.keys(studentFields), 'coordenadorId'].every(
+          (key) => student[key] === undefined || typeof student[key] === 'string',
+        ),
     ) &&
     new Set(value.map((student) => student.id)).size === value.length
   );
@@ -45,7 +49,34 @@ export function isClass(value: unknown): value is SchoolClass {
       (key) => typeof value[key] === 'string',
     ) &&
     typeof value['ativa'] === 'boolean' &&
+    ['coordenadorId', 'faixaEtaria', 'modalidade'].every(
+      (key) => value[key] === undefined || typeof value[key] === 'string',
+    ) &&
     strings(value['alunoIds']) &&
+    (value['matriculas'] === undefined ||
+      (Array.isArray(value['matriculas']) &&
+        value['matriculas'].every(
+          (row) =>
+            record(row) &&
+            typeof row['alunoId'] === 'string' &&
+            row['turmaId'] === value['id'] &&
+            (row['dataMatricula'] === null ||
+              (typeof row['dataMatricula'] === 'string' && isDate(row['dataMatricula']))),
+        ) &&
+        value['matriculas'].length === new Set(value['alunoIds']).size &&
+        new Set(value['matriculas'].map((row) => row.alunoId)).size ===
+          value['matriculas'].length &&
+        value['matriculas'].every((row) =>
+          (value['alunoIds'] as string[]).includes(row.alunoId),
+        ))) &&
+    (value['leciona'] === undefined ||
+      (Array.isArray(value['leciona']) &&
+        value['leciona'].every(
+          (row) =>
+            record(row) && typeof row['professorId'] === 'string' && row['turmaId'] === value['id'],
+        ) &&
+        new Set(value['leciona'].map((row) => row.professorId)).size === value['leciona'].length &&
+        value['leciona'].some((row) => row.professorId === value['professorId']))) &&
     Array.isArray(value['dias']) &&
     value['dias'].every((day) => Number.isInteger(day) && day >= 0 && day <= 6)
   );
@@ -67,6 +98,7 @@ export function isLessons(value: unknown): value is Lesson[] {
         ) &&
         typeof item['data'] === 'string' &&
         isDate(item['data']) &&
+        (item['licaoIds'] === undefined || strings(item['licaoIds'])) &&
         strings(item['licoes']) &&
         ['regular', 'revisao', 'PR1', 'PR2', 'PR3'].includes(String(item['tipo'])),
     )

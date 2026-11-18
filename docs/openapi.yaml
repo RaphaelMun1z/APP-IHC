@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: IPB APP 1 — contrato proposto da API
+  title: IPB — contrato proposto da API
   version: 1.0.0
   description:
     Contratos implementados pelos serviços Angular e pelo interceptor mock. Backend ainda não
@@ -34,7 +34,7 @@ paths:
       operationId: login
       summary: Autenticar e iniciar sessão
       description:
-        No mock, aceita somente professor/ipb123; trim e lowercase no usuário. Credenciais inválidas
+        No mock, aceita professor e coordenacao com senha ipb123; trim e lowercase no usuário. Credenciais inválidas
         retornam 401. Persiste somente o DTO da sessão, nunca senha. Em API real, cookie HttpOnly é proposta
         pendente de validação.
       tags:
@@ -112,7 +112,7 @@ paths:
       description: Valida a sessão antes de ativar rotas protegidas. O modo api não confia na sessão local demonstrativa.
       tags:
         - Autenticação
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -159,7 +159,7 @@ paths:
         401). Mock usa sessionStorage; falha no acesso é reportada.
       tags:
         - Autenticação
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '204':
           description: Sucesso; corpo ausente.
@@ -173,7 +173,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -211,11 +211,11 @@ paths:
   /catalogo:
     get:
       operationId: getCatalog
-      summary: Consultar cursos, módulos, professores e critérios
-      description: Catálogo completo, somente leitura. Não há cadastro/edição desses recursos no frontend atual.
+      summary: Consultar o catálogo pedagógico
+      description: Inclui cursos, módulos, lições, coordenação, professores e critérios de avaliação.
       tags:
         - Catálogo
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -238,6 +238,12 @@ paths:
                 professores:
                   - id: professor-01
                     nome: Mariana Oliveira
+                    email: mariana@example.invalid
+                coordenadores:
+                  - id: coordenador-01
+                    nome: Coordenação Pedagógica
+                    cpf: '00000000000'
+                    email: coordenacao@example.invalid
                 criterios:
                   - id: conhecimento-conteudo
                     nome: Conhecimento do conteúdo
@@ -270,6 +276,169 @@ paths:
               example:
                 code: MOCK_FAILURE
                 message: Falha simulada na API.
+    post:
+      operationId: registerCatalogItem
+      summary: Cadastrar coordenação, professor, curso, módulo ou lição
+      description: A coordenação autenticada é associada aos cursos e às lições que cadastra. Módulos são numerados no curso e lições no módulo.
+      tags: [Catálogo]
+      x-authorized-role: coordenacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogRegistration'
+            example: { tipo: curso, nome: Ciência da Computação, area: Tecnologia, cargaHorariaTotal: 3200 }
+      responses:
+        '201':
+          description: Catálogo atualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+              example:
+                cursos:
+                  - { id: curso-01, nome: Ciência da Computação, area: Tecnologia, cargaHorariaTotal: 3200, coordenadorId: coordenador-01, modulos: [] }
+                professores: []
+                criterios: []
+                coordenadores:
+                  - { id: coordenador-01, nome: Coordenação Pedagógica, cpf: '00000000000', email: coordenacao@example.invalid }
+        '403':
+          description: Ação reservada à coordenação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: FORBIDDEN, message: Ação reservada à coordenação pedagógica. }
+        '409':
+          description: CPF, e-mail, número ou título em conflito com o catálogo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: CONFLICT, message: Já existe um módulo com esse número no curso. }
+        '422':
+          description: Dados do cadastro inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: DOMAIN_ERROR, message: Informe um número inteiro positivo. }
+  /turmas/{turmaId}/professores:
+    put:
+      operationId: replaceTeachingAssignments
+      summary: Atualizar professores vinculados à turma
+      description: Substitui o conjunto de vínculos da turma. Deve permanecer pelo menos um professor.
+      tags: [Turmas]
+      x-authorized-role: coordenacao
+      parameters:
+        - name: turmaId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [professorIds]
+              properties:
+                professorIds: { type: array, minItems: 1, items: { type: string } }
+            example: { professorIds: [professor-01, professor-02] }
+      responses:
+        '200':
+          description: Turma com os vínculos atualizados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolClass'
+              example:
+                id: 6a
+                nome: Turma A
+                cursoId: formacao
+                moduloId: identidade
+                coordenadorId: coordenador-01
+                faixaEtaria: Adultos
+                modalidade: Presencial
+                professorId: professor-01
+                leciona:
+                  - { professorId: professor-01, turmaId: 6a }
+                  - { professorId: professor-02, turmaId: 6a }
+                dias: [1, 3]
+                inicio: '08:00'
+                fim: '09:40'
+                ativa: true
+                alunoIds: [aluno-01]
+                matriculas:
+                  - { alunoId: aluno-01, turmaId: 6a, dataMatricula: '2026-11-18' }
+        '403':
+          description: Ação reservada à coordenação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: FORBIDDEN, message: Ação reservada à coordenação pedagógica. }
+  /pontos-mensais:
+    get:
+      operationId: listMonthlyTime
+      summary: Consultar pontos mensais
+      description: O professor consulta seus lançamentos. A coordenação consulta todos os lançamentos.
+      tags: [Ponto mensal]
+      x-authorized-role: [professor, coordenacao]
+      responses:
+        '200':
+          description: Lista de lançamentos.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MonthlyTimeRecord'
+                  total: { type: integer, minimum: 0 }
+              example:
+                items:
+                  - { id: ponto-01, professorId: professor-01, mes: 11, ano: 2026, totalHorasAula: 12.5 }
+                total: 1
+    put:
+      operationId: saveMonthlyTime
+      summary: Registrar ou corrigir ponto mensal
+      description: Atualiza o lançamento do professor autenticado para o mês e ano informados. O total é informado em horas decimais.
+      tags: [Ponto mensal]
+      x-authorized-role: professor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonthlyTimeInput'
+            example: { mes: 11, ano: 2026, totalHorasAula: 12.5 }
+      responses:
+        '200':
+          description: Ponto salvo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyTimeRecord'
+              example: { id: ponto-01, professorId: professor-01, mes: 11, ano: 2026, totalHorasAula: 12.5 }
+        '403':
+          description: Apenas o professor pode lançar o próprio ponto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: FORBIDDEN, message: O ponto mensal deve ser lançado pelo professor. }
+        '422':
+          description: Mês, ano ou total inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: DOMAIN_ERROR, message: Total de horas-aula inválido. }
   /alunos:
     get:
       operationId: listStudents
@@ -279,7 +448,7 @@ paths:
         alunos; avaliações preservam seus nomes históricos.
       tags:
         - Alunos
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -328,7 +497,7 @@ paths:
         paginação da tela são locais.
       tags:
         - Turmas
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -390,7 +559,7 @@ paths:
         proprietário. ativa=false arquiva e preserva histórico. O ID é gerado no servidor.
       tags:
         - Turmas
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '201':
           description: Sucesso.
@@ -431,7 +600,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -512,7 +681,7 @@ paths:
         corpo DELETE deve ser suportado pelo backend e proxies.'
       tags:
         - Turmas
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '204':
           description: Sucesso; corpo ausente.
@@ -535,7 +704,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -610,7 +779,7 @@ paths:
         arquivada. Não remove marcas históricas de matrículas retiradas.
       tags:
         - Turmas
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -651,7 +820,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -740,7 +909,7 @@ paths:
         Escopo por usuário no backend depende de validação.
       tags:
         - Preferências
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -787,7 +956,7 @@ paths:
         ordem das fixações.
       tags:
         - Preferências
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -817,7 +986,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -878,7 +1047,7 @@ paths:
         reutilização automática de aluno existente neste fluxo.
       tags:
         - Alunos
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '201':
           description: Sucesso.
@@ -923,7 +1092,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -995,13 +1164,14 @@ paths:
   /turmas/{turmaId}/alunos/{alunoId}:
     patch:
       operationId: renameStudent
-      summary: Editar nome do aluno matriculado
+      summary: Editar cadastro do aluno matriculado
       description:
-        Turma ativa, aluno existente e matriculado nela. Nome após trim de 1 a 100 caracteres. Atualiza o
+        Turma ativa, aluno existente e matriculado nela. Nome após trim de 1 a 100 caracteres. Os demais
+        campos são opcionais e somente os campos enviados são atualizados. Atualiza o
         cadastro global e listas das outras turmas. Não reescreve nomes em avaliações históricas já salvas.
       tags:
         - Alunos
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1031,7 +1201,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -1115,7 +1285,7 @@ paths:
         matrículas de outras turmas e todas as marcas históricas.
       tags:
         - Alunos
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1156,7 +1326,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -1233,7 +1403,7 @@ paths:
         HTTP; demais filtros são aplicados na tela.
       tags:
         - Aulas
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1340,7 +1510,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: O professor autenticado deve estar vinculado à turma.
           content:
             application/json:
               schema:
@@ -1460,7 +1630,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: O professor autenticado deve estar vinculado à turma.
           content:
             application/json:
               schema:
@@ -1545,7 +1715,7 @@ paths:
         exige que exista aula para a data da chamada.
       tags:
         - Frequência
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1598,7 +1768,7 @@ paths:
         explícita na interface, não um novo campo HTTP. Não valida dias de encontro nem existência de aula.
       tags:
         - Frequência
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1630,7 +1800,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: A sessão não tem permissão para executar a operação.
           content:
             application/json:
               schema:
@@ -1711,7 +1881,7 @@ paths:
         endpoint de edição direta desses legados.
       tags:
         - Avaliações
-      x-authorized-role: professor
+      x-authorized-role: [professor, coordenacao]
       responses:
         '200':
           description: Sucesso.
@@ -1807,7 +1977,7 @@ paths:
                 code: UNAUTHENTICATED
                 message: Entre na sua conta para continuar.
         '403':
-          description: Reservado à autorização do backend; não é emitido no mock com o único perfil atual.
+          description: O professor autenticado deve estar vinculado à turma.
           content:
             application/json:
               schema:
@@ -1914,6 +2084,19 @@ components:
           description: Nome após trim.
           minLength: 1
           maxLength: 100
+        cpf: { type: string, maxLength: 150 }
+        dataNascimento: { type: string, description: Data no formato AAAA-MM-DD ou vazia. }
+        email: { type: string, maxLength: 150 }
+        telefone: { type: string, maxLength: 150 }
+        logradouro: { type: string, maxLength: 150 }
+        numero: { type: string, maxLength: 150 }
+        bairro: { type: string, maxLength: 150 }
+        cidade: { type: string, maxLength: 150 }
+        uf: { type: string, maxLength: 2 }
+        cep: { type: string, maxLength: 150 }
+        nomeMae: { type: string, maxLength: 150 }
+        nomePai: { type: string, maxLength: 150 }
+        coordenadorId: { type: string }
       required:
         - id
         - nome
@@ -1928,7 +2111,7 @@ components:
           description: Nome do usuário.
         perfil:
           type: string
-          const: professor
+          enum: [professor, coordenacao]
       required:
         - id
         - nome
@@ -1938,7 +2121,7 @@ components:
       properties:
         username:
           type: string
-          description: 'No mock: professor; trim e comparação sem maiúsculas.'
+          description: 'No mock: professor ou coordenacao, sem distinção entre maiúsculas e minúsculas.'
         password:
           type: string
           description: 'No mock: credencial pública ipb123.'
@@ -1951,6 +2134,18 @@ components:
         nome:
           type: string
           description: Nome após trim deve ter entre 1 e 100 caracteres.
+        cpf: { type: string, maxLength: 150 }
+        dataNascimento: { type: string, description: Data no formato AAAA-MM-DD ou vazia. }
+        email: { type: string, maxLength: 150 }
+        telefone: { type: string, maxLength: 150 }
+        logradouro: { type: string, maxLength: 150 }
+        numero: { type: string, maxLength: 150 }
+        bairro: { type: string, maxLength: 150 }
+        cidade: { type: string, maxLength: 150 }
+        uf: { type: string, maxLength: 2 }
+        cep: { type: string, maxLength: 150 }
+        nomeMae: { type: string, maxLength: 150 }
+        nomePai: { type: string, maxLength: 150 }
       required:
         - nome
     CourseModule:
@@ -1962,6 +2157,12 @@ components:
         nome:
           type: string
           description: Nome do módulo.
+        cursoId: { type: string }
+        numero: { type: integer, minimum: 1 }
+        curriculo:
+          type: array
+          items:
+            $ref: '#/components/schemas/CurriculumLesson'
         licoes:
           type: array
           items:
@@ -1980,6 +2181,9 @@ components:
         nome:
           type: string
           description: Nome do curso.
+        coordenadorId: { type: string }
+        area: { type: string }
+        cargaHorariaTotal: { type: integer, minimum: 1 }
         modulos:
           type: array
           items:
@@ -1998,7 +2202,11 @@ components:
         professores:
           type: array
           items:
-            $ref: '#/components/schemas/Person'
+            $ref: '#/components/schemas/Teacher'
+        coordenadores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Coordinator'
         criterios:
           type: array
           items:
@@ -2016,12 +2224,14 @@ components:
         cursoId:
           type: string
           description: Curso existente no catálogo.
+        faixaEtaria: { type: string, maxLength: 100 }
+        modalidade: { type: string, maxLength: 100 }
         moduloId:
           type: string
           description: Módulo pertencente ao curso.
         professorId:
           type: string
-          description: Professor existente no catálogo.
+          description: Professor do primeiro vínculo. Ao criar com perfil de professor, a API usa o professor autenticado.
         dias:
           type: array
           items:
@@ -2047,7 +2257,7 @@ components:
             type: string
             description: ID de aluno existente.
           minItems: 1
-          description: Ao menos um aluno. Duplicatas são removidas.
+          description: Ao menos um aluno. Duplicatas são removidas. Um aluno pode ter matrícula em até 10 turmas.
       required:
         - nome
         - cursoId
@@ -2075,7 +2285,18 @@ components:
           description: Módulo pertencente ao curso.
         professorId:
           type: string
-          description: Professor existente no catálogo.
+          description: Professor principal para compatibilidade. Consulte leciona para todos os vínculos.
+        coordenadorId: { type: string }
+        faixaEtaria: { type: string }
+        modalidade: { type: string }
+        matriculas:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrollmentLink'
+        leciona:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeachingAssignment'
         dias:
           type: array
           items:
@@ -2113,6 +2334,88 @@ components:
         - fim
         - ativa
         - alunoIds
+    Teacher:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            cpf: { type: string }
+            email: { type: string, format: email }
+            telefone: { type: string }
+    Coordinator:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          required: [cpf, email]
+          properties:
+            cpf: { type: string }
+            email: { type: string, format: email }
+    CurriculumLesson:
+      type: object
+      required: [id, moduloId, coordenadorId, numero, titulo]
+      properties:
+        id: { type: string }
+        moduloId: { type: string }
+        coordenadorId: { type: string }
+        numero: { type: integer, minimum: 1 }
+        titulo: { type: string, minLength: 1, maxLength: 150 }
+    EnrollmentLink:
+      type: object
+      required: [alunoId, turmaId, dataMatricula]
+      properties:
+        alunoId: { type: string }
+        turmaId: { type: string }
+        dataMatricula:
+          type: [string, 'null']
+          format: date
+          description: Data local da matrícula. Nula para registros antigos sem data conhecida.
+    TeachingAssignment:
+      type: object
+      required: [professorId, turmaId]
+      properties:
+        professorId: { type: string }
+        turmaId: { type: string }
+    MonthlyTimeInput:
+      type: object
+      required: [mes, ano, totalHorasAula]
+      properties:
+        mes: { type: integer, minimum: 1, maximum: 12 }
+        ano: { type: integer, minimum: 1900, maximum: 9999 }
+        totalHorasAula: { type: number, minimum: 0, maximum: 744, description: Até duas casas decimais. }
+    MonthlyTimeRecord:
+      allOf:
+        - $ref: '#/components/schemas/MonthlyTimeInput'
+        - type: object
+          required: [id, professorId]
+          properties:
+            id: { type: string }
+            professorId: { type: string }
+    CatalogRegistration:
+      type: object
+      required: [tipo]
+      properties:
+        tipo: { enum: [coordenador, professor, curso, modulo, licao] }
+        nome: { type: string, minLength: 1, maxLength: 150 }
+        cpf: { type: string }
+        email: { type: string, format: email }
+        telefone: { type: string }
+        area: { type: string, minLength: 1, maxLength: 150 }
+        cargaHorariaTotal: { type: integer, minimum: 1 }
+        cursoId: { type: string }
+        moduloId: { type: string }
+        numero: { type: integer, minimum: 1 }
+        titulo: { type: string, minLength: 1, maxLength: 150 }
+      allOf:
+        - if: { properties: { tipo: { enum: [professor, coordenador] } } }
+          then: { required: [nome, cpf, email] }
+        - if: { properties: { tipo: { const: professor } } }
+          then: { required: [telefone] }
+        - if: { properties: { tipo: { const: curso } } }
+          then: { required: [nome, area, cargaHorariaTotal] }
+        - if: { properties: { tipo: { const: modulo } } }
+          then: { required: [cursoId, nome, numero] }
+        - if: { properties: { tipo: { const: licao } } }
+          then: { required: [cursoId, moduloId, numero, titulo] }
     ClassList:
       type: object
       properties:
@@ -2255,6 +2558,10 @@ components:
             type: string
             description: Texto de lição do módulo informado.
           minItems: 1
+        licaoIds:
+          type: array
+          items: { type: string }
+          description: IDs das lições do currículo associadas ao registro da aula.
         notas:
           type: string
           description: Até 600 caracteres antes de trim. Pode ser vazio.

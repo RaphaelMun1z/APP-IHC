@@ -1,9 +1,0 @@
-// Retain the effective mobile spacing of the original pages, including its global rule.
-@mixin mobile-spacing($selector) {
-  @media (max-width: 48rem) {
-    #{$selector} {
-      padding-top: 6rem;
-      padding-bottom: 2rem;
-    }
-  }
-}

@@ -14,6 +14,7 @@ import { AttendanceStore } from '../attendance/attendance.store';
 import { AssessmentsStore } from '../assessments/assessments.store';
 import { HistoryStore } from '../history/history.store';
 import { localDate } from '../../shared/utils/dates';
+import { courses, defaultClasses } from '../../core/data/catalog';
 
 describe('Regras pedagógicas e acesso do professor', async () => {
   let auth: AuthService;
@@ -27,7 +28,7 @@ describe('Regras pedagógicas e acesso do professor', async () => {
     cursoId: 'formacao',
     moduloId: 'identidade',
     tipo: 'regular',
-    licoes: ['Quem sou eu'],
+    licoes: [courses[0].modulos[0].licoes[0]],
     notas: '',
   });
   const newClass = (): SchoolClass => ({
@@ -61,11 +62,9 @@ describe('Regras pedagógicas e acesso do professor', async () => {
     expect(lessons.records()).toHaveLength(4);
     expect(auth.user()?.perfil).toBe('professor');
   });
-  it('aceita somente credenciais do perfil Professor', async () => {
-    await expect(auth.login('coordenacao', 'ipb123', false)).rejects.toThrow(
-      'Usuário ou senha incorretos.',
-    );
-    expect(auth.user()?.perfil).toBe('professor');
+  it('permite acesso à conta demonstrativa de coordenação', async () => {
+    await auth.login('coordenacao', 'ipb123', false);
+    expect(auth.user()?.perfil).toBe('coordenacao');
   });
   it('mantém senha fora dos armazenamentos e encerra a sessão', async () => {
     expect(sessionStorage.getItem(storageKeys.session)).not.toContain('ipb123');
@@ -74,17 +73,13 @@ describe('Regras pedagógicas e acesso do professor', async () => {
     expect(auth.user()).toBeNull();
     expect(classes.active()).toHaveLength(0);
   });
-  it('permite ao professor salvar registros em qualquer turma', async () => {
+  it('restringe aulas e avaliações ao professor vinculado à turma', async () => {
     const otherLesson = lessons.records().find((item) => item.turmaId === '7a')!;
-    await lessons.save({ ...otherLesson, notas: 'Registro atualizado pelo professor' });
-    expect(lessons.records().find((item) => item.id === otherLesson.id)?.notas).toBe(
-      'Registro atualizado pelo professor',
-    );
+    await expect(lessons.save({ ...otherLesson, notas: 'Outro professor' })).rejects.toMatchObject({ status: 403 });
     const student = classes.roster('7a')[0];
     await attendance.saveMonth('7a', { [localDate()]: { [student.id]: 'presente' } });
     expect(attendance.records()['7a'][localDate()][student.id]).toBe('presente');
-    await assessments.save('demo-aula-7a', assessments.roster('demo-aula-7a'));
-    expect(assessments.records()['demo-aula-7a']).toBeDefined();
+    await expect(assessments.save('demo-aula-7a', assessments.roster('demo-aula-7a'))).rejects.toMatchObject({ status: 403 });
   });
   it('permite ao professor criar e excluir turmas', async () => {
     const created = await classes.save(newClass());
@@ -200,7 +195,7 @@ describe('Regras pedagógicas e acesso do professor', async () => {
     await expect(lessons.save({ ...lesson(), notas: 'x'.repeat(601) })).rejects.toThrow('600');
   });
   it('valida nomes duplicados, horário e matrícula da turma', async () => {
-    await expect(classes.save({ ...newClass(), nome: ' 6º ANO a ' })).rejects.toThrow('esse nome');
+    await expect(classes.save({ ...newClass(), nome: ` ${defaultClasses[0].nome.toUpperCase()} ` })).rejects.toThrow('esse nome');
     await expect(classes.save({ ...newClass(), fim: '07:00' })).rejects.toThrow('horário final');
     await expect(classes.save({ ...newClass(), alunoIds: [] })).rejects.toThrow('aluno válido');
     await expect(classes.save({ ...newClass(), dias: [7] })).rejects.toThrow('dias');

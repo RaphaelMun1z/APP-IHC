@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import { Directive, ElementRef, HostListener, inject, input, OnDestroy } from '@angular/core';
+import { Directive, ElementRef, HostListener, inject, input } from '@angular/core';
+import type { OnDestroy } from '@angular/core';
 
 @Directive({
   selector: '[title]:not(app-modal):not(app-list-header)',

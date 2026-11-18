@@ -1,5 +1,5 @@
 .turmas-table {
-  min-width: 60rem;
+  min-width: 52rem;
 }
 .turmas-table th[scope='row'] {
   text-align: left;
@@ -39,10 +39,16 @@
   font-size: 0.75rem;
   font-weight: 400;
   white-space: nowrap;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 .class-status.archived {
   background: #475569;
   color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .class-status {
+    transition: none;
+  }
 }
 .turmas-bulk-actions {
   display: flex;

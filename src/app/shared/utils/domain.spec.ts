@@ -43,10 +43,10 @@ describe('Datas, navegação e estados', () => {
   });
   it('aceita links antigos e rotas de gestão, restringindo retornos externos', () => {
     expect(safeReturn('./registro-aula.html?turma=6a')).toBe('/registro-aula?turma=6a');
-    expect(safeReturn('//evil.test')).toBe('/inicio');
-    expect(safeReturn('https://evil.test')).toBe('/inicio');
-    expect(safeReturn('/coordenacao')).toBe('/turmas');
-    expect(safeReturn('/coordenacao?busca=Angular')).toBe('/turmas?busca=Angular');
+    expect(safeReturn('//evil.test')).toBe('/turmas');
+    expect(safeReturn('https://evil.test')).toBe('/turmas');
+    expect(safeReturn('/coordenacao')).toBe('/coordenacao');
+    expect(safeReturn('/coordenacao?busca=Angular')).toBe('/coordenacao?busca=Angular');
     expect(safeReturn('/turma-form')).toBe('/turma-form');
     expect(safeReturn('/turmas/6a/gerenciar')).toBe('/turmas/6a/gerenciar');
   });

@@ -21,7 +21,7 @@ import type { AssessmentMark, StudentAssessment } from '../../core/models/domain
 import { ClassesStore } from '../classes/classes.store';
 import { AssessmentsStore, nextAssessment } from './assessments.store';
 import { LessonsStore } from '../lessons/lessons.store';
-import { UnsavedChangesDirective, confirmDiscard } from '../../core/navigation/unsaved-changes';
+import { confirmDiscard } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage } from '../../shared/utils/errors';
@@ -42,7 +42,6 @@ import { Tooltip } from '../../shared/ui/tooltip';
     ReactiveFormsModule,
     RouterLink,
     Feedback,
-    UnsavedChangesDirective,
   ],
   templateUrl: './assessments.html',
   styleUrl: './assessments.scss',
@@ -101,6 +100,10 @@ export class Assessments implements UnsavedChanges {
   readonly group = computed(() =>
     this.classes.get(this.selectedLesson()?.turmaId ?? this.applied().turmaId),
   );
+  readonly canEdit = computed(() => {
+    const group = this.group();
+    return !!group?.ativa && this.classes.canTeach(group.id);
+  });
   readonly listLessons = computed(() =>
     this.lessons
       .records()
@@ -155,7 +158,7 @@ export class Assessments implements UnsavedChanges {
     });
   }
   cycle(studentId: string, criterionId: string): void {
-    if (!this.selectedLesson() || !this.group()?.ativa) return;
+    if (!this.selectedLesson() || !this.canEdit()) return;
     this.rows.update((rows) =>
       rows.map((student) =>
         student.id === studentId
@@ -186,6 +189,7 @@ export class Assessments implements UnsavedChanges {
       this.message.set('Selecione uma aula para salvar a avaliação.');
       return;
     }
+    if (!this.canEdit()) return;
     try {
       await this.store.save(lesson.id, this.rows());
       this.dirty.set(false);

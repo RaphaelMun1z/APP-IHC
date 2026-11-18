@@ -8,7 +8,6 @@ import { ClassesStore } from '../classes/classes.store';
 import { LessonsStore } from './lessons.store';
 import type { LessonType } from '../../core/models/domain';
 import { lessonTypes } from '../../core/models/domain';
-import { UnsavedChangesDirective } from '../../core/navigation/unsaved-changes';
 import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
@@ -17,7 +16,7 @@ import { safeReturn } from '../../core/auth/auth.guards';
 
 @Component({
   selector: 'app-lesson-editor',
-  imports: [Action, ReactiveFormsModule, RouterLink, Feedback, UnsavedChangesDirective],
+  imports: [Action, ReactiveFormsModule, RouterLink, Feedback],
   templateUrl: './lesson-editor.html',
   styleUrl: './lesson-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,22 +31,24 @@ export class LessonEditor implements UnsavedChanges {
   private readonly existing = this.lessons.records().find((lesson) => lesson.id === this.initialId);
   readonly fixedClass = this.route.snapshot.pathFromRoot.some((node) => node.paramMap.has('turma'));
   readonly contextClass = contextParam(this.route.snapshot, 'turma');
+  readonly availableClasses = computed(() => this.classes.active().filter(({ id }) => this.classes.canTeach(id)));
   readonly back = returnTo(
     this.route.snapshot,
-    this.contextClass ? `/turmas/${this.contextClass}/aulas` : '/historico',
+    this.contextClass ? `/turmas/${this.contextClass}/aulas` : '/turmas',
   );
   readonly recordId = signal(this.existing?.id);
   readonly unavailable =
     (!!this.initialId &&
       (!this.existing ||
         !this.classes.get(this.existing.turmaId)?.ativa ||
+        !this.classes.canTeach(this.existing.turmaId) ||
         (!!this.contextClass && this.contextClass !== this.existing.turmaId))) ||
-    (!!this.contextClass && !this.classes.get(this.contextClass)?.ativa);
+    (!!this.contextClass && (!this.classes.get(this.contextClass)?.ativa || !this.classes.canTeach(this.contextClass)));
   readonly form = inject(FormBuilder).nonNullable.group({
     turmaId: [
       this.existing?.turmaId ??
         contextParam(this.route.snapshot, 'turma') ??
-        this.classes.active()[0]?.id ??
+        this.availableClasses()[0]?.id ??
         '',
       Validators.required,
     ],
@@ -103,6 +104,24 @@ export class LessonEditor implements UnsavedChanges {
   }
   selectModule(): void {
     this.form.controls.licoes.setValue([]);
+  }
+  canAdvance(): boolean {
+    if (this.step() === 0) {
+      this.value();
+      const { turmaId, data, cursoId, moduloId } = this.form.getRawValue();
+      return (
+        this.form.controls.turmaId.valid &&
+        this.form.controls.data.valid &&
+        data <= this.today &&
+        this.form.controls.cursoId.valid &&
+        this.form.controls.moduloId.valid &&
+        !!turmaId &&
+        !!cursoId &&
+        !!moduloId
+      );
+    }
+    if (this.step() === 1) return this.selectedLessons().length > 0;
+    return false;
   }
   toggleLesson(lesson: string): void {
     this.form.controls.licoes.setValue(toggleValue(this.form.controls.licoes.value, lesson));

@@ -5,6 +5,7 @@ import { classListReturn } from '../../core/navigation/context';
 import { ClassesStore } from './classes.store';
 import { ClassNavigationState } from '../../core/navigation/class-navigation-state';
 import { Action } from '../../shared/ui/action';
+import { animateRouteView } from '../../core/navigation/page-transition';
 
 @Component({
   selector: 'app-class-shell',
@@ -37,7 +38,7 @@ import { Action } from '../../shared/ui/action';
             [queryParams]="{ retorno: studentListUrl() }"
             >Cadastrar aluno</a
           >
-        } @else if (isSelected('aulas') && group()?.ativa) {
+        } @else if (isSelected('aulas') && group()?.ativa && classes.canTeach(id())) {
           <a
             appAction="add"
             class="app-button primary class-toolbar-action"
@@ -48,7 +49,7 @@ import { Action } from '../../shared/ui/action';
         }
       </div>
 
-      <router-outlet (activate)="updateSection()" />
+      <router-outlet (activate)="updateSection(); animateSection()" />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,12 +66,15 @@ export class ClassShell {
         .root.children['primary']?.segments.map((segment) => segment.path) ?? [];
     const section = segments[2] ?? '';
     this.section.set(
-      section === 'alunos' && segments[3] === 'novo'
+      section === 'alunos' && segments[3]
         ? 'student-registration'
         : section === 'registros'
           ? 'lesson'
           : section,
     );
+  }
+  animateSection(): void {
+    animateRouteView('.class-workspace > router-outlet + *');
   }
   revealTab(link: HTMLAnchorElement): void {
     link.scrollIntoView({ block: 'nearest', inline: 'nearest' });

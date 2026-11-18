@@ -2,7 +2,8 @@
 import type { Session } from '../../models/domain';
 import { isSession } from '../../data/validators';
 import { storageKeys } from '../../data/storage-keys';
-import { demoAccess } from '../../auth/demo-access';
+import { demoAccess, demoCoordinationUsername } from '../../auth/demo-access';
+import { demoCoordinator, teachers } from '../../data/catalog';
 
 @Injectable({ providedIn: 'root' })
 export class MockSession {
@@ -14,9 +15,10 @@ export class MockSession {
   login(username: string, password: string, remember: boolean): void {
     const role = username.trim().toLowerCase();
     // Public demonstration access, retained from the original app; this is not server authentication.
-    if (role !== demoAccess.username || password !== demoAccess.password)
+    if ((role !== demoAccess.username && role !== demoCoordinationUsername) || password !== demoAccess.password)
       throw new Error('Usuário ou senha incorretos.');
-    const user: Session = { id: 'professor-01', nome: 'Mariana Oliveira', perfil: role };
+    const { id, nome } = role === demoCoordinationUsername ? demoCoordinator : teachers[0];
+    const user: Session = { id, nome, perfil: role };
     try {
       sessionStorage.setItem(storageKeys.session, JSON.stringify(user));
     } catch {

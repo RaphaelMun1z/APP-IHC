@@ -8,6 +8,7 @@ import { contextParam } from '../../core/navigation/context';
 import { LessonsStore } from './lessons.store';
 import { LessonTabs } from './lesson-tabs';
 import { filter, map } from 'rxjs';
+import { animateRouteView } from '../../core/navigation/page-transition';
 
 @Component({
   selector: 'app-lesson-workspace',
@@ -17,7 +18,7 @@ import { filter, map } from 'rxjs';
       @if (lesson(); as item) {
         <div class="lesson-navigation">
           <app-lesson-tabs [classId]="item.turmaId" [lessonId]="item.id" [date]="item.data" />
-          @if (classes.get(item.turmaId)?.ativa && overviewOpen()) {
+          @if (classes.get(item.turmaId)?.ativa && classes.canTeach(item.turmaId) && overviewOpen()) {
             <a
               appAction="edit"
               class="app-button primary lesson-edit-button"
@@ -27,7 +28,7 @@ import { filter, map } from 'rxjs';
             >
           }
         </div>
-        <router-outlet />
+        <router-outlet (activate)="animateSection()" />
       } @else {
         <main class="app-page surface content-scroll record-page">
           <p class="app-empty" role="status">A aula não existe ou pertence a outra turma.</p>
@@ -42,6 +43,9 @@ export class LessonWorkspace {
   private readonly route = inject(ActivatedRoute);
   private readonly lessons = inject(LessonsStore);
   readonly classes = inject(ClassesStore);
+  animateSection(): void {
+    animateRouteView('.lesson-workspace > router-outlet + *');
+  }
   private readonly router = inject(Router);
   private readonly activeUrl = toSignal(
     this.router.events.pipe(

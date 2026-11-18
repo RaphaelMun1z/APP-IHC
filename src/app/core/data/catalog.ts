@@ -1,4 +1,18 @@
-import type { Student, Criterion, Person, Course, SchoolClass } from '../models/domain';
+import type {
+  Coordinator,
+  Student,
+  Criterion,
+  Teacher,
+  Course,
+  SchoolClass,
+} from '../models/domain';
+
+export const demoCoordinator: Coordinator = {
+  id: 'coordenador-01',
+  nome: 'Coordenação Pedagógica',
+  cpf: '00000000000',
+  email: 'coordenacao@example.invalid',
+};
 
 export const students: readonly Student[] = [
   'Ana Clara Santos',
@@ -16,7 +30,11 @@ export const students: readonly Student[] = [
   'Mariana Gomes',
   'Pedro Henrique Alves',
   'Vitória Nascimento',
-].map((nome, i) => ({ id: `aluno-${String(i + 1).padStart(2, '0')}`, nome }));
+].map((nome, i) => ({
+  id: `aluno-${String(i + 1).padStart(2, '0')}`,
+  nome,
+  coordenadorId: demoCoordinator.id,
+}));
 
 export const criteria: readonly Criterion[] = [
   ['dominio-conteudo', 'Domínio do conteúdo'],
@@ -31,9 +49,9 @@ export const criteria: readonly Criterion[] = [
   ['entrega-prazo', 'Entrega no prazo'],
 ].map(([id, nome]) => ({ id, nome }));
 
-export const teachers: readonly Person[] = [
-  { id: 'professor-01', nome: 'Mariana Oliveira' },
-  { id: 'professor-02', nome: 'Rafael Santos' },
+export const teachers: readonly Teacher[] = [
+  { id: 'professor-01', nome: 'Mariana Oliveira', email: 'mariana@example.invalid' },
+  { id: 'professor-02', nome: 'Rafael Santos', email: 'rafael@example.invalid' },
 ];
 
 export const courses: readonly Course[] = [
@@ -89,7 +107,24 @@ export const courses: readonly Course[] = [
       },
     ],
   },
-];
+].map((course, index) => ({
+  ...course,
+  coordenadorId: demoCoordinator.id,
+  area: index === 0 ? 'Tecnologia' : 'Gestão',
+  cargaHorariaTotal: index === 0 ? 3200 : 3000,
+  modulos: course.modulos.map((module, index) => ({
+    ...module,
+    cursoId: course.id,
+    numero: index + 1,
+    curriculo: module.licoes.map((titulo, index) => ({
+      id: `${module.id}-${index + 1}`,
+      moduloId: module.id,
+      coordenadorId: demoCoordinator.id,
+      numero: index + 1,
+      titulo,
+    })),
+  })),
+}));
 
 export const defaultClasses: readonly SchoolClass[] = [
   {
@@ -132,4 +167,13 @@ export const defaultClasses: readonly SchoolClass[] = [
     inicio: '20:50',
     fim: '22:30',
   },
-].map((turma) => ({ ...turma, ativa: true, alunoIds: students.map((aluno) => aluno.id) }));
+].map((turma) => ({
+  ...turma,
+  ativa: true,
+  coordenadorId: demoCoordinator.id,
+  faixaEtaria: 'Adultos',
+  modalidade: 'Presencial',
+  alunoIds: students.map((aluno) => aluno.id),
+  matriculas: students.map(({ id }) => ({ alunoId: id, turmaId: turma.id, dataMatricula: null })),
+  leciona: [{ professorId: turma.professorId, turmaId: turma.id }],
+}));

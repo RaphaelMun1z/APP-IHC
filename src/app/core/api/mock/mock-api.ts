@@ -6,12 +6,15 @@ import { MockClassesRepository } from './classes.repository';
 import { MockLessonsRepository } from './lessons.repository';
 import { MockAttendanceRepository } from './attendance.repository';
 import { MockAssessmentsRepository } from './assessments.repository';
+import { MockCatalogRepository } from './catalog.repository';
+import { MockMonthlyTimeRepository } from './monthly-time.repository';
 import { initializeDemoData } from '../../data/demo-data';
 import { StorageService } from '../../data/storage.service';
 import { isAssessments, isAttendance, isClass, isLessons } from '../../data/validators';
-import type { LessonRequest, ListResponse } from '../contracts';
+import type { LessonRequest, ListResponse, StudentRequest } from '../contracts';
 import { ApiFailure } from '../contracts';
 import type { AttendanceData, SchoolClass, StudentAssessment } from '../../models/domain';
+import { studentFields } from '../../models/domain';
 
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -22,13 +25,33 @@ function badRequest(): never {
     message: 'Formato da requisição inválido.',
   });
 }
-function studentName(value: unknown): string {
+function studentBody(value: unknown): StudentRequest {
   if (!object(value) || typeof value['nome'] !== 'string') return badRequest();
-  return value['nome'];
+  const input: StudentRequest = { nome: value['nome'] };
+  for (const field of Object.keys(studentFields) as (keyof typeof studentFields)[]) {
+    const entry = value[field];
+    if (entry === undefined) continue;
+    if (typeof entry !== 'string') return badRequest();
+    input[field] = entry;
+  }
+  return input;
 }
 function classBody(value: unknown, id: string): SchoolClass {
   if (!object(value)) return badRequest();
-  const input = { ...value, id, dias: [] };
+  const input = {
+    id,
+    dias: [],
+    nome: value['nome'],
+    cursoId: value['cursoId'],
+    moduloId: value['moduloId'],
+    professorId: value['professorId'],
+    inicio: value['inicio'],
+    fim: value['fim'],
+    ativa: value['ativa'],
+    alunoIds: value['alunoIds'],
+    faixaEtaria: value['faixaEtaria'],
+    modalidade: value['modalidade'],
+  };
   if (
     !isClass(input) ||
     !Array.isArray(value['dias']) ||
@@ -136,12 +159,17 @@ export class MockApi {
     const lessons = inject(MockLessonsRepository);
     const attendance = inject(MockAttendanceRepository);
     const assessments = inject(MockAssessmentsRepository);
-    if (path === '/catalogo' && method === 'GET')
-      return reply({
-        cursos: classes.courses,
-        professores: classes.teachers,
-        criterios: assessments.criteria,
-      });
+    if (path === '/catalogo') {
+      const catalog = inject(MockCatalogRepository);
+      if (method === 'GET') return reply(catalog.snapshot());
+      if (method === 'POST')
+        return reply(catalog.register(object(body) ? body : badRequest()), 201);
+    }
+    if (path === '/pontos-mensais') {
+      const points = inject(MockMonthlyTimeRepository);
+      if (method === 'GET') return reply(list(points.list()));
+      if (method === 'PUT') return reply(points.save(object(body) ? body : badRequest()));
+    }
     if (path === '/alunos' && method === 'GET') return reply(list(classes.students));
     if (path === '/turmas/fixadas' && method === 'GET')
       return reply({ turmaIds: classes.pinned().map((group) => group.id) });
@@ -192,13 +220,21 @@ export class MockApi {
         return reply({ turmaIds: classes.pinned().map((group) => group.id) });
       }
       if (parts.length === 3 && child === 'alunos' && method === 'POST') {
-        const aluno = classes.addStudent(id, studentName(body));
+        const aluno = classes.addStudent(id, studentBody(body));
         return reply({ aluno, turma: classes.require(id) }, 201);
+      }
+      if (parts.length === 3 && child === 'professores' && method === 'PUT') {
+        if (
+          !object(body) ||
+          !Array.isArray(body['professorIds']) ||
+          !body['professorIds'].every((id: unknown) => typeof id === 'string')
+        )
+          return badRequest();
+        return reply(classes.assignTeachers(id, body['professorIds']));
       }
       if (parts.length === 4 && child === 'alunos') {
         if (method === 'PATCH') {
-          classes.renameStudent(id, childId, studentName(body));
-          return reply(classes.students.find((student) => student.id === childId));
+          return reply(classes.updateStudent(id, childId, studentBody(body)));
         }
         if (method === 'DELETE') {
           classes.removeStudent(id, childId);
