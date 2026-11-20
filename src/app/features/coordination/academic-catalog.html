@@ -17,7 +17,7 @@
       @case ('cadastros') {
         <section class="form-wizard-panel">
           <form
-            class="form-wizard-field-stack"
+            class="form-grid"
             #cadastro="ngForm"
             (ngSubmit)="register(cadastro)"
             (input)="catalogMessage.set('')"
@@ -110,10 +110,10 @@
                   maxlength="150"
               /></label>
             }
-            <div>
+            <div class="app-actions">
               <button
                 appAction="save"
-                class="primary"
+                class="app-button form-action primary"
                 type="submit"
                 [disabled]="cadastro.invalid || requests.saving()"
               >
@@ -125,7 +125,7 @@
         </section>
       }
       @case ('vinculos') {
-        <section class="form-wizard-panel">
+        <section class="form-wizard-panel form-grid">
           <label class="field"
             >Turma
             <select [value]="classId()" (change)="changeClass($event)">
@@ -153,7 +153,7 @@
             </fieldset>
             <button
               appAction="save"
-              class="primary"
+              class="app-button form-action primary"
               type="button"
               (click)="saveTeachers()"
               [disabled]="!assignmentDirty() || !selected().length || requests.saving()"
@@ -162,11 +162,11 @@
             </button>
           }
           <app-feedback [message]="assignmentMessage()" [error]="assignmentError()" />
-          <a appAction="add" class="app-button" routerLink="/turma-form">Nova turma</a>
+          <a appAction="add" class="app-button form-action" routerLink="/turma-form">Nova turma</a>
         </section>
       }
       @default {
-        <label class="field"
+        <label class="field standalone-field"
           >Buscar no catálogo<input
             type="search"
             placeholder="Curso, módulo, lição ou pessoa"

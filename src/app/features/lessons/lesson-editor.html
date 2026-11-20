@@ -14,7 +14,7 @@
     } @else {
       <form class="registro-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
         <header class="form-wizard-header">
-          <a appAction="close" class="form-wizard-cancel" [routerLink]="backLink">Cancelar</a>
+          <a appAction="close" class="app-button form-action danger" [routerLink]="backLink">Cancelar</a>
         </header>
         <div class="form-wizard-layout">
           <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
@@ -41,7 +41,7 @@
             <section class="form-wizard-panel" [hidden]="step() !== 0">
               <h2>Informações da aula</h2>
               <p>Defina a turma, a data e o conteúdo da aula.</p>
-              <div class="form-wizard-field-stack">
+              <div class="form-grid">
                 <fieldset class="form-wizard-choice">
                   <legend>Turma</legend>
                   <div class="form-wizard-option-list">
@@ -114,42 +114,46 @@
                 Marque uma ou mais lições trabalhadas nesta aula. {{ selectedLessons().length }}
                 selecionadas.
               </p>
-              <fieldset class="form-wizard-choice">
-                <legend>Lições</legend>
-                <div class="form-wizard-option-list">
-                  @for (lesson of availableLessons(); track lesson) {
-                    <label class="form-wizard-option"
-                      ><input
-                        type="checkbox"
-                        [checked]="selectedLessons().includes(lesson)"
-                        (change)="toggleLesson(lesson)"
-                      /><span>{{ lesson }}</span></label
-                    >
-                  } @empty {
-                    <p class="form-wizard-hint">
-                      Selecione um curso e um módulo para ver as lições.
-                    </p>
-                  }
-                </div>
-              </fieldset>
+              <div class="form-grid">
+                <fieldset class="form-wizard-choice">
+                  <legend>Lições</legend>
+                  <div class="form-wizard-option-list">
+                    @for (lesson of availableLessons(); track lesson) {
+                      <label class="form-wizard-option"
+                        ><input
+                          type="checkbox"
+                          [checked]="selectedLessons().includes(lesson)"
+                          (change)="toggleLesson(lesson)"
+                        /><span>{{ lesson }}</span></label
+                      >
+                    } @empty {
+                      <p class="form-wizard-hint">
+                        Selecione um curso e um módulo para ver as lições.
+                      </p>
+                    }
+                  </div>
+                </fieldset>
+              </div>
             </section>
             <section class="form-wizard-panel" [hidden]="step() !== 2">
               <h2>Observações</h2>
               <p>Adicione algum contexto importante sobre esta aula (opcional).</p>
-              <label class="registro-field"
-                >Observações<textarea
-                  rows="4"
-                  formControlName="notas"
-                  maxlength="600"
-                  placeholder="Algum contexto importante sobre a aula?"
-                ></textarea>
-              </label>
+              <div class="form-grid">
+                <label class="registro-field form-grid-wide"
+                  >Observações<textarea
+                    rows="4"
+                    formControlName="notas"
+                    maxlength="600"
+                    placeholder="Algum contexto importante sobre a aula?"
+                  ></textarea>
+                </label>
+              </div>
             </section>
             <app-feedback [message]="message()" [error]="isError()" />
             <nav class="form-wizard-actions" aria-label="Navegação das etapas">
               @if (step() < steps.length - 1) {
                 <button
-                  class="primary"
+                  class="app-button form-action primary"
                   type="button"
                   data-step-next
                   [disabled]="!canAdvance()"
@@ -160,14 +164,14 @@
                   >
                 </button>
               } @else {
-                <button appAction="save" class="primary" type="submit" data-step-save>
+                <button appAction="save" class="app-button form-action primary" type="submit" data-step-save>
                   {{ recordId() ? 'Salvar alterações' : 'Salvar registro' }}
                 </button>
               }
               @if (step() > 0) {
                 <button
                   appAction="arrow_back"
-                  class="form-wizard-back"
+                  class="app-button form-action"
                   type="button"
                   (click)="goToStep(step() - 1)"
                 >
@@ -178,14 +182,14 @@
             @if (saved()) {
               <div class="app-actions">
                 <a
-                  class="app-button primary"
+                  class="app-button form-action primary"
                   routerLink="/presencas"
                   [queryParams]="{
                     turma: form.controls.turmaId.value,
                     data: form.controls.data.value,
                   }"
                   >Registrar frequência</a
-                ><a class="app-button" routerLink="/turmas">Consultar turmas</a>
+                ><a class="app-button form-action" routerLink="/turmas">Consultar turmas</a>
               </div>
             }
           </div>

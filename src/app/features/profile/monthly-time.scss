@@ -1,0 +1,136 @@
+.monthly-workspace {
+  padding: var(--content-pad, 1.5rem);
+  display: grid;
+  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr);
+  min-height: 0;
+  gap: 1.5rem;
+}
+.period-sidebar {
+  border-right: 1px solid var(--color-divider);
+  padding-right: 1rem;
+}
+.period-sidebar h2,
+.period-header h2 {
+  margin: 0;
+  color: var(--color-text);
+}
+.period-sidebar h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+.period-sidebar nav {
+  display: grid;
+  gap: 0.25rem;
+}
+.period-sidebar button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-secondary-text);
+  font-size: var(--font-size-help);
+  font-weight: 500;
+}
+.period-sidebar button span {
+  text-transform: capitalize;
+}
+.period-sidebar button small {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+}
+.period-sidebar button:hover {
+  background: var(--color-surface-muted);
+}
+.period-sidebar button[aria-current] {
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+  background: var(--color-surface-muted);
+  font-weight: 650;
+}
+.monthly-main {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+.period-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.period-header h2 {
+  font-size: 1.35rem;
+  text-transform: capitalize;
+}
+.monthly-entry-form {
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--color-surface);
+}
+.monthly-entry-form h3,
+.table-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+.hours-field small:not(.field-error) {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.monthly-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: 1rem;
+}
+.monthly-table {
+  min-width: 30rem;
+}
+.monthly-workspace.form-open {
+  display: block;
+  min-height: 0;
+}
+.form-open .monthly-entry-form {
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.form-open .monthly-entry-form h3 {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  text-align: center;
+}
+.form-open .monthly-actions {
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+@media (max-width: 700px) {
+  .monthly-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .period-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-divider);
+    padding: 0 0 0.75rem;
+  }
+  .period-sidebar nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .period-sidebar button {
+    flex: 0 0 auto;
+  }
+  .period-header {
+    align-items: flex-start;
+  }
+}

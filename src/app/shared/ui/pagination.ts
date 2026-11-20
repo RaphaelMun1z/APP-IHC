@@ -1,3 +1,4 @@
+import { pageItems } from '../utils/collections';
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Tooltip } from './tooltip';
@@ -13,7 +14,7 @@ export class TablePage {
     Math.min(this.page(), Math.max(1, Math.ceil(this.count() / this.size()))),
   );
   slice<T>(values: readonly T[]): readonly T[] {
-    return values.slice((this.current() - 1) * this.size(), this.current() * this.size());
+    return pageItems(values, { page: this.current(), pageSize: this.size() });
   }
   resize(size: number): void {
     this.size.set(size);

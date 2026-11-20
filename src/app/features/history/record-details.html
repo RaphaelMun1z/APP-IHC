@@ -8,28 +8,16 @@
       <app-lesson-tabs [classId]="item.turmaId" [lessonId]="item.id" [date]="item.data" />
     }
     <section class="overview-grid lesson-overview" aria-label="Visão geral da aula">
-      <article class="overview-card">
-        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">event</span>
-        <h2>Data da aula</h2>
+      <article appOverviewCard icon="event" heading="Data da aula">
         <p class="overview-card-value">{{ formatDate(item.data) }}</p>
       </article>
-      <article class="overview-card">
-        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">groups</span>
-        <h2>Turma</h2>
+      <article appOverviewCard icon="groups" heading="Turma">
         <p class="overview-card-value">{{ classes.get(item.turmaId)?.nome ?? '—' }}</p>
       </article>
-      <article class="overview-card">
-        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
-          >category</span
-        >
-        <h2>Tipo de aula</h2>
+      <article appOverviewCard icon="category" heading="Tipo de aula">
         <p class="overview-card-value">{{ types[item.registro.tipo] }}</p>
       </article>
-      <article class="overview-card">
-        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
-          >menu_book</span
-        >
-        <h2>Curso e módulo</h2>
+      <article appOverviewCard icon="menu_book" heading="Curso e módulo">
         <p class="overview-card-value">
           {{ classes.course(item.registro.cursoId)?.nome ?? '—' }}
         </p>
@@ -40,11 +28,7 @@
           }}
         </p>
       </article>
-      <article class="overview-card">
-        <span class="overview-card-icon material-symbols-outlined" aria-hidden="true"
-          >checklist</span
-        >
-        <h2>Conteúdos registrados</h2>
+      <article appOverviewCard icon="checklist" heading="Conteúdos registrados">
         <ul class="lesson-content-tags">
           @for (lesson of item.registro.licoes; track lesson) {
             <li class="lesson-content-tag">{{ lesson }}</li>
@@ -52,9 +36,7 @@
         </ul>
       </article>
       @if (item.registro.notas) {
-        <article class="overview-card">
-          <span class="overview-card-icon material-symbols-outlined" aria-hidden="true">notes</span>
-          <h2>Observações</h2>
+        <article appOverviewCard icon="notes" heading="Observações">
           <p class="notes">{{ item.registro.notas }}</p>
         </article>
       }

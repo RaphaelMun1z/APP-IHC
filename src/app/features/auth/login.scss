@@ -5,7 +5,7 @@
   overflow: hidden;
   margin: 0;
   padding: 0;
-  background: #fff;
+  background: var(--color-surface);
   color: #171717;
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +18,7 @@
   height: 100dvh;
   min-height: 0;
   overflow: hidden;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .app-login-story {
@@ -30,7 +30,7 @@
   gap: 3rem;
   padding: clamp(1.5rem, 3vw, 3rem);
   overflow: hidden;
-  color: #fff;
+  color: var(--color-surface);
   background: #4e4035;
 }
 .app-login-photo {
@@ -53,7 +53,7 @@
 .app-login-wordmark {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 .app-login-logo {
   display: block;
@@ -100,7 +100,7 @@
 .app-login-heading p {
   margin: 0.5rem 0 0;
   color: #717477;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   line-height: 1.5;
 }
 
@@ -108,8 +108,8 @@
   position: relative;
   height: 3.5rem;
   border: 1px solid #e1e1e6;
-  border-radius: 0.5rem;
-  background: #fff;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
 }
 .app-login-field + .app-login-field {
   margin-top: 1rem;
@@ -161,9 +161,9 @@
 }
 .app-login-forgot {
   display: block;
-  min-height: 2.75rem;
+  min-height: var(--control-height);
   margin-top: 0.25rem;
-  font-size: 0.8125rem;
+  font-size: var(--font-size-help);
   line-height: 1.5;
 }
 
@@ -172,10 +172,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  min-height: 2.75rem;
+  gap: var(--space-4);
+  min-height: var(--control-height);
   color: #717477;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   line-height: 1.5;
   cursor: pointer;
 }
@@ -204,7 +204,7 @@
   width: calc(1.5rem - 2px);
   height: calc(1.5rem - 2px);
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-surface);
   transition: transform 150ms;
 }
 .app-login-remember input:checked + .app-login-switch {
@@ -231,7 +231,7 @@
   border: 0;
   border-radius: 999px;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   font-weight: 600;
   line-height: 1.5;
   cursor: pointer;
@@ -241,7 +241,7 @@
   margin-top: 1rem;
   border: 1px solid #6943e9;
   background: #7652ff;
-  color: #fff;
+  color: var(--color-surface);
 }
 .app-login-submit:hover {
   background: #6641ee;
@@ -249,7 +249,7 @@
 .app-login-divider {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   margin: 1.25rem 0.75rem;
   color: #808487;
   font-size: 0.6875rem;
@@ -280,23 +280,23 @@
   margin: 1rem 0 0;
   color: #717477;
   text-align: center;
-  font-size: 0.8125rem;
+  font-size: var(--font-size-help);
   line-height: 1.5;
 }
 .app-login-signup button {
-  min-height: 2.75rem;
+  min-height: var(--control-height);
 }
 .app-login-dev {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
-  min-height: 2.75rem;
+  min-height: var(--control-height);
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
   border: 1px dashed #d5d5da;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-control);
   background: transparent;
   color: #717477;
   font: inherit;
@@ -326,7 +326,7 @@
 .app-login #login-error {
   margin-top: 1rem;
   padding: 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
 }
 
 @media (max-width: 47.99rem) {

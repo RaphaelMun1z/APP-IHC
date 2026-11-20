@@ -404,10 +404,10 @@ paths:
                 items:
                   - { id: ponto-01, professorId: professor-01, mes: 11, ano: 2026, totalHorasAula: 12.5 }
                 total: 1
-    put:
-      operationId: saveMonthlyTime
-      summary: Registrar ou corrigir ponto mensal
-      description: Atualiza o lançamento do professor autenticado para o mês e ano informados. O total é informado em horas decimais.
+    post:
+      operationId: createMonthlyTime
+      summary: Registrar horas-aula do mês
+      description: Cria um único lançamento por professor, mês e ano. Após o registro, o total é definitivo. O total é informado em horas decimais.
       tags: [Ponto mensal]
       x-authorized-role: professor
       requestBody:
@@ -418,7 +418,7 @@ paths:
               $ref: '#/components/schemas/MonthlyTimeInput'
             example: { mes: 11, ano: 2026, totalHorasAula: 12.5 }
       responses:
-        '200':
+        '201':
           description: Ponto salvo.
           content:
             application/json:
@@ -432,6 +432,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
               example: { code: FORBIDDEN, message: O ponto mensal deve ser lançado pelo professor. }
+        '409':
+          description: Já existe um lançamento do professor para esse período.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: { code: MONTHLY_TIME_EXISTS, message: Você já lançou as horas-aula deste mês. Escolha outro período. }
         '422':
           description: Mês, ano ou total inválido.
           content:

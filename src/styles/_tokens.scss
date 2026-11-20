@@ -9,6 +9,17 @@
   --color-primary-hover: #1d4ed8;
   --color-success: #15803d;
   --color-danger: #b91c1c;
+  --color-surface: #fff;
+  --color-surface-muted: #f8fafc;
+  --color-divider: #e2e8f0;
+  --color-secondary-text: #334155;
+  --form-width: 32rem;
+  --form-action-width: 12rem;
+  --color-danger-hover: #991b1b;
+  --control-height: 2.75rem;
+  --font-size-control: 0.875rem;
+  --font-size-help: 0.8125rem;
+  --space-3: 0.75rem;
   --font-family: 'Inter', sans-serif;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -16,6 +27,6 @@
   --space-6: 1.5rem;
   --radius-control: 0.5rem;
   --radius-button: var(--radius-control);
-  --radius-panel: 0.5rem;
-  --radius-tag: 999px;
+  --radius-panel: var(--radius-control);
+  --radius-tag: var(--radius-control);
 }

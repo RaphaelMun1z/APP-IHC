@@ -40,11 +40,13 @@ function isMonthlyTime(value: unknown): value is MonthlyTimeRecord[] {
 export class MockMonthlyTimeRepository {
   private readonly storage = inject(StorageService);
   private readonly auth = inject(MockSession);
-  private readonly records = this.storage.collection<readonly MonthlyTimeRecord[]>(
-    storageKeys.monthlyTime,
-    [],
-    isMonthlyTime,
-  );
+  private records(): readonly MonthlyTimeRecord[] {
+    return this.storage.read<readonly MonthlyTimeRecord[]>(
+      storageKeys.monthlyTime,
+      [],
+      isMonthlyTime,
+    );
+  }
 
   list(): readonly MonthlyTimeRecord[] {
     const user = this.auth.user();
@@ -53,7 +55,7 @@ export class MockMonthlyTimeRepository {
     );
   }
 
-  save(input: Record<string, unknown>): MonthlyTimeRecord {
+  create(input: Record<string, unknown>): MonthlyTimeRecord {
     const user = this.auth.user();
     if (user?.perfil !== 'professor')
       throw new ApiFailure(403, {
@@ -63,20 +65,24 @@ export class MockMonthlyTimeRepository {
     if (!timeInput(input))
       throw new Error('Informe mês, ano e horas válidos, com até duas casas decimais.');
     const { mes, ano, totalHorasAula } = input;
-    const previous = this.records().find(
+    const records = this.records();
+    const exists = records.some(
       (row) => row.professorId === user.id && row.mes === mes && row.ano === ano,
     );
+    if (exists) {
+      throw new ApiFailure(409, {
+        code: 'MONTHLY_TIME_EXISTS',
+        message: 'Você já lançou as horas-aula deste mês. Escolha outro período.',
+      });
+    }
     const record = {
-      id: previous?.id ?? crypto.randomUUID(),
+      id: crypto.randomUUID(),
       professorId: user.id,
       mes,
       ano,
       totalHorasAula,
     };
-    this.storage.write(storageKeys.monthlyTime, [
-      ...this.records().filter((row) => row.id !== record.id),
-      record,
-    ]);
+    this.storage.write(storageKeys.monthlyTime, [...records, record]);
     return record;
   }
 }

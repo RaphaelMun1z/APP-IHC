@@ -30,7 +30,14 @@
             spellcheck="false"
             placeholder="Seu usuário"
             required
+            [attr.aria-invalid]="form.controls.username.touched && form.controls.username.invalid"
+            aria-describedby="username-error"
           />
+          @if (form.controls.username.touched && form.controls.username.invalid) {
+            <small class="field-error" id="username-error">{{
+              form.controls.username.errors | fieldError
+            }}</small>
+          }
         </div>
         <div class="app-login-field app-login-password">
           <label for="senha">Senha</label>
@@ -42,7 +49,14 @@
             autocomplete="current-password"
             placeholder="Sua senha"
             required
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            aria-describedby="password-error"
           />
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <small class="field-error" id="password-error">{{
+              form.controls.password.errors | fieldError
+            }}</small>
+          }
         </div>
         <button
           id="forgot-password"

@@ -6,27 +6,3 @@
   max-width: none;
   margin: 0;
 }
-.registro-field {
-  display: grid;
-  gap: 0.5rem;
-  color: #334155;
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-.registro-field input,
-.registro-field select,
-.registro-field textarea {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: #fff;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.875rem;
-}
-.registro-field textarea {
-  min-height: 6rem;
-  resize: vertical;
-}

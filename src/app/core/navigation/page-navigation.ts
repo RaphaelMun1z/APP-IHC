@@ -129,7 +129,7 @@ export class PageNavigation {
       title = this.auth.user()?.perfil === 'coordenacao' ? 'Turmas' : 'Minhas turmas';
       add('Turmas', '/turmas');
     } else if (root === 'coordenacao' || root === 'pontos-mensais') {
-      title = root === 'coordenacao' ? 'Coordenação pedagógica' : 'Ponto mensal';
+      title = root === 'coordenacao' ? 'Coordenação pedagógica' : 'Lançamento de horas-aula';
       crumbs.push(classes);
       add(title, '/' + root);
       if (root === 'coordenacao' && segments[1]) {

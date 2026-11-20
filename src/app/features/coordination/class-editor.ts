@@ -1,6 +1,7 @@
+import { requiredText } from '../../shared/utils/form-validators';
 import { Action } from '../../shared/ui/action';
 import { contextParam, returnTo } from '../../core/navigation/context';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClassesStore } from '../classes/classes.store';
@@ -9,6 +10,8 @@ import type { UnsavedChanges } from '../../core/navigation/unsaved-changes';
 import { Feedback } from '../../shared/ui/feedback';
 import { errorMessage, toggleValue } from '../../shared/utils/errors';
 import { weekdays } from '../../shared/utils/dates';
+import { classMeetings, validMeetingTime } from '../../core/data/academic-records';
+import type { ClassMeeting } from '../../core/models/domain';
 import { ConfirmDialogService } from '../../shared/ui/confirm-dialog';
 @Component({
   selector: 'app-class-editor',
@@ -38,17 +41,17 @@ export class ClassEditor implements UnsavedChanges {
   readonly step = signal(0);
   readonly furthestStep = signal(0);
   readonly form = inject(FormBuilder).nonNullable.group({
-    nome: [this.existing?.nome ?? '', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(60)]],
+    nome: [this.existing?.nome ?? '', requiredText(60)],
     cursoId: [this.existing?.cursoId ?? '', Validators.required],
     moduloId: [this.existing?.moduloId ?? '', Validators.required],
     professorId: [this.existing?.professorId ?? (this.pickProfessor ? '' : this.auth.user()?.id ?? ''), Validators.required],
-    faixaEtaria: [this.existing?.faixaEtaria ?? '', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(100)]],
-    modalidade: [this.existing?.modalidade ?? '', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(100)]],
-    inicio: [this.existing?.inicio ?? '08:00', Validators.required],
-    fim: [this.existing?.fim ?? '08:50', Validators.required],
+    faixaEtaria: [this.existing?.faixaEtaria ?? '', requiredText(100)],
+    modalidade: [this.existing?.modalidade ?? '', requiredText(100)],
     ativa: this.existing?.ativa ?? true,
   });
-  readonly days = signal<readonly number[]>(this.existing?.dias ?? []);
+  readonly meetings = signal<ClassMeeting[]>(this.existing ? classMeetings(this.existing) : []);
+  readonly selectedDays = computed(() => this.meetings().map(({ dia }) => dia));
+  readonly validSchedule = computed(() => this.meetings().length > 0 && this.meetings().every(validMeetingTime));
   readonly students = signal<readonly string[]>(this.existing?.alunoIds ?? []);
   private readonly selectionDirty = signal(false);
   readonly weekdays = weekdays;
@@ -74,18 +77,22 @@ export class ClassEditor implements UnsavedChanges {
       );
     }
     if (this.step() === 1) {
-      const { inicio, fim } = this.form.getRawValue();
-      return (
-        this.days().length > 0 &&
-        this.form.controls.inicio.valid &&
-        this.form.controls.fim.valid &&
-        fim > inicio
-      );
+      return this.validSchedule();
     }
     return false;
   }
   toggleDay(day: number): void {
-    this.days.update((values) => toggleValue(values, day));
+    this.meetings.update((meetings) =>
+      this.selectedDays().includes(day)
+        ? meetings.filter(({ dia }) => dia !== day)
+        : [...meetings, { dia: day, inicio: '08:00', fim: '08:50' }].sort((a, b) => a.dia - b.dia),
+    );
+    this.selectionDirty.set(true);
+  }
+  setTime(day: number, field: 'inicio' | 'fim', value: string): void {
+    this.meetings.update((meetings) => meetings.map((meeting) =>
+      meeting.dia === day ? { ...meeting, [field]: value } : meeting,
+    ));
     this.selectionDirty.set(true);
   }
   toggleStudent(id: string): void {
@@ -122,14 +129,9 @@ export class ClassEditor implements UnsavedChanges {
         return;
       }
     }
-    if (this.step() === 1) {
-      const { inicio, fim } = this.form.getRawValue();
-      this.form.controls.inicio.markAsTouched();
-      this.form.controls.fim.markAsTouched();
-      if (!this.days().length || !inicio || !fim || fim <= inicio) {
-        this.message.set('Selecione pelo menos um dia e um horário final posterior ao inicial.');
-        return;
-      }
+    if (this.step() === 1 && !this.validSchedule()) {
+      this.message.set('Selecione um dia e informe um intervalo válido em cada dia de aula.');
+      return;
     }
     this.message.set('');
     this.step.update((current) => Math.min(this.steps.length - 1, current + 1));
@@ -141,8 +143,8 @@ export class ClassEditor implements UnsavedChanges {
       this.message.set('Preencha os dados obrigatórios da turma.');
       return;
     }
-    if (!this.days().length) {
-      this.message.set('Selecione pelo menos um dia da semana.');
+    if (!this.validSchedule()) {
+      this.message.set('Selecione um dia e informe um intervalo válido em cada dia de aula.');
       this.step.set(1);
       return;
     }
@@ -164,7 +166,10 @@ export class ClassEditor implements UnsavedChanges {
       const saved = await this.classes.save({
         ...this.form.getRawValue(),
         id: this.existing?.id ?? '',
-        dias: this.days(),
+        dias: this.selectedDays(),
+        horarios: this.meetings(),
+        inicio: this.meetings()[0].inicio,
+        fim: this.meetings()[0].fim,
         alunoIds: this.students(),
       });
       this.form.markAsPristine();

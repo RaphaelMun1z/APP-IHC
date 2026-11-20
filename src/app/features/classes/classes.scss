@@ -1,8 +1,16 @@
 .turmas-table {
-  min-width: 52rem;
+  --icon-button-size: 3rem;
+  --icon-button-glyph-size: 1.5rem;
+  min-width: 30rem;
+  font-size: 1rem;
+}
+.turmas-table .turma-row > :is(th, td) {
+  padding: var(--space-4) clamp(0.5rem, 1.5vw, 1.25rem);
+  overflow-wrap: anywhere;
 }
 .turmas-table th[scope='row'] {
   text-align: left;
+  font-weight: 600;
 }
 .turma-name-link {
   display: block;
@@ -10,12 +18,12 @@
   text-decoration: none;
 }
 .turma-name-link:hover {
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
 .turma-name-link:focus-visible {
-  border-radius: 0.25rem;
+  border-radius: var(--radius-control);
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
 }
@@ -23,7 +31,7 @@
   position: sticky;
   right: 0;
   z-index: 2;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
 }
 .turmas-table tbody .actions-cell {
   position: sticky;
@@ -31,46 +39,6 @@
   z-index: 1;
   background: inherit;
 }
-.class-status {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-tag);
-  background: #15803d;
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 400;
-  white-space: nowrap;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
-}
-.class-status.archived {
-  background: #475569;
-  color: #fff;
-}
-@media (prefers-reduced-motion: reduce) {
-  .class-status {
-    transition: none;
-  }
-}
-.turmas-bulk-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 2.75rem;
-  padding: 0 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-.turmas-bulk-actions label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.8125rem;
-}
-.turmas-bulk-actions .icon-button {
-  margin-left: auto;
-}
-
 @media (max-width: 48rem) {
   .turmas-table tbody .actions-cell {
     position: static;

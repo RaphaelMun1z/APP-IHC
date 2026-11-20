@@ -1,0 +1,103 @@
+<main class="app-page registro-page">
+  <section
+    class="surface content-scroll registro-panel"
+    aria-label="Formulário de cadastro de aluno"
+  >
+    @if (!group()) {
+      <p class="app-empty" role="alert">Turma não encontrada.</p>
+    } @else if (studentId && !student) {
+      <p class="app-empty" role="alert">Aluno não matriculado nesta turma.</p>
+    } @else if (!group()?.ativa) {
+      <p class="app-empty" role="status">
+        Esta turma está arquivada e não permite novas matrículas.
+        <a [routerLink]="backLink">Voltar à turma</a>
+      </p>
+    } @else {
+      <form class="registro-form form-wizard" [formGroup]="form" (ngSubmit)="save()">
+        <header class="form-wizard-header">
+          <a appAction="close" class="app-button form-action danger" [routerLink]="backLink"> Cancelar </a>
+        </header>
+        <div class="form-wizard-layout">
+          <nav class="form-wizard-sidebar" aria-label="Etapas do formulário">
+            <ol>
+              <li>
+                <button type="button" aria-current="step">
+                  <span class="form-wizard-step-number">1</span>
+                  <span class="form-wizard-step-copy">
+                    <strong>Dados do aluno</strong>
+                    <small>Identificação, contato e endereço</small>
+                  </span>
+                </button>
+              </li>
+            </ol>
+          </nav>
+          <div class="form-wizard-content">
+            <section class="form-wizard-panel">
+              <h2>{{ studentId ? 'Editar dados do aluno' : 'Cadastrar aluno' }}</h2>
+              @if (!studentId) {
+                <p>O aluno será matriculado na turma {{ group()?.nome }}.</p>
+              }
+              <div class="form-grid">
+                <label class="registro-field form-grid-wide" for="new-student-name">
+                  Nome do aluno
+                  <input
+                    id="new-student-name"
+                    type="text"
+                    autocomplete="name"
+                    required
+                    maxlength="100"
+                    formControlName="name"
+                    [attr.aria-invalid]="name.touched && name.invalid"
+                    aria-describedby="name-error"
+                  />
+                  @if (form.controls.name.touched && form.controls.name.invalid) {
+                    <small class="field-error" id="name-error">{{
+                      form.controls.name.errors | fieldError
+                    }}</small>
+                  }
+                </label>
+                <div formGroupName="details" class="form-grid-group">
+                  @for (field of fields; track field.key) {
+                    <label class="registro-field">
+                      {{ field.label }}
+                      <input
+                        [formControlName]="field.key"
+                        [type]="
+                          field.key === 'dataNascimento'
+                            ? 'date'
+                            : field.key === 'email'
+                              ? 'email'
+                              : field.key === 'telefone'
+                                ? 'tel'
+                                : 'text'
+                        "
+                        [attr.max]="field.key === 'dataNascimento' ? today : null"
+                        [attr.maxlength]="field.key === 'uf' ? 2 : 150"
+                      />
+                    </label>
+                  }
+                </div>
+              </div>
+            </section>
+            <app-feedback
+              id="student-registration-message"
+              [message]="message()"
+              [error]="isError()"
+            />
+            <nav class="form-wizard-actions" aria-label="Ações do formulário">
+              <button
+                appAction="save"
+                class="app-button form-action primary"
+                type="submit"
+                [disabled]="form.invalid || requests.saving()"
+              >
+                Salvar aluno
+              </button>
+              <a class="app-button form-action" [routerLink]="backLink">Voltar à turma</a>
+            </nav>
+          </div>
+        </div>
+      </form>
+    }
+  </section>
+</main>

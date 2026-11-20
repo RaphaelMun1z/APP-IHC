@@ -6,6 +6,7 @@ import type {
   Criterion,
   LegacyAssessment,
   Lesson,
+  MonthlyTimeRecord,
   SchoolClass,
   Session,
   Student,
@@ -17,6 +18,7 @@ import type {
 // DTOs intentionally keep the field names already used by the application.
 export type ClassDto = SchoolClass;
 export type ClassRequest = Omit<SchoolClass, 'id'>;
+export type MonthlyTimeRequest = Pick<MonthlyTimeRecord, 'mes' | 'ano' | 'totalHorasAula'>;
 export type LessonDto = Lesson;
 export type LessonRequest = Omit<Lesson, 'id' | 'professorId' | 'atualizadoEm' | 'licaoIds'>;
 export interface LoginRequest {
@@ -77,6 +79,16 @@ export interface AssessmentsDto {
   readonly legadasSemAula: readonly UnlinkedAssessmentDto[];
   readonly avisoMigracao: string;
 }
+export interface PageRequest {
+  readonly page: number;
+  readonly pageSize: number;
+}
+
+export interface SortOrder<Field extends string> {
+  readonly field: Field;
+  readonly direction: 'asc' | 'desc';
+}
+
 export interface ListResponse<T> {
   readonly items: readonly T[];
   readonly total: number;

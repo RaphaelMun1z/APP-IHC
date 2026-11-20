@@ -8,7 +8,7 @@
       (removeFilter)="removeFilter($event)"
       (clearFilters)="resetFilters()"
     >
-      <form class="filter-bar presencas-filters" [formGroup]="form" (ngSubmit)="search()">
+      <form class="form-grid filter-bar presencas-filters" [formGroup]="form" (ngSubmit)="search()">
         @if (!fixedClass) {
           <label
             >Turma<select formControlName="turmaId">
@@ -153,7 +153,7 @@
       />
       @if (group()?.ativa && dirty()) {
         <footer class="presencas-footer">
-          <button appAction="save" type="button" (click)="save()">Salvar alterações</button>
+          <button class="app-button form-action primary" appAction="save" type="button" (click)="save()">Salvar alterações</button>
         </footer>
       }
     } @else {

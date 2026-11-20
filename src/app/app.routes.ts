@@ -52,7 +52,7 @@ export const routes: Routes = [
       },
       {
         path: 'pontos-mensais',
-        title: 'Ponto mensal | IPB',
+        title: 'Lançamento de horas-aula | IPB',
         loadComponent: () => import('./features/profile/monthly-time').then((m) => m.MonthlyTime),
       },
       {

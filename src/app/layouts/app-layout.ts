@@ -3,7 +3,9 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../core/auth/auth.service';
 import { StorageService } from '../core/data/storage.service';
 import { PageHeader } from '../shared/ui/page-header';
+import { ClassesStore } from '../features/classes/classes.store';
 import { Feedback } from '../shared/ui/feedback';
+import { LoadingSkeleton } from '../shared/ui/loading-skeleton';
 import { errorMessage } from '../shared/utils/errors';
 import { DataState } from '../core/api/data-state';
 import { BootstrapService } from '../core/api/bootstrap.service';
@@ -14,12 +16,13 @@ import { animateRouteView } from '../core/navigation/page-transition';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Feedback, PageHeader, ConfirmDialog, Tooltip],
+  imports: [LoadingSkeleton, RouterLink, RouterLinkActive, RouterOutlet, Feedback, PageHeader, ConfirmDialog, Tooltip],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayout {
+  readonly pinnedClasses = inject(ClassesStore).pinned;
   readonly data = inject(DataState);
   readonly bootstrap = inject(BootstrapService);
   readonly requests = inject(RequestState);
@@ -39,10 +42,16 @@ export class AppLayout {
   readonly isCoordinator = computed(() => this.auth.user()?.perfil === 'coordenacao');
   readonly navigation = computed(() => [
     { path: '/turmas', icon: 'groups', title: 'Turmas' },
-    { path: '/pontos-mensais', icon: 'schedule', title: 'Ponto mensal' },
+    { path: '/pontos-mensais', icon: 'schedule', title: 'Lançamento de horas-aula' },
     ...(this.isCoordinator() ? [{ path: '/coordenacao', icon: 'school', title: 'Coordenação' }] : []),
   ]);
   readonly storageMessages = computed(() => Object.values(this.storage.errors()));
+  openPinnedClass(select: HTMLSelectElement): void {
+    const id = select.value;
+    select.selectedIndex = 0;
+    if (id) void this.router.navigate(['/turmas', id]).catch((error: unknown) => this.report(error));
+  }
+
   animatePage(): void {
     animateRouteView('.page-view > router-outlet + *');
     animateRouteView('.page-header');

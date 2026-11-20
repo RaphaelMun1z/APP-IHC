@@ -13,7 +13,7 @@
 .lesson-navigation {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   min-width: 0;
 }
 .lesson-navigation app-lesson-tabs {
@@ -26,8 +26,8 @@
   margin-left: auto;
   min-height: 2rem;
   padding: 0.375rem 0.875rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-help);
   font-weight: 500;
 }
 .lesson-workspace > router-outlet + * {

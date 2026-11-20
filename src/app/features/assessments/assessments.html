@@ -7,7 +7,7 @@
       (removeFilter)="removeFilter($event)"
       (clearFilters)="resetFilters()"
     >
-      <form class="filter-bar avaliacao-filters" [formGroup]="form" (ngSubmit)="load()">
+      <form class="form-grid filter-bar avaliacao-filters" [formGroup]="form" (ngSubmit)="load()">
         @if (!fixedClass) {
           <label
             >Turma<select formControlName="turmaId">
@@ -224,7 +224,7 @@
       />
       @if (canEdit() && dirty()) {
         <footer class="avaliacao-footer">
-          <button appAction="save" type="button" (click)="save()">Salvar alterações</button>
+          <button class="app-button form-action primary" appAction="save" type="button" (click)="save()">Salvar alterações</button>
         </footer>
       }
     </section>

@@ -17,7 +17,7 @@ O acesso demonstrativo aceita os usuários `professor` e `coordenacao` com a sen
 
 Em **Coordenação**, cadastre cursos, módulos, lições, professores e coordenadores. Cada turma pode ter vários professores vinculados. No perfil de professor, novas turmas usam automaticamente a conta conectada. Cadastros de pessoas no catálogo representam dados pedagógicos. As contas de demonstração são independentes.
 
-Os dados do aluno podem ser editados na aba **Alunos** da turma. Novos vínculos recebem a data de matrícula. Matrículas antigas aparecem com a data como não informada. Em **Ponto mensal**, o professor lança o total de horas-aula do mês em horas decimais e a coordenação consulta os lançamentos.
+Os dados do aluno podem ser editados na aba **Alunos** da turma. Novos vínculos recebem a data de matrícula. Matrículas antigas aparecem com a data como não informada. Em **Lançamento de horas-aula**, o professor lança o total mensal em horas decimais e a coordenação consulta os lançamentos.
 
 ## Integração REST e troca da fonte
 
@@ -25,26 +25,11 @@ A aplicação funciona sem backend por padrão. Em `src/environments/environment
 
 Consulte [docs/openapi.yaml](docs/openapi.yaml) para os contratos HTTP, exemplos e regras. Cookie de sessão, CORS/CSRF, expiração e concorrência precisam ser validados com o futuro backend. Os dados da demonstração ficam no navegador e os IDs existentes são preservados.
 
-```sh
-npm run test:contracts
-npm test
-```
-
-O primeiro comando valida os exemplos e referências de schema. A suíte Angular compara requisições e respostas da API simulada com o OpenAPI. Há teste de modo API que confirma o encaminhamento ao transporte e a ausência de inicialização local.
-
 Para exercer o FetchBackend real contra uma simulação HTTP local, use o Postman CLI 1.75 ou posterior. Em um terminal:
 
 ```sh
 npm run mock:transport
 ```
-
-Em outro terminal:
-
-```sh
-npm run test:transport
-```
-
-O mock de transporte é regenerado da especificação em `.preview/http-mock`, sem upload e sem login, e usa a porta 4011. Encerre o servidor com Ctrl+C após os testes. A simulação cobre login, os sete snapshots, HTTP 503 e timeout. Ela reproduz exemplos e não comprova autenticação real, cookies/CORS de navegador ou CRUD persistente; o CRUD e as regras são testados contra o interceptor mock da aplicação. O contexto e os limites da evidência ficam em `postman/simulations/ipb-http.context.yaml`.
 
 ## Publicar no GitHub Pages
 
@@ -56,7 +41,6 @@ O build cria `404.html` junto ao `index.html` e restaura a rota original antes d
 
 ```sh
 npm run build
-npm test
 npm run lint
 npm run format:check
 npm audit
@@ -69,16 +53,6 @@ npm run preview
 ```
 
 Abra `http://127.0.0.1:4175`. Em hospedagens estáticas, configure o fallback das rotas de navegação para `index.html`; arquivos e assets inexistentes devem continuar retornando 404.
-
-Os testes de navegador usam o build de produção e iniciam seu próprio preview na porta 4175, que deve estar livre:
-
-```sh
-npx playwright install chromium
-npm run build
-npm run test:e2e
-```
-
-A suíte cobre regras pedagógicas, serviços HTTP, interceptors, CRUD mockado, conformidade com o OpenAPI, persistência, formulários, histórico, alterações não salvas e teclado. Os cenários de navegador usam Chromium com larguras de 1440 e 390 pixels. A comparação visual verifica cores e geometria dos principais contêineres contra as medidas em `tests/visual-baseline.json`. O relatório fica em `playwright-report/index.html`.
 
 ## Organização
 
@@ -104,10 +78,9 @@ src/
   environments/       alternância mock/api, URL base, timeout e latência
   styles/             SCSS global, tokens e regra responsiva compartilhada
 public/assets/        imagens originais
-tests/                fluxos de navegador e referência visual
-scripts/              preview e verificações de contratos/transporte
+scripts/              preview, build e simulação de transporte
 docs/                 especificação OpenAPI 3.1
-postman/simulations/   teste opcional de transporte HTTP local
+postman/simulations/   simulação opcional de transporte HTTP local
 ```
 
 ## Decisões arquiteturais

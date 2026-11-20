@@ -1,0 +1,166 @@
+<main class="app-page monthly-page">
+  <div class="surface content-scroll monthly-workspace" [class.form-open]="showForm()">
+    @if (showForm() && isProfessor) {
+      <form [formGroup]="form" (ngSubmit)="save()" class="monthly-entry-form">
+        <h3>Lançar horas-aula</h3>
+        <div class="form-grid">
+          <label class="field">
+            Mês
+            <select formControlName="mes">
+              @for (label of months; track label) {
+                <option [ngValue]="$index + 1">{{ label }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            Ano
+            <input
+              type="number"
+              min="1900"
+              max="9999"
+              step="1"
+              formControlName="ano"
+              required
+              [attr.aria-invalid]="form.controls.ano.touched && form.controls.ano.invalid"
+              aria-describedby="ano-error"
+            />
+            @if (form.controls.ano.touched && form.controls.ano.invalid) {
+              <small class="field-error" id="ano-error">{{
+                form.controls.ano.errors | fieldError
+              }}</small>
+            }
+          </label>
+          <label class="field form-grid-wide hours-field">
+            Total de horas-aula no mês
+            <input
+              type="number"
+              min="0"
+              max="744"
+              step="0.01"
+              inputmode="decimal"
+              formControlName="totalHorasAula"
+              required
+              [attr.aria-invalid]="
+                form.controls.totalHorasAula.touched && form.controls.totalHorasAula.invalid
+              "
+              aria-describedby="totalHorasAula-error hours-hint"
+            />
+            @if (form.controls.totalHorasAula.touched && form.controls.totalHorasAula.invalid) {
+              <small class="field-error" id="totalHorasAula-error">{{
+                form.controls.totalHorasAula.errors | fieldError
+              }}</small>
+            }
+            <small id="hours-hint"
+              >Informe as horas do mês em formato decimal. Exemplo: 12,5.</small
+            >
+          </label>
+        </div>
+        <app-feedback [message]="message()" [error]="failed()" />
+        @if (periodRegistered) {
+          <app-feedback message="Você já lançou as horas-aula deste mês. Escolha outro período." />
+        }
+        <div class="monthly-actions">
+          <button
+            appAction="save"
+            class="app-button form-action primary"
+            type="submit"
+            [disabled]="form.invalid || periodRegistered || loading() || requests.saving()"
+          >
+            Salvar lançamento
+          </button>
+          <button
+            appAction="close"
+            class="app-button form-action danger"
+            type="button"
+            (click)="closeForm()"
+            [disabled]="requests.saving()"
+          >
+            Fechar formulário
+          </button>
+        </div>
+      </form>
+    } @else {
+      <aside class="period-sidebar" aria-label="Períodos de horas-aula">
+        <h2>Períodos</h2>
+        <nav aria-label="Meses disponíveis">
+          @for (period of periods(); track period.key) {
+            <button
+              type="button"
+              [attr.aria-current]="selectedPeriod() === period.key ? 'true' : null"
+              (click)="selectPeriod(period.mes, period.ano)"
+            >
+              <span>{{ months[period.mes - 1] }}</span>
+              <small>{{ period.ano }}</small>
+            </button>
+          }
+        </nav>
+      </aside>
+      <section class="monthly-main" aria-labelledby="period-title">
+        <header class="period-header">
+          <h2 id="period-title">{{ monthTitle() }}</h2>
+          @if (canStartEntry()) {
+            <button appAction="add" class="primary" type="button" (click)="startEntry()">
+              Lançar horas-aula
+            </button>
+          }
+        </header>
+        @if (!isProfessor && !loading() && !loadFailed()) {
+          <label class="field standalone-field">
+            Professor
+            <select
+              #teacherFilter
+              [value]="teacherId()"
+              (change)="teacherId.set(teacherFilter.value)"
+            >
+              <option value="">Todos os professores</option>
+              @for (id of availableTeachers(); track id) {
+                <option [value]="id">{{ teacher(id) }}</option>
+              }
+            </select>
+          </label>
+        }
+        <app-feedback [message]="message()" [error]="failed()" />
+        @if (loadFailed()) {
+          <button appAction="refresh" type="button" (click)="load()" [disabled]="loading()">
+            Tentar novamente
+          </button>
+        }
+        <h3 class="table-heading">Horas lançadas no período</h3>
+        @if (loading()) {
+          <app-loading-skeleton label="Carregando lançamentos…" />
+        } @else if (!loadFailed()) {
+          <app-data-table label="Totais de horas lançadas no mês">
+            <table class="monthly-table">
+              <thead>
+                <tr>
+                  @if (!isProfessor) {
+                    <th scope="col">Professor</th>
+                  }
+                  <th scope="col">Período</th>
+                  <th scope="col">Horas lançadas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of selectedRecords(); track row.id) {
+                  <tr>
+                    @if (!isProfessor) {
+                      <td>{{ teacher(row.professorId) }}</td>
+                    }
+                    <td>{{ months[row.mes - 1] }} de {{ row.ano }}</td>
+                    <td>{{ formatHours(row.totalHorasAula) }} h</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td [attr.colspan]="isProfessor ? 2 : 3" class="app-empty">
+                      Nenhum lançamento neste período.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </app-data-table>
+        }
+      </section>
+    }
+  </div>
+</main>

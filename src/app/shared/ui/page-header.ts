@@ -31,7 +31,7 @@ import { Tooltip } from './tooltip';
           [class.is-pinned]="classes.isPinned(pin.id)"
           type="button"
           [attr.aria-pressed]="classes.isPinned(pin.id)"
-          [title]="classes.isPinned(pin.id) ? 'Desafixar da tela inicial' : 'Fixar na tela inicial'"
+          [title]="classes.isPinned(pin.id) ? 'Desafixar turma' : 'Fixar turma'"
           [attr.aria-label]="(classes.isPinned(pin.id) ? 'Desafixar ' : 'Fixar ') + pin.name"
           (click)="togglePin(pin.id)"
         ></button>
@@ -75,7 +75,7 @@ export class PageHeader {
     try {
       await this.classes.togglePinned(id);
       this.pinMessage.set(
-        wasPinned ? 'Turma removida da tela inicial.' : 'Turma fixada na tela inicial.',
+        wasPinned ? 'Turma desafixada.' : 'Turma fixada no menu.',
       );
     } catch {
       this.pinMessage.set('Não foi possível atualizar a turma fixada. Tente novamente.');

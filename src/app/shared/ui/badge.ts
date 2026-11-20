@@ -5,5 +5,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Badge {
-  readonly tone = input('neutral');
+  readonly tone = input<'neutral' | 'success' | 'warning'>('neutral');
 }

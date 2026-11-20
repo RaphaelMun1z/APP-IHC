@@ -1,11 +1,11 @@
 <main class="app-page turmas-page">
   <app-filter-panel
     [searchable]="true"
+    [refinable]="false"
     [chips]="chips()"
     [activeCount]="chips().length"
-    (removeFilter)="removeFilter($event)"
-    (clearFilters)="clearFilters()"
-    (applyFilters)="persist()"
+    (removeFilter)="setQuery('')"
+    (clearFilters)="setQuery('')"
   >
     <label filter-search class="filter-search-label"
       ><span class="sr-only">Buscar turma pelo nome</span
@@ -18,25 +18,6 @@
     <a filter-actions appAction="add" class="app-button primary" routerLink="/turma-form"
       >Nova turma</a
     >
-    <div class="filter-bar filters">
-<label class="field"
-        >Curso<select [ngModel]="courseId()" (ngModelChange)="setCourse($event)">
-          <option value="">Todos os cursos</option>
-          @for (course of store.courses; track course.id) {
-            <option [value]="course.id">{{ course.nome }}</option>
-          }
-        </select></label
-      >
-      <div class="field filter-option-field">
-        <span>Situação</span>
-        <app-filter-options
-          label="Situação"
-          [options]="statusOptions"
-          [selected]="status()"
-          (selectedChange)="setStatus($event)"
-        />
-      </div>
-    </div>
   </app-filter-panel>
   <section class="surface data-panel" aria-label="Listagem de turmas">
     <app-list-header
@@ -46,54 +27,21 @@
       plural="turmas"
     />
     <app-feedback [message]="message()" [error]="isError()" />
-    @if (filtered().length) {
-      <div class="turmas-bulk-actions">
-        <label
-          ><input
-            type="checkbox"
-            [checked]="allSelected()"
-            [indeterminate]="selected().length > 0 && !allSelected()"
-            (change)="toggleAll()"
-          />Selecionar todas as turmas</label
-        >
-        @if (selected().length) {
-          <button
-            appAction="delete"
-            class="icon-button danger"
-            type="button"
-            title="Excluir turmas selecionadas"
-            [attr.aria-label]="'Apagar ' + selected().length + ' turmas selecionadas'"
-            (click)="remove(selected())"
-          ></button>
-        }
-      </div>
-    }
     <app-data-table class="turmas-table-scroll" label="Turmas disponíveis">
       <table class="turmas-table">
         <caption class="sr-only">
-          Turmas, cursos, alunos e situação
+          Turmas, cursos e ações disponíveis
         </caption>
         <thead>
           <tr>
-            <th scope="col"><span class="sr-only">Selecionar</span></th>
             <th scope="col">Turma</th>
             <th scope="col">Curso</th>
-            <th scope="col">Alunos</th>
-            <th scope="col">Situação</th>
             <th scope="col" class="actions-cell">Ações</th>
           </tr>
         </thead>
         <tbody>
           @for (group of visible(); track group.id) {
             <tr class="turma-row">
-              <td>
-                <input
-                  type="checkbox"
-                  [attr.aria-label]="'Selecionar ' + group.nome"
-                  [checked]="selected().includes(group.id)"
-                  (change)="toggle(group.id)"
-                />
-              </td>
               <th scope="row">
                 <a
                   class="turma-name-link"
@@ -103,12 +51,6 @@
                 >
               </th>
               <td>{{ store.course(group.cursoId)?.nome }}</td>
-              <td>{{ group.alunoIds.length }}</td>
-              <td>
-                <span class="class-status" [class.archived]="!group.ativa">{{
-                  group.ativa ? 'Ativa' : 'Arquivada'
-                }}</span>
-              </td>
               <td class="actions-cell">
                 <div class="row-actions">
                   <a
@@ -133,14 +75,14 @@
                     type="button"
                     title="Excluir"
                     [attr.aria-label]="'Excluir ' + group.nome"
-                    (click)="remove([group.id])"
+                    (click)="remove(group.id)"
                   ></button>
                 </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="6" class="app-empty">Nenhuma turma encontrada.</td>
+              <td colspan="3" class="app-empty">Nenhuma turma encontrada.</td>
             </tr>
           }
         </tbody>

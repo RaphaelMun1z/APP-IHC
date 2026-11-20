@@ -1,8 +1,8 @@
+import { FieldError } from '../../shared/ui/field-error';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { demoCoordinationUsername } from '../../core/auth/demo-access';
 import { safeReturn } from '../../core/auth/auth.guards';
 import { Feedback } from '../../shared/ui/feedback';
 import { Modal } from '../../shared/ui/modal';
@@ -10,7 +10,7 @@ import { errorMessage } from '../../shared/utils/errors';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, Feedback, Modal],
+  imports: [FieldError, ReactiveFormsModule, Feedback, Modal],
   templateUrl: './login.html',
   styleUrl: './login.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,10 +28,8 @@ export class Login {
   readonly message = signal(this.auth.error());
   readonly help = signal<{ title: string; description: string } | null>(null);
   fillDemo(coordinator = false): void {
-    if (this.demoAccess) this.form.patchValue({
-      ...this.demoAccess,
-      username: coordinator ? demoCoordinationUsername : this.demoAccess.username,
-    });
+    const credentials = this.auth.demoCredentials(coordinator);
+    if (credentials) this.form.patchValue(credentials);
     this.message.set('');
   }
   rememberChanged(): void {

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { API_CONFIG } from '../../core/api/api.config';
 import { AuthService } from '../../core/auth/auth.service';
 import { DataState } from '../../core/api/data-state';
 
@@ -66,7 +65,7 @@ export class Profile {
   readonly teacher = computed(() => this.catalog().professores.find(({ id }) => id === this.auth.user()?.id));
   readonly person = computed(() => this.teacher() ?? this.catalog().coordenadores?.find(({ id }) => id === this.auth.user()?.id));
   readonly phone = computed(() => this.teacher()?.telefone);
-  readonly mockMode = inject(API_CONFIG).mode === 'mock';
+  readonly mockMode = !!this.auth.demoAccess;
   readonly initials = computed(() =>
     (this.auth.user()?.nome ?? '')
       .split(' ')

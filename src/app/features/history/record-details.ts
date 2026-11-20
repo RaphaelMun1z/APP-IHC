@@ -1,3 +1,4 @@
+import { OverviewCard } from '../../shared/ui/overview-card';
 import { Pagination, TablePage } from '../../shared/ui/pagination';
 import { ListHeader } from '../../shared/ui/list-header';
 import { PersonAvatar } from '../../shared/ui/person-avatar';
@@ -15,7 +16,7 @@ import { LessonTabs } from '../lessons/lesson-tabs';
 @Component({
   selector: 'app-record-details',
   host: { '[class.tabular]': "record().tipo !== 'aula'" },
-  imports: [Pagination, ListHeader, DataTable, PersonAvatar, Badge, Action, RouterLink, LessonTabs],
+  imports: [OverviewCard, Pagination, ListHeader, DataTable, PersonAvatar, Badge, Action, RouterLink, LessonTabs],
   templateUrl: './record-details.html',
   styleUrl: './record-details.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -10,7 +10,7 @@ import { MockCatalogRepository } from './catalog.repository';
 import { MockMonthlyTimeRepository } from './monthly-time.repository';
 import { initializeDemoData } from '../../data/demo-data';
 import { StorageService } from '../../data/storage.service';
-import { isAssessments, isAttendance, isClass, isLessons } from '../../data/validators';
+import { isAssessments, isAttendance, isClass, isLessons, isMeetingList } from '../../data/validators';
 import type { LessonRequest, ListResponse, StudentRequest } from '../contracts';
 import { ApiFailure } from '../contracts';
 import type { AttendanceData, SchoolClass, StudentAssessment } from '../../models/domain';
@@ -54,11 +54,12 @@ function classBody(value: unknown, id: string): SchoolClass {
   };
   if (
     !isClass(input) ||
+    (value['horarios'] !== undefined && !isMeetingList(value['horarios'])) ||
     !Array.isArray(value['dias']) ||
     !value['dias'].every((day: unknown) => typeof day === 'number')
   )
     return badRequest();
-  return { ...input, dias: value['dias'] };
+  return { ...input, dias: value['dias'], horarios: value['horarios'] };
 }
 function lessonBody(value: unknown): LessonRequest {
   if (!object(value)) return badRequest();
@@ -168,7 +169,7 @@ export class MockApi {
     if (path === '/pontos-mensais') {
       const points = inject(MockMonthlyTimeRepository);
       if (method === 'GET') return reply(list(points.list()));
-      if (method === 'PUT') return reply(points.save(object(body) ? body : badRequest()));
+      if (method === 'POST') return reply(points.create(object(body) ? body : badRequest()), 201);
     }
     if (path === '/alunos' && method === 'GET') return reply(list(classes.students));
     if (path === '/turmas/fixadas' && method === 'GET')

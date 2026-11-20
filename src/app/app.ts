@@ -72,7 +72,7 @@ import { RequestState } from './core/api/request-state';
       left: 50%;
       transform: translateX(-50%);
       padding: 0.6rem 1rem;
-      border-radius: 8px;
+      border-radius: var(--radius-control);
       background: #fff;
       color: #253449;
       box-shadow: 0 2px 12px #0003;

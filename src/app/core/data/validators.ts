@@ -1,6 +1,7 @@
 import type {
   AssessmentData,
   AttendanceData,
+  ClassMeeting,
   LegacyAssessmentData,
   Lesson,
   SchoolClass,
@@ -15,6 +16,12 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 function strings(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+export function isMeetingList(value: unknown): value is ClassMeeting[] {
+  return Array.isArray(value) && value.every((row) =>
+    record(row) && typeof row['dia'] === 'number' &&
+    typeof row['inicio'] === 'string' && typeof row['fim'] === 'string',
+  );
 }
 export function isSession(value: unknown): value is Session {
   return (
@@ -78,6 +85,7 @@ export function isClass(value: unknown): value is SchoolClass {
         new Set(value['leciona'].map((row) => row.professorId)).size === value['leciona'].length &&
         value['leciona'].some((row) => row.professorId === value['professorId']))) &&
     Array.isArray(value['dias']) &&
+    (value['horarios'] === undefined || isMeetingList(value['horarios'])) &&
     value['dias'].every((day) => Number.isInteger(day) && day >= 0 && day <= 6)
   );
 }

@@ -69,6 +69,11 @@ export interface MonthlyTimeRecord {
   readonly ano: number;
   readonly totalHorasAula: number;
 }
+export interface ClassMeeting {
+  readonly dia: number;
+  readonly inicio: string;
+  readonly fim: string;
+}
 export interface SchoolClass extends Person {
   readonly cursoId: string;
   readonly coordenadorId?: string;
@@ -80,6 +85,7 @@ export interface SchoolClass extends Person {
   readonly moduloId: string;
   readonly professorId: string;
   readonly dias: readonly number[];
+  readonly horarios?: readonly ClassMeeting[];
   readonly inicio: string;
   readonly fim: string;
   readonly ativa: boolean;

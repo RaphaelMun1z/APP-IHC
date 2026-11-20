@@ -27,6 +27,7 @@ export class ConfirmDialogService {
       itemNoun?: string;
     } = {},
   ): Promise<boolean> {
+    this.answer(false);
     return new Promise((resolve) => {
       this.request.set({
         title: options.title ?? 'Confirmar ação',
@@ -72,10 +73,10 @@ export class ConfirmDialogService {
           }
         }
         <div class="confirm-actions">
-          <button class="app-button" type="button" (click)="confirm.answer(false)">
+          <button class="app-button form-action" type="button" (click)="confirm.answer(false)">
             <span class="material-symbols-outlined" aria-hidden="true">close</span>Cancelar
           </button>
-          <button class="app-button danger" type="button" (click)="confirm.answer(true)">
+          <button class="app-button form-action danger" type="button" (click)="confirm.answer(true)">
             <span class="material-symbols-outlined" aria-hidden="true">{{
               request.confirmIcon
             }}</span>
@@ -102,7 +103,7 @@ export class ConfirmDialogService {
     .confirm-items li {
       padding: 0.5rem 0.75rem;
       border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-control);
       background: #f8fafc;
       font-size: 0.875rem;
     }
@@ -112,26 +113,21 @@ export class ConfirmDialogService {
       font-size: 0.8125rem;
     }
     .confirm-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
+      --form-action-width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+      margin-top: var(--space-6);
     }
     .confirm-actions button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.375rem;
+      min-width: 0;
+      padding-inline: var(--space-2);
+      overflow-wrap: anywhere;
     }
     .confirm-actions .material-symbols-outlined {
       font-size: 1.125rem;
     }
-    .app-button.danger {
-      border-color: #b91c1c;
-      background: #b91c1c;
-      color: white;
-    }
+
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -15,6 +15,31 @@
         ><span class="nav-label">{{ item.title }}</span></a
       >
     }
+    @if (pinnedClasses().length) {
+      <section class="pinned-classes" aria-labelledby="pinned-title">
+        <h2 id="pinned-title">Turmas fixadas</h2>
+        <ul>
+          @for (group of pinnedClasses(); track group.id) {
+            <li>
+              <a [routerLink]="['/turmas', group.id]" routerLinkActive="active"
+                ariaCurrentWhenActive="location" [title]="group.nome">
+                <span class="material-symbols-outlined" aria-hidden="true">push_pin</span>
+                <span>{{ group.nome }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+        <label class="pinned-picker" title="Turmas fixadas">
+          <span class="material-symbols-outlined" aria-hidden="true">push_pin</span>
+          <select #picker aria-labelledby="pinned-title" (change)="openPinnedClass(picker)">
+            <option value="" disabled selected>Turmas fixadas</option>
+            @for (group of pinnedClasses(); track group.id) {
+              <option [value]="group.id">{{ group.nome }}</option>
+            }
+          </select>
+        </label>
+      </section>
+    }
   </nav>
   <section class="sidebar-account" aria-label="Conta do usuário">
     <a
@@ -50,7 +75,9 @@
     } @else {
       <main class="app-page surface content-scroll">
         <app-feedback [message]="data.error() || auth.error()" [error]="true" />
-        @if (auth.user()) {
+        @if (requests.pending() && !data.error() && !auth.error()) {
+          <app-loading-skeleton />
+        } @else if (auth.user()) {
           <button
             class="app-button primary"
             type="button"

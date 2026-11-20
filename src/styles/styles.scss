@@ -1,4 +1,5 @@
 @use 'tokens';
+@use 'forms';
 @use 'workspace';
 @use 'tables';
 
@@ -116,18 +117,18 @@ th {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
+  gap: var(--space-2);
+  min-height: var(--control-height);
   padding: 0.5rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-button);
   background: white;
-  color: #334155;
-  font-size: 0.875rem;
+  color: var(--color-secondary-text);
+  font-size: var(--font-size-control);
   font-weight: 600;
 }
 .app-button.primary {
-  border-color: #60a5fa;
+  border-color: var(--color-primary);
   background: var(--color-primary);
   color: white;
 }
@@ -143,5 +144,30 @@ th {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
+}
+
+.app-button.danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: white;
+}
+
+.app-button.form-action {
+  width: min(100%, var(--form-action-width));
+  min-height: var(--control-height);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-button);
+  font-size: var(--font-size-control);
+  line-height: 1.25;
+  text-align: center;
+}
+.app-button.form-action:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+}
+.app-button.form-action.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+.app-button.form-action.danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
 }

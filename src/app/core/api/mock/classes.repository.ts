@@ -3,7 +3,7 @@ import { MockSession } from './mock-session';
 import { StorageService } from '../../data/storage.service';
 import { storageKeys } from '../../data/storage-keys';
 import { defaultClasses, demoCoordinator, students } from '../../data/catalog';
-import { enrollments, teachingAssignments } from '../../data/academic-records';
+import { classMeetings, enrollments, teachingAssignments, validMeetingTime } from '../../data/academic-records';
 import { isDate, localDate } from '../../../shared/utils/dates';
 import { studentFields } from '../../models/domain';
 import type { StudentRequest } from '../contracts';
@@ -203,12 +203,15 @@ export class MockClassesRepository {
       !this.catalog.records().professores.some((teacher) => teacher.id === professorId)
     )
       throw new Error('Preencha os dados da turma.');
+    const meetings = classMeetings(input);
+    const meetingDays = new Set(meetings.map(({ dia }) => dia));
     if (
-      !input.dias.length ||
+      !meetings.length ||
       input.dias.some((day) => !Number.isInteger(day) || day < 0 || day > 6) ||
-      !/^\d{2}:\d{2}$/.test(input.inicio) ||
-      !/^\d{2}:\d{2}$/.test(input.fim) ||
-      input.fim <= input.inicio
+      meetingDays.size !== meetings.length ||
+      meetingDays.size !== new Set(input.dias).size ||
+      input.dias.some((day) => !meetingDays.has(day)) ||
+      !meetings.every(validMeetingTime)
     )
       throw new Error('Escolha os dias e um horário final posterior ao inicial.');
     if (
@@ -247,8 +250,9 @@ export class MockClassesRepository {
       cursoId: input.cursoId,
       moduloId: input.moduloId,
       professorId,
-      inicio: input.inicio,
-      fim: input.fim,
+      inicio: meetings[0].inicio,
+      fim: meetings[0].fim,
+      horarios: meetings,
       ativa: input.ativa,
       coordenadorId: previous?.coordenadorId ?? this.catalog.coordinatorForNewRecord(),
       faixaEtaria: input.faixaEtaria?.trim() ?? previous?.faixaEtaria,

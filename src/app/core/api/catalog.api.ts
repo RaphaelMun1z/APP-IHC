@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_CONFIG, apiUrl } from './api.config';
 import type { CatalogDto, CatalogRegistration, ListResponse } from './contracts';
-import type { MonthlyTimeRecord, Student } from '../models/domain';
+import type { Student } from '../models/domain';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogApi {
@@ -16,11 +16,5 @@ export class CatalogApi {
   }
   register(body: CatalogRegistration) {
     return this.http.post<CatalogDto>(apiUrl(this.config.baseUrl, 'catalogo'), body);
-  }
-  monthlyTime() {
-    return this.http.get<ListResponse<MonthlyTimeRecord>>(apiUrl(this.config.baseUrl, 'pontos-mensais'));
-  }
-  saveMonthlyTime(body: Pick<MonthlyTimeRecord, 'mes' | 'ano' | 'totalHorasAula'>) {
-    return this.http.put<MonthlyTimeRecord>(apiUrl(this.config.baseUrl, 'pontos-mensais'), body);
   }
 }

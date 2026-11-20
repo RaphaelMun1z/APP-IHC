@@ -9,7 +9,7 @@ import { storageKeys } from '../data/storage-keys';
 import { ApiFailure } from '../api/contracts';
 import { errorMessage } from '../../shared/utils/errors';
 import { API_CONFIG } from '../api/api.config';
-import { demoAccess } from './demo-access';
+import { demoAccess, demoCoordinationUsername } from './demo-access';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -63,6 +63,14 @@ export class AuthService {
       ),
     );
   }
+  demoCredentials(coordinator: boolean) {
+    if (!this.demoAccess) return null;
+    return {
+      username: coordinator ? demoCoordinationUsername : this.demoAccess.username,
+      password: this.demoAccess.password,
+    };
+  }
+
   rememberedUsername(): string {
     try {
       return localStorage.getItem(storageKeys.username) ?? '';

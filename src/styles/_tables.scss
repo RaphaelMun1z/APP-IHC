@@ -19,22 +19,22 @@ app-filter-panel {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-width: 0;
   flex: none;
 }
 .filter-search-box {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex: 0 1 28rem;
   min-width: 8rem;
   min-height: 2.25rem;
   padding: 0 0.625rem;
   border: 1px solid #dce2e9;
-  border-radius: 999px;
-  background: #fff;
-  color: #334155;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
 }
 .filter-search-box:focus-within {
   border-color: #60a5fa;
@@ -45,17 +45,12 @@ app-filter-panel {
   order: 2;
   margin-left: auto;
   font-size: 1.125rem;
-  color: #64748b;
+  color: var(--color-muted);
   flex: none;
 }
 .filter-search-slot {
   flex: 1;
   min-width: 0;
-}
-.filter-search-form {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
 }
 .filter-search-label {
   display: block;
@@ -65,11 +60,11 @@ app-filter-panel {
   padding: 0.375rem 0;
   border: 0;
   background: transparent;
-  font-size: 0.8125rem;
+  font-size: var(--font-size-help);
   outline: 0;
 }
 .filter-search-slot input::placeholder {
-  color: #64748b;
+  color: var(--color-muted);
   opacity: 1;
 }
 .app-page .filter-shell button,
@@ -82,10 +77,10 @@ app-filter-panel {
   width: auto;
   padding: 0.375rem 0.75rem;
   border: 1px solid #dce2e9;
-  border-radius: 999px;
-  background: #fff;
-  color: #334155;
-  font-size: 0.8125rem;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  font-size: var(--font-size-help);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -97,16 +92,16 @@ app-filter-panel {
 .app-page .filter-shell .filter-context[aria-expanded='true'] {
   background: #eff6ff;
   border-color: #93c5fd;
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
 }
 .app-page .filter-shell .filter-toggle {
   flex: none;
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-radius: 50%;
-  border-color: #cbd5e1;
-  background: #fff;
+  border-radius: var(--radius-control);
+  border-color: var(--color-border);
+  background: var(--color-surface);
   color: #475569;
   transition:
     background-color 160ms ease,
@@ -117,23 +112,23 @@ app-filter-panel {
 .app-page .filter-shell .filter-toggle:hover {
   border-color: #60a5fa;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
 }
 .app-page .filter-shell .filter-toggle[aria-expanded='true'] {
-  border-color: #2563eb;
-  background: #2563eb;
-  color: #fff;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
 }
 .app-page .filter-shell .filter-toggle[aria-expanded='true']:hover {
   border-color: #1e40af;
-  background: #1d4ed8;
-  color: #fff;
+  background: var(--color-primary-hover);
+  color: var(--color-surface);
 }
 .app-page .filter-shell .filter-clear {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-control);
 }
 .filter-shell .material-symbols-outlined {
   font-size: 1.125rem;
@@ -142,12 +137,12 @@ app-filter-panel {
   padding-inline: 0.375rem;
   background: transparent;
   border-color: transparent;
-  color: #cbd5e1;
+  color: var(--color-border);
 }
 .app-page .filter-shell .filter-clear:hover {
   background: #1e293b;
   border-color: transparent;
-  color: #fff;
+  color: var(--color-surface);
 }
 .filter-toolbar-actions {
   margin-left: auto;
@@ -161,7 +156,7 @@ app-filter-panel {
 .app-page .filter-toolbar-actions .app-button.primary {
   border-color: #3b82f6;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-surface);
 }
 .app-page .filter-toolbar-actions .app-button.primary:hover {
   background: var(--color-primary-hover);
@@ -183,13 +178,13 @@ app-filter-panel {
   min-height: 1.875rem;
   padding: 0.125rem 0.125rem 0.125rem 0.625rem;
   border: 1px solid #dce2e9;
-  border-radius: 999px;
-  background: #fff;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   font-size: 0.75rem;
   line-height: 1.4;
 }
 .filter-chip-label {
-  color: #64748b;
+  color: var(--color-muted);
 }
 .filter-chip-value {
   min-width: 0;
@@ -205,10 +200,10 @@ app-filter-panel {
   padding: 0;
   border: 0;
   background: #f1f5f9;
-  color: #64748b;
+  color: var(--color-muted);
 }
 .filter-chip-remove .material-symbols-outlined {
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
 }
 .filter-content {
   min-height: 0;
@@ -224,38 +219,22 @@ app-filter-panel {
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 .filter-shell .filter-bar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: flex-end;
-  flex-wrap: nowrap;
-  width: max-content;
-  gap: 0.625rem;
-  max-height: none;
-  color: #cbd5e1;
-}
-.filter-shell .filter-bar label {
-  flex: 0 0 11rem;
-  min-width: 7.5rem;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-}
-.filter-shell .filter-bar > .filter-option-field {
-  flex: 0 0 auto;
-  width: max-content;
-  min-width: max-content;
+  color: var(--color-border);
 }
 .app-page .filter-shell .filter-content :is(input, select) {
   min-height: 2.25rem;
   padding: 0.375rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-help);
   color-scheme: light;
 }
 .filter-option-group {
+  justify-content: center;
   display: flex;
+  flex-wrap: wrap;
   flex: none;
   align-items: center;
   gap: 0.375rem;
@@ -264,9 +243,9 @@ app-filter-panel {
   flex: none;
   min-height: 2.25rem;
   padding: 0.375rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   color: #475569;
   font: inherit;
   font-size: 0.75rem;
@@ -275,18 +254,18 @@ app-filter-panel {
 }
 .app-page .filter-shell .filter-option:hover {
   border-color: #93c5fd;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
 }
 .app-page .filter-shell .filter-option.selected {
-  border-color: #1d4ed8;
-  background: #2563eb;
-  color: #fff;
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .app-page .filter-shell .filter-option.selected:hover {
   border-color: #1e40af;
-  background: #1d4ed8;
-  color: #fff;
+  background: var(--color-primary-hover);
+  color: var(--color-surface);
 }
 main.app-page > .data-panel {
   display: flex;
@@ -304,13 +283,13 @@ app-list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   min-height: 1.75rem;
   color: #1e293b;
 }
 .app-page .list-header h2 {
   min-width: 0;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -320,10 +299,10 @@ app-list-header {
   flex: none;
   min-height: 1.75rem;
   padding: 0.25rem 0.75rem;
-  border: 1px solid #1d4ed8;
-  border-radius: 999px;
-  background: #2563eb;
-  color: #fff;
+  border: 1px solid var(--color-primary-hover);
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 0.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -344,9 +323,9 @@ app-list-header {
 .table-scroll table {
   height: auto;
   align-self: flex-start;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   line-height: 1.5;
-  color: #334155;
+  color: var(--color-secondary-text);
 }
 .table-scroll table :is(th, td) {
   padding: 0.625rem 0.875rem;
@@ -371,33 +350,33 @@ app-list-header {
 .table-scroll small {
   font-size: 0.75rem;
   margin-top: 0.125rem;
-  color: #64748b;
+  color: var(--color-muted);
 }
 .table-scroll strong {
   font-weight: 600;
 }
 .app-page .icon-button {
-  width: 2rem;
-  height: 2rem;
+  width: var(--icon-button-size, 2rem);
+  height: var(--icon-button-size, 2rem);
   min-height: 2rem;
   padding: 0;
   border: 1px solid #dce2e9;
-  background: #fff;
+  background: var(--color-surface);
   color: #475569;
   border-radius: var(--radius-button);
 }
 .app-page .icon-button:hover {
   background: #eff6ff;
   border-color: #93c5fd;
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
 }
 .app-page .icon-button.danger:hover {
-  color: #b91c1c;
+  color: var(--color-danger);
   border-color: #fecaca;
   background: #fef2f2;
 }
 .app-page .icon-button[data-action='open_in_new'] {
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
   border-color: #bfdbfe;
   background: #eff6ff;
 }
@@ -417,7 +396,7 @@ app-list-header {
   background: #fef3c7;
 }
 .app-page .icon-button[data-action='delete'] {
-  color: #b91c1c;
+  color: var(--color-danger);
   border-color: #fecaca;
   background: #fef2f2;
 }
@@ -442,17 +421,17 @@ app-list-header {
   background: #ede9fe;
 }
 .app-page .icon-button.pin-action {
-  color: #64748b;
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  color: var(--color-muted);
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
 }
 .page-header .icon-button.pin-action {
   width: 2.5rem;
   height: 2.5rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 50%;
-  color: #64748b;
-  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-muted);
+  background: var(--color-surface-muted);
   transition:
     color 150ms ease,
     background-color 150ms ease,
@@ -462,12 +441,12 @@ app-list-header {
 .page-header .icon-button.pin-action:hover {
   border-color: #94a3b8;
   background: #e2e8f0;
-  color: #334155;
+  color: var(--color-secondary-text);
 }
 .page-header .icon-button.pin-action.is-pinned {
   border-color: #d97706;
   background: #f59e0b;
-  color: #fff;
+  color: var(--color-surface);
   box-shadow: 0 2px 6px rgb(180 83 9 / 25%);
 }
 .page-header .icon-button.pin-action.is-pinned:hover {
@@ -485,7 +464,7 @@ app-list-header {
   background: #fffbeb;
 }
 .icon-button .material-symbols-outlined {
-  font-size: 1.125rem;
+  font-size: var(--icon-button-glyph-size, 1.125rem);
 }
 .row-actions {
   gap: 0.375rem;
@@ -493,7 +472,7 @@ app-list-header {
 .table-scroll table :is(.attendance-mark, .eval-mark) {
   width: 2rem;
   height: 2rem;
-  font-size: 0.875rem;
+  font-size: var(--font-size-control);
   transition:
     background-color 180ms ease,
     color 180ms ease,
@@ -507,9 +486,9 @@ app-list-header {
   align-items: center;
   gap: 0.25rem;
   padding: 0.1875rem 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-tag);
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: #475569;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -521,19 +500,19 @@ app-list-header {
     color 180ms ease;
 }
 .table-badge[data-tone='success'] {
-  background: #15803d;
+  background: var(--color-success);
   border-color: #166534;
-  color: #fff;
+  color: var(--color-surface);
 }
 .table-badge[data-tone='warning'] {
   background: #b45309;
   border-color: #92400e;
-  color: #fff;
+  color: var(--color-surface);
 }
 .table-badge[data-tone='neutral'] {
   background: #475569;
-  border-color: #334155;
-  color: #fff;
+  border-color: var(--color-secondary-text);
+  color: var(--color-surface);
 }
 @media (prefers-reduced-motion: reduce) {
   .table-scroll table :is(.attendance-mark, .eval-mark),
@@ -545,7 +524,7 @@ app-list-header {
 .lesson-type-badge[data-lesson-type='regular'] {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #1d4ed8;
+  color: var(--color-primary-hover);
 }
 .lesson-type-badge[data-lesson-type='revisao'] {
   background: #f5f3ff;
@@ -578,16 +557,16 @@ app-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-3);
   min-width: 0;
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 0.75rem;
 }
 .pagination-info,
 .pagination-info label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 .pagination-info label {
   white-space: nowrap;
@@ -614,7 +593,7 @@ app-pagination {
   height: 1.875rem;
   padding: 0;
   border: 1px solid #dce2e9;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-button);
   color: #475569;
 }
@@ -623,7 +602,7 @@ app-pagination {
 }
 .pagination-current {
   padding: 0.25rem 0.375rem;
-  color: #334155;
+  color: var(--color-secondary-text);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -652,7 +631,7 @@ app-record-details.tabular .details-table {
 }
 .class-workspace,
 .app-page {
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 @media (max-width: 48rem) {
   .filter-search-box {
@@ -664,15 +643,6 @@ app-record-details.tabular .details-table {
   }
   .app-page .filter-shell .filter-clear {
     margin-left: auto;
-  }
-  .filter-shell .filter-bar {
-    flex: 0 0 auto;
-    width: max-content;
-    flex-wrap: nowrap;
-  }
-  .filter-shell .filter-bar label {
-    flex: 0 0 9rem;
-    min-width: 9rem;
   }
   main.app-page > .data-panel {
     padding: 0.625rem;
@@ -699,12 +669,6 @@ app-record-details.tabular .details-table {
     flex: 1 0 6rem;
     min-height: 6rem;
   }
-  .app-page .presencas-footer button,
-  .app-page .avaliacao-footer button {
-    min-height: 2rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8125rem;
-  }
 }
 
 @media (max-width: 48rem) {
@@ -712,28 +676,16 @@ app-record-details.tabular .details-table {
     overflow: auto;
     overscroll-behavior: contain;
   }
-  .filter-shell .filter-bar {
-    display: grid;
-    width: 100%;
-    grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
-  }
-  .filter-shell .filter-bar > :is(label, .filter-option-field) {
-    width: 100%;
-    min-width: 0;
-  }
-  .filter-option-group {
-    flex-wrap: wrap;
-  }
   .app-page .icon-button,
   .app-page app-pagination button,
   .table-scroll table :is(.attendance-mark, .eval-mark),
   .app-page .filter-shell :is(.filter-clear, .filter-toggle) {
-    min-height: 2.75rem;
+    min-height: var(--control-height);
     min-width: 2.75rem;
   }
   .filter-shell .filter-bar :is(button, select),
   .context-tabs a {
-    min-height: 2.75rem;
+    min-height: var(--control-height);
   }
   .page-title-row {
     gap: 0.375rem;
@@ -746,6 +698,7 @@ app-record-details.tabular .details-table {
   }
 }
 .list-skeleton {
+  display: block;
   height: 5rem;
   background: repeating-linear-gradient(to bottom, #eef2f6 0 1rem, transparent 1rem 2rem);
 }
@@ -761,7 +714,7 @@ app-record-details.tabular .details-table {
 }
 
 @media (max-width: 48rem) {
-  .app-page .filter-shell .filter-chip-remove { min-width: 2.75rem; min-height: 2.75rem; }
-  .app-page app-pagination .pagination .pagination-info select { min-height: 2.75rem; }
+  .app-page .filter-shell .filter-chip-remove { min-width: 2.75rem; min-height: var(--control-height); }
+  .app-page app-pagination .pagination .pagination-info select { min-height: var(--control-height); }
   .app-page .filter-shell .filter-content :is(input, select), .app-page .field :is(input, select, textarea) { font-size: 1rem; }
 }
